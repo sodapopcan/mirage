@@ -1,0 +1,148 @@
+defmodule HoloTest.DOM do
+  @moduledoc false
+
+  alias Hologram.Component
+  alias Hologram.Reflection
+  alias Hologram.Server
+
+  @doc """
+  Recursively expands a Hologram template DOM node, resolving components down
+  to their underlying elements/text. Preserves `$`-prefixed attributes so that
+  interaction testing (e.g. simulating clicks) remains possible.
+  """
+  def expand(nodes, env, server) when is_list(nodes) do
+    nodes
+    |> Enum.filter(& &1)
+    |> Enum.map(&expand(&1, env, server))
+    |> List.flatten()
+  end
+
+  def expand({:component, module, props_dom, children_dom}, env, server) do
+    expanded_children = expand_slots(children_dom, env.slots)
+
+    props =
+      props_dom
+      |> cast_props(module)
+      |> inject_props_from_context(module, env.context)
+      |> inject_default_prop_values(module)
+
+    {component_struct, server} =
+      if has_cid?(props) do
+        init_component(module, props, server)
+      else
+        {%Component{}, server}
+      end
+
+    vars = Map.merge(props, component_struct.state)
+    merged_context = Map.merge(env.context, component_struct.emitted_context)
+    template_dom = module.template().(vars)
+
+    expand(
+      template_dom,
+      %{context: merged_context, slots: [default: expanded_children]},
+      server
+    )
+  end
+
+  def expand({:element, "slot", _attrs, []}, env, server) do
+    expand(env.slots[:default] || [], %{env | slots: []}, server)
+  end
+
+  def expand({:element, tag, attrs_dom, children}, env, server) do
+    {:element, tag, attrs_dom, expand(children, env, server)}
+  end
+
+  def expand({:expression, {value}}, _env, _server) do
+    {:text, to_string(value)}
+  end
+
+  def expand({:public_comment, children}, env, server) do
+    {:public_comment, expand(children, env, server)}
+  end
+
+  def expand(other, _env, _server), do: other
+
+  @doc """
+  Calls the module's `init/3` if defined and normalizes the result to a
+  `{%Component{}, %Server{}}` tuple.
+  """
+  def init_component(module, props, server) do
+    result =
+      if Reflection.has_function?(module, :init, 3) do
+        module.init(props, %Component{}, server)
+      else
+        {%Component{}, server}
+      end
+
+    case result do
+      {%Component{} = component_struct, %Server{} = mutated_server} ->
+        {component_struct, mutated_server}
+
+      %Component{} = component_struct ->
+        {component_struct, server}
+
+      %Server{} = mutated_server ->
+        {%Component{}, mutated_server}
+    end
+  end
+
+  defp cast_props(props_dom, module) do
+    allowed =
+      ["cid" | for({name, _, opts} <- module.__props__(), !opts[:from_context], do: to_string(name))]
+
+    props_dom
+    |> Enum.filter(fn {name, _} -> name in allowed end)
+    |> Enum.map(&evaluate_prop_value/1)
+    |> Enum.map(fn {name, value} -> {String.to_existing_atom(name), value} end)
+    |> Enum.into(%{})
+  end
+
+  defp evaluate_prop_value({name, [expression: {value}]}), do: {name, value}
+  defp evaluate_prop_value({name, [expression: value]}), do: {name, value}
+
+  defp evaluate_prop_value({name, dom}) do
+    str = dom |> Enum.map(&prop_part_to_string/1) |> Enum.join()
+    {name, str}
+  end
+
+  defp prop_part_to_string({:text, text}), do: text
+  defp prop_part_to_string({:expression, {value}}), do: to_string(value)
+
+  defp inject_props_from_context(props, module, context) do
+    extras =
+      for {name, _type, opts} <- module.__props__(),
+          opts[:from_context] && Map.has_key?(context, opts[:from_context]),
+          into: %{},
+          do: {name, context[opts[:from_context]]}
+
+    Map.merge(props, extras)
+  end
+
+  defp inject_default_prop_values(props, module) do
+    Enum.reduce(module.__props__(), props, fn {name, _type, opts}, acc ->
+      if !Map.has_key?(acc, name) and Keyword.has_key?(opts, :default) do
+        Map.put(acc, name, opts[:default])
+      else
+        acc
+      end
+    end)
+  end
+
+  defp expand_slots(nodes, slots) when is_list(nodes) do
+    nodes |> Enum.map(&expand_slots(&1, slots)) |> List.flatten()
+  end
+
+  defp expand_slots({:component, module, props_dom, children_dom}, slots) do
+    {:component, module, props_dom, expand_slots(children_dom, slots)}
+  end
+
+  defp expand_slots({:element, "slot", _, []}, slots), do: slots[:default]
+
+  defp expand_slots({:element, tag, attrs_dom, children}, slots) do
+    {:element, tag, attrs_dom, expand_slots(children, slots)}
+  end
+
+  defp expand_slots(node, _slots), do: node
+
+  defp has_cid?(props), do: Map.has_key?(props, :cid)
+end
