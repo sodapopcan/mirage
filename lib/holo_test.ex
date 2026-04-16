@@ -16,9 +16,9 @@ defmodule HoloTest do
     defstruct [:page, :ast, :page_module]
 
     @type t :: %__MODULE__{
-            page: Component.t() | nil,
+            page: Component.t(),
             ast: any(),
-            page_module: module() | nil
+            page_module: module()
           }
   end
 
@@ -93,9 +93,6 @@ defmodule HoloTest do
       nested
     end
   end
-
-  # Public comments aren't interactive content — don't recurse into them.
-  defp find_clickables({:public_comment, _children}, _text, _exact?), do: []
 
   defp find_clickables(_other, _text, _exact?), do: []
 
@@ -206,8 +203,6 @@ defmodule HoloTest do
     collect_form_nodes(children, form_change)
   end
 
-  # Mirror click's treatment of comments: they're not interactive content.
-  defp collect_form_nodes({:public_comment, _children}, _form_change), do: {[], %{}}
   defp collect_form_nodes(_other, _form_change), do: {[], %{}}
 
   defp find_nested_input(nodes) when is_list(nodes) do
@@ -268,8 +263,8 @@ defmodule HoloTest do
     run_action(session, name, extra)
   end
 
-  # Anything else (literal strings, shapes we don't model) is a no-op: the
-  # session is returned as-is. This is what the basic click/3 tests rely on.
+  # Attribute values that aren't one of the known expression shapes (e.g.
+  # a literal string like `$click="foo"`) are treated as no-ops.
   defp dispatch_action(session, _other, _extra), do: session
 
   defp find_attr(attrs, name) do
@@ -291,25 +286,11 @@ defmodule HoloTest do
 
   defp attr_to_string(_other), do: ""
 
-  # Without a known page module there's no `action/3` to dispatch into, so
-  # the click is a no-op on the session.
-  defp run_action(%Session{page_module: nil} = session, _name, _params), do: session
-
-  defp run_action(%Session{page_module: page_module} = session, name, params) do
-    component = session.page || %Component{}
-    server = %Server{}
-
-    result =
-      if function_exported?(page_module, :action, 3) do
-        page_module.action(name, params, component)
-      else
-        component
-      end
-
+  defp run_action(%Session{page: component, page_module: page_module} = session, name, params) do
     {new_component, new_server} =
-      case result do
+      case page_module.action(name, params, component) do
         {%Component{} = c, %Server{} = s} -> {c, s}
-        %Component{} = c -> {c, server}
+        %Component{} = c -> {c, %Server{}}
         %Server{} = s -> {component, s}
       end
 

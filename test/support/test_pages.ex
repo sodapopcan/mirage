@@ -127,6 +127,269 @@ defmodule HoloTest.FillInPage do
   end
 end
 
+defmodule HoloTest.ClickPage do
+  @moduledoc """
+  Single clickable button with intentionally verbose text so the same page
+  can drive exact-match, substring-match, and no-match scenarios.
+  """
+  use Hologram.Page
+
+  route "/click"
+  layout HoloTest.TestLayout
+
+  def action(:save, _params, component), do: put_state(component, clicked: true)
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button $click={:save}>Save changes now</button>
+    """
+  end
+end
+
+defmodule HoloTest.ClickWhitespacePage do
+  @moduledoc """
+  Uses an expression-bound string so leading/trailing whitespace around
+  the button's text survives the template parser and exercises the trim
+  in `text_matches?/3`.
+  """
+  use Hologram.Page
+
+  route "/click-whitespace"
+  layout HoloTest.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, text: "  Save  ")
+  end
+
+  def action(:save, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button $click={:save}>{@text}</button>
+    """
+  end
+end
+
+defmodule HoloTest.ClickNestedTextPage do
+  @moduledoc "Button text split across descendant elements."
+  use Hologram.Page
+
+  route "/click-nested-text"
+  layout HoloTest.TestLayout
+
+  def action(:submit, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button $click={:submit}><span>Click </span><span>me</span></button>
+    """
+  end
+end
+
+defmodule HoloTest.ClickDeepPage do
+  @moduledoc "Clickable anchor nested several elements deep."
+  use Hologram.Page
+
+  route "/click-deep"
+  layout HoloTest.TestLayout
+
+  def action(:go, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <div><section><a $click={:go}>Go</a></section></div>
+    """
+  end
+end
+
+defmodule HoloTest.ClickNoAttrPage do
+  @moduledoc "Button without a `$click` attribute — nothing to click."
+  use Hologram.Page
+
+  route "/click-no-attr"
+  layout HoloTest.TestLayout
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button>Save</button>
+    """
+  end
+end
+
+defmodule HoloTest.ClickAmbiguousPage do
+  @moduledoc "Two clickable elements sharing the same text."
+  use Hologram.Page
+
+  route "/click-ambiguous"
+  layout HoloTest.TestLayout
+
+  def action(:save, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button $click={:save}>Save</button>
+    <a $click={:save}>Save</a>
+    """
+  end
+end
+
+defmodule HoloTest.ClickCommentPage do
+  @moduledoc """
+  The clickable button is inside an HTML comment — Hologram's parser
+  treats everything between `<!--` and `-->` as text, so the button
+  must not be reachable as a clickable.
+  """
+  use Hologram.Page
+
+  route "/click-comment"
+  layout HoloTest.TestLayout
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <!-- <button $click={:x}>Hidden</button> -->
+    """
+  end
+end
+
+defmodule HoloTest.FillInCommentPage do
+  @moduledoc """
+  Counterpart to `ClickCommentPage` for labels: a commented-out label
+  must not be reachable via `fill_in/3`.
+  """
+  use Hologram.Page
+
+  route "/fill-in-comment"
+  layout HoloTest.TestLayout
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <!-- <label>Hidden<input $action={:x} /></label> -->
+    """
+  end
+end
+
+defmodule HoloTest.FillInLabelTextPage do
+  @moduledoc """
+  Single labelled input where the label text is longer than any single
+  word — lets the same page cover exact-match, substring-match, and
+  no-match variants of `fill_in/3`.
+  """
+  use Hologram.Page
+
+  route "/fill-in-label-text"
+  layout HoloTest.TestLayout
+
+  def action(:update, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Email address<input $action={:update} /></label>
+    """
+  end
+end
+
+defmodule HoloTest.FillInWhitespaceLabelPage do
+  @moduledoc """
+  Expression-bound label text so surrounding whitespace survives parsing
+  and exercises the trim in `text_matches?/3`.
+  """
+  use Hologram.Page
+
+  route "/fill-in-whitespace-label"
+  layout HoloTest.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, text: "  Name  ")
+  end
+
+  def action(:update, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>{@text}<input $action={:update} /></label>
+    """
+  end
+end
+
+defmodule HoloTest.FillInNestedLabelPage do
+  @moduledoc "Label text split across descendant elements."
+  use Hologram.Page
+
+  route "/fill-in-nested-label"
+  layout HoloTest.TestLayout
+
+  def action(:update, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label><span>First </span><span>name</span><input $action={:update} /></label>
+    """
+  end
+end
+
+defmodule HoloTest.FillInDeepLabelPage do
+  @moduledoc "Label nested several elements deep in the tree."
+  use Hologram.Page
+
+  route "/fill-in-deep-label"
+  layout HoloTest.TestLayout
+
+  def action(:update, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <div><section><label>Email<input $action={:update} /></label></section></div>
+    """
+  end
+end
+
+defmodule HoloTest.FillInAmbiguousLabelPage do
+  @moduledoc "Two labels with the same text."
+  use Hologram.Page
+
+  route "/fill-in-ambiguous-label"
+  layout HoloTest.TestLayout
+
+  def action(:update, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Name<input $action={:update} /></label>
+    <label>Name<input $action={:update} /></label>
+    """
+  end
+end
+
+defmodule HoloTest.FillInOrphanLabelPage do
+  @moduledoc "Label whose `for` attribute points at a non-existent input."
+  use Hologram.Page
+
+  route "/fill-in-orphan-label"
+  layout HoloTest.TestLayout
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label for="missing">Orphan</label>
+    """
+  end
+end
+
 defmodule HoloTest.CommandPage do
   @moduledoc false
   use Hologram.Page

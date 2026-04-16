@@ -7,110 +7,79 @@ defmodule HoloTestTest do
 
   describe "click/3" do
     test "returns the session when a clickable element's text matches exactly" do
-      ast = [
-        {:element, "button", [{"$click", "save"}], [{:text, "Save"}]}
-      ]
-
-      session = %Session{ast: ast}
-      assert HoloTest.click(session, "Save") == session
+      session = HoloTest.visit(HoloTest.ClickPage)
+      assert %Session{} = HoloTest.click(session, "Save changes now")
     end
 
     test "trims surrounding whitespace when matching exactly" do
-      ast = [
-        {:element, "button", [{"$click", "save"}], [{:text, "  Save  "}]}
-      ]
-
-      assert %Session{} = HoloTest.click(%Session{ast: ast}, "Save")
+      session = HoloTest.visit(HoloTest.ClickWhitespacePage)
+      assert %Session{} = HoloTest.click(session, "Save")
     end
 
     test "concatenates text from descendant elements when computing inner text" do
-      ast = [
-        {:element, "button", [{"$click", "submit"}],
-         [
-           {:element, "span", [], [{:text, "Click "}]},
-           {:element, "span", [], [{:text, "me"}]}
-         ]}
-      ]
-
-      assert %Session{} = HoloTest.click(%Session{ast: ast}, "Click me")
+      session = HoloTest.visit(HoloTest.ClickNestedTextPage)
+      assert %Session{} = HoloTest.click(session, "Click me")
     end
 
     test "finds a clickable element nested deep in the tree" do
-      ast = [
-        {:element, "div", [],
-         [
-           {:element, "section", [],
-            [
-              {:element, "a", [{"$click", "go"}], [{:text, "Go"}]}
-            ]}
-         ]}
-      ]
-
-      assert %Session{} = HoloTest.click(%Session{ast: ast}, "Go")
-    end
-
-    test "ignores clicks in comments" do
-      ast = [
-        {:public_comment,
-         [
-           {:element, "button", [{"$click", "x"}], [{:text, "Hidden"}]}
-         ]}
-      ]
-
-      assert_raise RuntimeError, ~r/No clickable element found/, fn ->
-        HoloTest.click(%Session{ast: ast}, "Hidden")
-      end
+      session = HoloTest.visit(HoloTest.ClickDeepPage)
+      assert %Session{} = HoloTest.click(session, "Go")
     end
 
     test "matches substrings when exact: false" do
-      ast = [
-        {:element, "button", [{"$click", "save"}], [{:text, "Save changes now"}]}
-      ]
-
-      assert %Session{} = HoloTest.click(%Session{ast: ast}, "changes", exact: false)
+      session = HoloTest.visit(HoloTest.ClickPage)
+      assert %Session{} = HoloTest.click(session, "changes", exact: false)
     end
 
     test "does not match substrings when exact is the default" do
-      ast = [
-        {:element, "button", [{"$click", "save"}], [{:text, "Save changes now"}]}
-      ]
+      session = HoloTest.visit(HoloTest.ClickPage)
 
       assert_raise RuntimeError, ~r/No clickable element found/, fn ->
-        HoloTest.click(%Session{ast: ast}, "changes")
+        HoloTest.click(session, "changes")
       end
     end
 
     test "raises when no element has a $click attribute" do
-      ast = [
-        {:element, "button", [], [{:text, "Save"}]}
-      ]
+      session = HoloTest.visit(HoloTest.ClickNoAttrPage)
 
       assert_raise RuntimeError, ~r/No clickable element found with text: "Save"/, fn ->
-        HoloTest.click(%Session{ast: ast}, "Save")
+        HoloTest.click(session, "Save")
+      end
+    end
+
+    test "ignores clickables written inside an HTML comment" do
+      session = HoloTest.visit(HoloTest.ClickCommentPage)
+
+      assert_raise RuntimeError, ~r/No clickable element found with text: "Hidden"/, fn ->
+        HoloTest.click(session, "Hidden")
       end
     end
 
     test "raises when text does not match any clickable element" do
-      ast = [
-        {:element, "button", [{"$click", "save"}], [{:text, "Save"}]}
-      ]
+      session = HoloTest.visit(HoloTest.ClickPage)
 
       assert_raise RuntimeError, ~r/No clickable element found with text: "Cancel"/, fn ->
-        HoloTest.click(%Session{ast: ast}, "Cancel")
+        HoloTest.click(session, "Cancel")
       end
     end
 
     test "raises when more than one clickable element matches the text" do
-      ast = [
-        {:element, "button", [{"$click", "save"}], [{:text, "Save"}]},
-        {:element, "a", [{"$click", "save"}], [{:text, "Save"}]}
-      ]
+      session = HoloTest.visit(HoloTest.ClickAmbiguousPage)
 
       assert_raise RuntimeError,
                    ~r/Ambiguous match: found 2 clickable elements with text: "Save"/,
                    fn ->
-                     HoloTest.click(%Session{ast: ast}, "Save")
+                     HoloTest.click(session, "Save")
                    end
+    end
+
+    test "dispatches the clicked action — page state reflects the call" do
+      session =
+        HoloTest.ClickPage
+        |> HoloTest.visit()
+        |> HoloTest.click("Save changes now")
+
+      assert session.page.state.clicked == true
     end
   end
 
@@ -164,169 +133,80 @@ defmodule HoloTestTest do
 
   describe "fill_in/3" do
     test "fills an input wrapped by a label matching exactly" do
-      ast = [
-        {:element, "label", [],
-         [
-           {:text, "Name"},
-           {:element, "input", [{"$action", "update"}], []}
-         ]}
-      ]
-
-      session = %Session{ast: ast}
-      assert HoloTest.fill_in(session, "Name", with: "Alice") == session
+      session = HoloTest.visit(HoloTest.FillInPage)
+      assert %Session{} = HoloTest.fill_in(session, "Name", with: "Alice")
     end
 
     test "fills an input referenced by `for` matching the input's id" do
-      ast = [
-        {:element, "label", [{"for", "name"}], [{:text, "Name"}]},
-        {:element, "input", [{"id", "name"}, {"$action", "update"}], []}
-      ]
-
-      session = %Session{ast: ast}
-      assert HoloTest.fill_in(session, "Name", with: "Alice") == session
+      session = HoloTest.visit(HoloTest.FillInPage)
+      assert %Session{} = HoloTest.fill_in(session, "Email", with: "a@b.c")
     end
 
     test "trims surrounding whitespace in the label when matching exactly" do
-      ast = [
-        {:element, "label", [],
-         [
-           {:text, "  Name  "},
-           {:element, "input", [{"$action", "update"}], []}
-         ]}
-      ]
-
-      assert %Session{} = HoloTest.fill_in(%Session{ast: ast}, "Name", with: "Alice")
+      session = HoloTest.visit(HoloTest.FillInWhitespaceLabelPage)
+      assert %Session{} = HoloTest.fill_in(session, "Name", with: "Alice")
     end
 
     test "concatenates text from descendant elements when computing the label's text" do
-      ast = [
-        {:element, "label", [],
-         [
-           {:element, "span", [], [{:text, "First "}]},
-           {:element, "span", [], [{:text, "name"}]},
-           {:element, "input", [{"$action", "update"}], []}
-         ]}
-      ]
-
-      assert %Session{} = HoloTest.fill_in(%Session{ast: ast}, "First name", with: "Alice")
+      session = HoloTest.visit(HoloTest.FillInNestedLabelPage)
+      assert %Session{} = HoloTest.fill_in(session, "First name", with: "Alice")
     end
 
     test "finds a label nested deep in the tree" do
-      ast = [
-        {:element, "div", [],
-         [
-           {:element, "section", [],
-            [
-              {:element, "label", [],
-               [
-                 {:text, "Email"},
-                 {:element, "input", [{"$action", "update"}], []}
-               ]}
-            ]}
-         ]}
-      ]
-
-      assert %Session{} = HoloTest.fill_in(%Session{ast: ast}, "Email", with: "a@b.c")
+      session = HoloTest.visit(HoloTest.FillInDeepLabelPage)
+      assert %Session{} = HoloTest.fill_in(session, "Email", with: "a@b.c")
     end
 
     test "matches substrings when exact: false" do
-      ast = [
-        {:element, "label", [],
-         [
-           {:text, "Email address"},
-           {:element, "input", [{"$action", "update"}], []}
-         ]}
-      ]
-
-      assert %Session{} =
-               HoloTest.fill_in(%Session{ast: ast}, "Email", with: "a@b.c", exact: false)
+      session = HoloTest.visit(HoloTest.FillInLabelTextPage)
+      assert %Session{} = HoloTest.fill_in(session, "Email", with: "a@b.c", exact: false)
     end
 
     test "does not match substrings when exact is the default" do
-      ast = [
-        {:element, "label", [],
-         [
-           {:text, "Email address"},
-           {:element, "input", [{"$action", "update"}], []}
-         ]}
-      ]
+      session = HoloTest.visit(HoloTest.FillInLabelTextPage)
 
       assert_raise RuntimeError, ~r/No input found with label: "Email"/, fn ->
-        HoloTest.fill_in(%Session{ast: ast}, "Email", with: "a@b.c")
-      end
-    end
-
-    test "ignores labels inside public comments" do
-      ast = [
-        {:public_comment,
-         [
-           {:element, "label", [],
-            [
-              {:text, "Hidden"},
-              {:element, "input", [{"$action", "update"}], []}
-            ]}
-         ]}
-      ]
-
-      assert_raise RuntimeError, ~r/No input found with label: "Hidden"/, fn ->
-        HoloTest.fill_in(%Session{ast: ast}, "Hidden", with: "x")
+        HoloTest.fill_in(session, "Email", with: "a@b.c")
       end
     end
 
     test "raises when no label matches" do
-      ast = [
-        {:element, "label", [],
-         [
-           {:text, "Name"},
-           {:element, "input", [{"$action", "update"}], []}
-         ]}
-      ]
+      session = HoloTest.visit(HoloTest.FillInPage)
 
-      assert_raise RuntimeError, ~r/No input found with label: "Email"/, fn ->
-        HoloTest.fill_in(%Session{ast: ast}, "Email", with: "a@b.c")
+      assert_raise RuntimeError, ~r/No input found with label: "Nonsense"/, fn ->
+        HoloTest.fill_in(session, "Nonsense", with: "x")
+      end
+    end
+
+    test "ignores labels written inside an HTML comment" do
+      session = HoloTest.visit(HoloTest.FillInCommentPage)
+
+      assert_raise RuntimeError, ~r/No input found with label: "Hidden"/, fn ->
+        HoloTest.fill_in(session, "Hidden", with: "x")
       end
     end
 
     test "raises when more than one label matches" do
-      ast = [
-        {:element, "label", [],
-         [
-           {:text, "Name"},
-           {:element, "input", [{"$action", "update"}], []}
-         ]},
-        {:element, "label", [],
-         [
-           {:text, "Name"},
-           {:element, "input", [{"$action", "update"}], []}
-         ]}
-      ]
+      session = HoloTest.visit(HoloTest.FillInAmbiguousLabelPage)
 
       assert_raise RuntimeError, ~r/Ambiguous match: found 2 labels matching: "Name"/, fn ->
-        HoloTest.fill_in(%Session{ast: ast}, "Name", with: "Alice")
+        HoloTest.fill_in(session, "Name", with: "Alice")
       end
     end
 
     test "raises when a matching `for` label has no corresponding input" do
-      ast = [
-        {:element, "label", [{"for", "missing"}], [{:text, "Orphan"}]}
-      ]
+      session = HoloTest.visit(HoloTest.FillInOrphanLabelPage)
 
       assert_raise RuntimeError, ~r/No input with id="missing"/, fn ->
-        HoloTest.fill_in(%Session{ast: ast}, "Orphan", with: "x")
+        HoloTest.fill_in(session, "Orphan", with: "x")
       end
     end
 
     test "requires a `with:` option" do
-      ast = [
-        {:element, "label", [],
-         [
-           {:text, "Name"},
-           {:element, "input", [{"$action", "update"}], []}
-         ]}
-      ]
+      session = HoloTest.visit(HoloTest.FillInPage)
 
       assert_raise KeyError, ~r/key :with not found/, fn ->
-        HoloTest.fill_in(%Session{ast: ast}, "Name", [])
+        HoloTest.fill_in(session, "Name", [])
       end
     end
   end
