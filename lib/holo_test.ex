@@ -6,21 +6,21 @@ defmodule HoloTest do
   template into a fully-resolved DOM that tests can make assertions against.
   """
 
-defmodule Session do
-  @moduledoc """
-  Represents a test session — the state of a page after a `HoloTest.visit/2`.
-  """
+  defmodule Session do
+    @moduledoc """
+    Represents a test session — the state of a page after a `HoloTest.visit/2`.
+    """
 
-  alias Hologram.Component
+    alias Hologram.Component
 
-  defstruct [:page, :ast, :page_module]
+    defstruct [:page, :ast, :page_module]
 
-  @type t :: %__MODULE__{
-          page: Component.t() | nil,
-          ast: any(),
-          page_module: module() | nil
-        }
-end
+    @type t :: %__MODULE__{
+            page: Component.t() | nil,
+            ast: any(),
+            page_module: module() | nil
+          }
+  end
 
   alias Hologram.Component
   alias Hologram.Page

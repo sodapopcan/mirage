@@ -88,7 +88,10 @@ defmodule HoloTest.DOM do
 
   defp cast_props(props_dom, module) do
     allowed =
-      ["cid" | for({name, _, opts} <- module.__props__(), !opts[:from_context], do: to_string(name))]
+      [
+        "cid"
+        | for({name, _, opts} <- module.__props__(), !opts[:from_context], do: to_string(name))
+      ]
 
     props_dom
     |> Enum.filter(fn {name, _} -> name in allowed end)
