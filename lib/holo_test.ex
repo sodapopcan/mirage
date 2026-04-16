@@ -103,10 +103,14 @@ defmodule HoloTest do
     end)
   end
 
-  defp inner_text({:element, _tag, _attrs, children}), do: inner_text(children)
-  defp inner_text({:text, text}), do: text
-  defp inner_text(nodes) when is_list(nodes), do: Enum.map_join(nodes, "", &inner_text/1)
-  defp inner_text(_other), do: ""
+  defp inner_text(node) do
+    case node do
+      {:element, _tag, _attrs, children} -> inner_text(children)
+      {:text, text} -> text
+      nodes when is_list(nodes) -> Enum.map_join(nodes, "", &inner_text/1)
+      _ -> ""
+    end
+  end
 
   defp text_matches?(actual, expected, true), do: String.trim(actual) == expected
   defp text_matches?(actual, expected, false), do: String.contains?(actual, expected)
