@@ -99,6 +99,19 @@ defmodule HoloTestTest do
         HoloTest.click(%Session{ast: ast}, "Cancel")
       end
     end
+
+    test "raises when more than one clickable element matches the text" do
+      ast = [
+        {:element, "button", [{"$click", "save"}], [{:text, "Save"}]},
+        {:element, "a", [{"$click", "save"}], [{:text, "Save"}]}
+      ]
+
+      assert_raise RuntimeError,
+                   ~r/Ambiguous match: found 2 clickable elements with text: "Save"/,
+                   fn ->
+                     HoloTest.click(%Session{ast: ast}, "Save")
+                   end
+    end
   end
 
   describe "click/3 — navigation" do

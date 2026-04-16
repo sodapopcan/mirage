@@ -61,37 +61,43 @@ defmodule HoloTest do
   command, that command is executed server-side before returning.
 
   Matches exactly by default; pass `exact: false` to match substrings instead.
-  Raises if no matching clickable element is found.
+  Raises if no matching clickable element is found, or if more than one
+  matches (ambiguous match).
   """
   @spec click(Session.t(), String.t(), keyword()) :: Session.t()
   def click(session, text, opts \\ []) do
     exact? = Keyword.get(opts, :exact, true)
 
-    case find_clickable(session.ast, text, exact?) do
-      nil ->
+    case find_clickables(session.ast, text, exact?) do
+      [] ->
         raise "No clickable element found with text: #{inspect(text)}"
 
-      node ->
+      [node] ->
         handle_click(session, node)
+
+      [_ | _] = nodes ->
+        raise "Ambiguous match: found #{length(nodes)} clickable elements with text: #{inspect(text)}"
     end
   end
 
-  defp find_clickable(nodes, text, exact?) when is_list(nodes) do
-    Enum.find_value(nodes, &find_clickable(&1, text, exact?))
+  defp find_clickables(nodes, text, exact?) when is_list(nodes) do
+    Enum.flat_map(nodes, &find_clickables(&1, text, exact?))
   end
 
-  defp find_clickable({:element, _tag, attrs, children} = node, text, exact?) do
+  defp find_clickables({:element, _tag, attrs, children} = node, text, exact?) do
+    nested = find_clickables(children, text, exact?)
+
     if has_click_attr?(attrs) and text_matches?(inner_text(node), text, exact?) do
-      node
+      [node | nested]
     else
-      find_clickable(children, text, exact?)
+      nested
     end
   end
 
   # Public comments aren't interactive content — don't recurse into them.
-  defp find_clickable({:public_comment, _children}, _text, _exact?), do: nil
+  defp find_clickables({:public_comment, _children}, _text, _exact?), do: []
 
-  defp find_clickable(_other, _text, _exact?), do: nil
+  defp find_clickables(_other, _text, _exact?), do: []
 
   defp has_click_attr?(attrs) do
     Enum.any?(attrs, fn
