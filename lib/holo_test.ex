@@ -115,17 +115,16 @@ defmodule HoloTest do
   defp text_matches?(actual, expected, false), do: String.contains?(actual, expected)
 
   defp handle_click(session, {:element, _tag, attrs, _children}) do
-    dispatch_click(session, find_attr(attrs, "$click"))
-  end
+    # Hologram.UI.Link expands `$click={:__load_prefetched_page__, to: @to}` —
+    # in the resolved AST that shows up as `[expression: {:__load_prefetched_page__, [to: Target]}]`.
+    case find_attr(attrs, "$click") do
+      [{:expression, {:__load_prefetched_page__, params}}] when is_list(params) ->
+        visit(Keyword.fetch!(params, :to))
 
-  # Hologram.UI.Link expands `$click={:__load_prefetched_page__, to: @to}` —
-  # in the resolved AST that shows up as `[expression: {:__load_prefetched_page__, [to: Target]}]`.
-  defp dispatch_click(_session, [{:expression, {:__load_prefetched_page__, params}}])
-       when is_list(params) do
-    visit(Keyword.fetch!(params, :to))
+      value ->
+        dispatch_action(session, value, %{})
+    end
   end
-
-  defp dispatch_click(session, value), do: dispatch_action(session, value, %{})
 
   @doc """
   Finds an input by its associated label and triggers the input's `$action`
@@ -209,7 +208,6 @@ defmodule HoloTest do
 
   # Mirror click's treatment of comments: they're not interactive content.
   defp collect_form_nodes({:public_comment, _children}, _form_change), do: {[], %{}}
-
   defp collect_form_nodes(_other, _form_change), do: {[], %{}}
 
   defp find_nested_input(nodes) when is_list(nodes) do
@@ -221,7 +219,6 @@ defmodule HoloTest do
        do: node
 
   defp find_nested_input({:element, _tag, _attrs, children}), do: find_nested_input(children)
-
   defp find_nested_input(_other), do: nil
 
   defp resolve_input({_label, {:element, _, _, _} = input, form_change}, _by_id, _label_text) do

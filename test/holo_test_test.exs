@@ -379,8 +379,9 @@ defmodule HoloTestTest do
 
   # Recursively collects all text content from an expanded DOM AST so tests
   # can assert against the rendered page without caring about structure.
-  defp rendered_text(nodes) when is_list(nodes),
-    do: Enum.map_join(nodes, "", &rendered_text/1)
+  defp rendered_text(nodes) when is_list(nodes) do
+    Enum.map_join(nodes, "", &rendered_text/1)
+  end
 
   defp rendered_text({:text, text}), do: text
   defp rendered_text({:element, _tag, _attrs, children}), do: rendered_text(children)
