@@ -73,6 +73,60 @@ defmodule HoloTest.WrappedLinkPage do
   end
 end
 
+defmodule HoloTest.FillInPage do
+  @moduledoc """
+  Page fixture for `fill_in/3`. Has a form with two labelled inputs (one
+  wrapping, one `for`-referenced) and a `$change` handler at the form
+  level, plus a textarea *outside* the form whose `$action` fires without
+  any form-level change.
+  """
+  use Hologram.Page
+
+  route "/fill-in"
+  layout HoloTest.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component,
+      name: nil,
+      email: nil,
+      comment: nil,
+      change_log: []
+    )
+  end
+
+  def action(:update_name, %{value: value}, component) do
+    put_state(component, name: value)
+  end
+
+  # Generic field-setter — proves that extra params declared on the
+  # attribute (e.g. `field: :email`) are merged with the fill value.
+  def action(:set_field, %{field: field, value: value}, component) do
+    put_state(component, field, value)
+  end
+
+  def action(:update_comment, %{value: value}, component) do
+    put_state(component, comment: value)
+  end
+
+  # Records a form-level change — used to assert `$change` fired.
+  def action(:form_changed, %{value: value}, component) do
+    put_state(component, change_log: component.state.change_log ++ [value])
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <form $change={:form_changed}>
+      <label>Name<input $action={:update_name} /></label>
+      <label for="email">Email</label>
+      <input id="email" $action={:set_field, field: :email} />
+    </form>
+    <label>Comment<textarea $action={:update_comment} /></label>
+    """
+  end
+end
+
 defmodule HoloTest.CommandPage do
   @moduledoc false
   use Hologram.Page

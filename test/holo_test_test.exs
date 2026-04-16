@@ -162,6 +162,221 @@ defmodule HoloTestTest do
     end
   end
 
+  describe "fill_in/3" do
+    test "fills an input wrapped by a label matching exactly" do
+      ast = [
+        {:element, "label", [],
+         [
+           {:text, "Name"},
+           {:element, "input", [{"$action", "update"}], []}
+         ]}
+      ]
+
+      session = %Session{ast: ast}
+      assert HoloTest.fill_in(session, "Name", with: "Alice") == session
+    end
+
+    test "fills an input referenced by `for` matching the input's id" do
+      ast = [
+        {:element, "label", [{"for", "name"}], [{:text, "Name"}]},
+        {:element, "input", [{"id", "name"}, {"$action", "update"}], []}
+      ]
+
+      session = %Session{ast: ast}
+      assert HoloTest.fill_in(session, "Name", with: "Alice") == session
+    end
+
+    test "trims surrounding whitespace in the label when matching exactly" do
+      ast = [
+        {:element, "label", [],
+         [
+           {:text, "  Name  "},
+           {:element, "input", [{"$action", "update"}], []}
+         ]}
+      ]
+
+      assert %Session{} = HoloTest.fill_in(%Session{ast: ast}, "Name", with: "Alice")
+    end
+
+    test "concatenates text from descendant elements when computing the label's text" do
+      ast = [
+        {:element, "label", [],
+         [
+           {:element, "span", [], [{:text, "First "}]},
+           {:element, "span", [], [{:text, "name"}]},
+           {:element, "input", [{"$action", "update"}], []}
+         ]}
+      ]
+
+      assert %Session{} = HoloTest.fill_in(%Session{ast: ast}, "First name", with: "Alice")
+    end
+
+    test "finds a label nested deep in the tree" do
+      ast = [
+        {:element, "div", [],
+         [
+           {:element, "section", [],
+            [
+              {:element, "label", [],
+               [
+                 {:text, "Email"},
+                 {:element, "input", [{"$action", "update"}], []}
+               ]}
+            ]}
+         ]}
+      ]
+
+      assert %Session{} = HoloTest.fill_in(%Session{ast: ast}, "Email", with: "a@b.c")
+    end
+
+    test "matches substrings when exact: false" do
+      ast = [
+        {:element, "label", [],
+         [
+           {:text, "Email address"},
+           {:element, "input", [{"$action", "update"}], []}
+         ]}
+      ]
+
+      assert %Session{} =
+               HoloTest.fill_in(%Session{ast: ast}, "Email", with: "a@b.c", exact: false)
+    end
+
+    test "does not match substrings when exact is the default" do
+      ast = [
+        {:element, "label", [],
+         [
+           {:text, "Email address"},
+           {:element, "input", [{"$action", "update"}], []}
+         ]}
+      ]
+
+      assert_raise RuntimeError, ~r/No input found with label: "Email"/, fn ->
+        HoloTest.fill_in(%Session{ast: ast}, "Email", with: "a@b.c")
+      end
+    end
+
+    test "ignores labels inside public comments" do
+      ast = [
+        {:public_comment,
+         [
+           {:element, "label", [],
+            [
+              {:text, "Hidden"},
+              {:element, "input", [{"$action", "update"}], []}
+            ]}
+         ]}
+      ]
+
+      assert_raise RuntimeError, ~r/No input found with label: "Hidden"/, fn ->
+        HoloTest.fill_in(%Session{ast: ast}, "Hidden", with: "x")
+      end
+    end
+
+    test "raises when no label matches" do
+      ast = [
+        {:element, "label", [],
+         [
+           {:text, "Name"},
+           {:element, "input", [{"$action", "update"}], []}
+         ]}
+      ]
+
+      assert_raise RuntimeError, ~r/No input found with label: "Email"/, fn ->
+        HoloTest.fill_in(%Session{ast: ast}, "Email", with: "a@b.c")
+      end
+    end
+
+    test "raises when more than one label matches" do
+      ast = [
+        {:element, "label", [],
+         [
+           {:text, "Name"},
+           {:element, "input", [{"$action", "update"}], []}
+         ]},
+        {:element, "label", [],
+         [
+           {:text, "Name"},
+           {:element, "input", [{"$action", "update"}], []}
+         ]}
+      ]
+
+      assert_raise RuntimeError, ~r/Ambiguous match: found 2 labels matching: "Name"/, fn ->
+        HoloTest.fill_in(%Session{ast: ast}, "Name", with: "Alice")
+      end
+    end
+
+    test "raises when a matching `for` label has no corresponding input" do
+      ast = [
+        {:element, "label", [{"for", "missing"}], [{:text, "Orphan"}]}
+      ]
+
+      assert_raise RuntimeError, ~r/No input with id="missing"/, fn ->
+        HoloTest.fill_in(%Session{ast: ast}, "Orphan", with: "x")
+      end
+    end
+
+    test "requires a `with:` option" do
+      ast = [
+        {:element, "label", [],
+         [
+           {:text, "Name"},
+           {:element, "input", [{"$action", "update"}], []}
+         ]}
+      ]
+
+      assert_raise KeyError, ~r/key :with not found/, fn ->
+        HoloTest.fill_in(%Session{ast: ast}, "Name", [])
+      end
+    end
+  end
+
+  describe "fill_in/3 — action dispatch" do
+    test "triggers the input's $action, passing the filled value as :value" do
+      session = HoloTest.visit(HoloTest.FillInPage)
+
+      # Before: the page hasn't seen any input yet.
+      refute session.page.state[:name]
+
+      session = HoloTest.fill_in(session, "Name", with: "Alice")
+
+      # The `:update_name` action ran and wrote `:name` into the page state.
+      assert session.page.state.name == "Alice"
+    end
+
+    test "merges the filled value with params declared on the attribute" do
+      session =
+        HoloTest.FillInPage
+        |> HoloTest.visit()
+        |> HoloTest.fill_in("Email", with: "a@b.c")
+
+      # `$action={:set_field, field: :email}` + `value: "a@b.c"` ⇒ state[:email].
+      assert session.page.state.email == "a@b.c"
+    end
+
+    test "also triggers the enclosing form's $change action" do
+      session =
+        HoloTest.FillInPage
+        |> HoloTest.visit()
+        |> HoloTest.fill_in("Name", with: "Alice")
+
+      # The form's `$change` handler appends each change to a log — both
+      # the input's own action AND the form's change action fired.
+      assert session.page.state.change_log == ["Alice"]
+    end
+
+    test "does not trigger a $change action when the input has no enclosing form" do
+      session =
+        HoloTest.FillInPage
+        |> HoloTest.visit()
+        |> HoloTest.fill_in("Comment", with: "hi")
+
+      # The comment textarea is outside the <form>, so only its $action ran.
+      assert session.page.state.comment == "hi"
+      assert session.page.state.change_log == []
+    end
+  end
+
   # Recursively collects all text content from an expanded DOM AST so tests
   # can assert against the rendered page without caring about structure.
   defp rendered_text(nodes) when is_list(nodes),
