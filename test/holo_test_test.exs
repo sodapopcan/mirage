@@ -117,6 +117,18 @@ defmodule HoloTestTest do
       assert rendered_text(session.ast) =~ "I am the other page"
       refute rendered_text(session.ast) =~ "link to other page"
     end
+
+    test "clicking a Hologram.UI.Link wrapped in a custom component still navigates" do
+      session = HoloTest.visit(HoloTest.WrappedLinkPage)
+
+      assert rendered_text(session.ast) =~ "wrapped link to other page"
+      refute rendered_text(session.ast) =~ "I am the other page"
+
+      session = HoloTest.click(session, "wrapped link to other page")
+
+      assert rendered_text(session.ast) =~ "I am the other page"
+      refute rendered_text(session.ast) =~ "wrapped link to other page"
+    end
   end
 
   describe "click/3 — commands" do
