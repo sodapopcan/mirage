@@ -90,7 +90,7 @@ defmodule HoloTest do
   defp find_clickables({:element, _tag, attrs, children} = node, text, exact?) do
     nested = find_clickables(children, text, exact?)
 
-    if has_click_attr?(attrs) and text_matches?(inner_text(node), text, exact?) do
+    if has_click_attr?(attrs) and text_matches?(DOM.inner_text(node), text, exact?) do
       [node | nested]
     else
       nested
@@ -106,22 +106,13 @@ defmodule HoloTest do
     end)
   end
 
-  defp inner_text(node) do
-    case node do
-      {:element, _tag, _attrs, children} -> inner_text(children)
-      {:text, text} -> text
-      nodes when is_list(nodes) -> Enum.map_join(nodes, "", &inner_text/1)
-      _ -> ""
-    end
-  end
-
   defp text_matches?(actual, expected, true), do: String.trim(actual) == expected
   defp text_matches?(actual, expected, false), do: String.contains?(actual, expected)
 
   defp handle_click(session, {:element, _tag, attrs, _children}) do
     # Hologram.UI.Link expands `$click={:__load_prefetched_page__, to: @to}` —
     # in the resolved AST that shows up as `[expression: {:__load_prefetched_page__, [to: Target]}]`.
-    case find_attr(attrs, "$click") do
+    case DOM.find_attr(attrs, "$click") do
       [{:expression, {:__load_prefetched_page__, params}}] when is_list(params) ->
         visit(Keyword.fetch!(params, :to))
 
@@ -153,7 +144,7 @@ defmodule HoloTest do
 
     matches =
       Enum.filter(labels, fn {node, _wrapped, _form_change} ->
-        text_matches?(inner_text(node), label, exact?)
+        text_matches?(DOM.inner_text(node), label, exact?)
       end)
 
     case matches do
@@ -189,57 +180,13 @@ defmodule HoloTest do
 
   Without `:at`, the assertion passes when at least one match exists.
   """
-  @spec assert_has(Session.t(), String.t() | keyword(), keyword()) :: Session.t()
-  def assert_has(session, text_or_opts, opts \\ [])
-
-  def assert_has(%Session{} = session, text, opts) when is_binary(text) do
-    if Keyword.has_key?(opts, :value) do
-      raise ArgumentError, "assert_has/3 accepts text or :value, not both"
-    end
-
-    assert_text(session.ast, text, Keyword.get(opts, :at))
-    session
-  end
-
-  def assert_has(%Session{} = session, opts, []) when is_list(opts) do
-    value = Keyword.get(opts, :value)
-    at = Keyword.get(opts, :at)
-
-    if is_nil(value) do
-      raise ArgumentError, "assert_has/2 requires text or :value"
-    end
-
-    assert_value(session.ast, value, at)
-    session
-  end
+  defdelegate assert_has(session, text_or_opts, opts \\ []), to: HoloTest.Assertions
 
   @doc """
   The opposite of `assert_has` — asserts that the session's DOM does *not*
   contain a matching node. Accepts the same arguments.
   """
-  @spec refute_has(Session.t(), String.t() | keyword(), keyword()) :: Session.t()
-  def refute_has(session, text_or_opts, opts \\ [])
-
-  def refute_has(%Session{} = session, text, opts) when is_binary(text) do
-    if Keyword.has_key?(opts, :value) do
-      raise ArgumentError, "refute_has/3 accepts text or :value, not both"
-    end
-
-    refute_text(session.ast, text, Keyword.get(opts, :at))
-    session
-  end
-
-  def refute_has(%Session{} = session, opts, []) when is_list(opts) do
-    value = Keyword.get(opts, :value)
-    at = Keyword.get(opts, :at)
-
-    if is_nil(value) do
-      raise ArgumentError, "refute_has/2 requires text or :value"
-    end
-
-    refute_value(session.ast, value, at)
-    session
-  end
+  defdelegate refute_has(session, text_or_opts, opts \\ []), to: HoloTest.Assertions
 
   @doc """
   Opens the current page HTML in the default browser. Useful for
@@ -288,7 +235,7 @@ defmodule HoloTest do
   defp ast_to_html({:element, tag, attrs, children}) do
     attr_str =
       Enum.map_join(attrs, "", fn {name, value} ->
-        " #{name}=\"#{attr_to_html_value(value)}\""
+        " #{name}=\"#{DOM.attr_to_string(value)}\""
       end)
 
     inner = ast_to_html(children)
@@ -300,18 +247,6 @@ defmodule HoloTest do
   end
 
   defp ast_to_html(_other), do: ""
-
-  defp attr_to_html_value(value) when is_binary(value), do: value
-
-  defp attr_to_html_value(parts) when is_list(parts) do
-    Enum.map_join(parts, "", fn
-      {:text, t} -> t
-      {:expression, {v}} -> to_string(v)
-      _ -> ""
-    end)
-  end
-
-  defp attr_to_html_value(_other), do: ""
 
   defp open_with_system_cmd(path) do
     {cmd, args} =
@@ -333,116 +268,6 @@ defmodule HoloTest do
     System.cmd(cmd, args)
   end
 
-  defp assert_text(ast, text, nil) do
-    if collect_elements(ast) |> Enum.all?(&(String.trim(inner_text(&1)) != text)) do
-      raise "No element found with text: #{inspect(text)}"
-    end
-  end
-
-  defp assert_text(ast, text, at) when is_integer(at) do
-    elements = collect_elements(ast)
-    count = length(elements)
-
-    if at < 1 or at > count do
-      raise "Expected element at position #{at} but only found #{count} elements"
-    end
-
-    element = Enum.at(elements, at - 1)
-    actual = String.trim(inner_text(element))
-
-    if actual != text do
-      raise "Expected element at position #{at} to have text #{inspect(text)} but found #{inspect(actual)}"
-    end
-  end
-
-  defp assert_value(ast, value, nil) do
-    if collect_inputs(ast) |> Enum.all?(&(input_value(&1) != value)) do
-      raise "No element found with value: #{inspect(value)}"
-    end
-  end
-
-  defp assert_value(ast, value, at) when is_integer(at) do
-    inputs = collect_inputs(ast)
-    count = length(inputs)
-
-    if at < 1 or at > count do
-      raise "Expected input at position #{at} but only found #{count} inputs"
-    end
-
-    actual = input_value(Enum.at(inputs, at - 1))
-
-    if actual != value do
-      raise "Expected input at position #{at} to have value #{inspect(value)} but found #{inspect(actual)}"
-    end
-  end
-
-  defp refute_text(ast, text, nil) do
-    if collect_elements(ast) |> Enum.any?(&(String.trim(inner_text(&1)) == text)) do
-      raise "Expected no element with text: #{inspect(text)}"
-    end
-  end
-
-  defp refute_text(ast, text, at) when is_integer(at) do
-    elements = collect_elements(ast)
-    count = length(elements)
-
-    if at >= 1 and at <= count do
-      actual = String.trim(inner_text(Enum.at(elements, at - 1)))
-
-      if actual == text do
-        raise "Expected element at position #{at} not to have text #{inspect(text)}"
-      end
-    end
-  end
-
-  defp refute_value(ast, value, nil) do
-    if collect_inputs(ast) |> Enum.any?(&(input_value(&1) == value)) do
-      raise "Expected no input with value: #{inspect(value)}"
-    end
-  end
-
-  defp refute_value(ast, value, at) when is_integer(at) do
-    inputs = collect_inputs(ast)
-    count = length(inputs)
-
-    if at >= 1 and at <= count do
-      actual = input_value(Enum.at(inputs, at - 1))
-
-      if actual == value do
-        raise "Expected input at position #{at} not to have value #{inspect(value)}"
-      end
-    end
-  end
-
-  defp input_value({:element, _tag, attrs, _children}) do
-    attr_to_string(find_attr(attrs, "value"))
-  end
-
-  defp collect_elements(nodes) when is_list(nodes) do
-    Enum.flat_map(nodes, &collect_elements/1)
-  end
-
-  defp collect_elements({:element, _tag, _attrs, children} = node) do
-    [node | collect_elements(children)]
-  end
-
-  defp collect_elements(_other), do: []
-
-  defp collect_inputs(nodes) when is_list(nodes) do
-    Enum.flat_map(nodes, &collect_inputs/1)
-  end
-
-  defp collect_inputs({:element, tag, _attrs, children} = node)
-       when tag in ["input", "textarea", "select"] do
-    [node | collect_inputs(children)]
-  end
-
-  defp collect_inputs({:element, _tag, _attrs, children}) do
-    collect_inputs(children)
-  end
-
-  defp collect_inputs(_other), do: []
-
   # Walks the AST once, tracking the nearest enclosing `<form>`'s `$change`
   # attribute. Returns `{labels, inputs_by_id}` where:
   #   * labels = [{label_node, wrapped_input_or_nil, form_change_or_nil}, ...]
@@ -455,7 +280,7 @@ defmodule HoloTest do
   end
 
   defp collect_form_nodes({:element, "form", attrs, children}, _form_change) do
-    collect_form_nodes(children, find_attr(attrs, "$change"))
+    collect_form_nodes(children, DOM.find_attr(attrs, "$change"))
   end
 
   defp collect_form_nodes({:element, "label", _attrs, children} = node, form_change) do
@@ -469,9 +294,9 @@ defmodule HoloTest do
     {nested_labels, nested_inputs} = collect_form_nodes(children, form_change)
 
     inputs =
-      case find_attr(attrs, "id") do
+      case DOM.find_attr(attrs, "id") do
         nil -> nested_inputs
-        id -> Map.put(nested_inputs, attr_to_string(id), {node, form_change})
+        id -> Map.put(nested_inputs, DOM.attr_to_string(id), {node, form_change})
       end
 
     {nested_labels, inputs}
@@ -499,12 +324,12 @@ defmodule HoloTest do
   end
 
   defp resolve_input({{:element, "label", attrs, _children}, nil, _fc}, by_id, label_text) do
-    case find_attr(attrs, "for") do
+    case DOM.find_attr(attrs, "for") do
       nil ->
         raise "Label #{inspect(label_text)} has no wrapped input and no `for` attribute"
 
       for_attr ->
-        id = attr_to_string(for_attr)
+        id = DOM.attr_to_string(for_attr)
 
         case Map.fetch(by_id, id) do
           {:ok, match} ->
@@ -517,7 +342,7 @@ defmodule HoloTest do
   end
 
   defp trigger_input_action(session, {:element, _tag, attrs, _children}, value) do
-    case find_attr(attrs, "$change") do
+    case DOM.find_attr(attrs, "$change") do
       nil -> session
       action -> dispatch_action(session, action, %{value: value})
     end
@@ -544,25 +369,6 @@ defmodule HoloTest do
   # Attribute values that aren't one of the known expression shapes (e.g.
   # a literal string like `$click="foo"`) are treated as no-ops.
   defp dispatch_action(session, _other, _extra), do: session
-
-  defp find_attr(attrs, name) do
-    case Enum.find(attrs, fn {n, _} -> n == name end) do
-      {^name, value} -> value
-      _ -> nil
-    end
-  end
-
-  defp attr_to_string(value) when is_binary(value), do: value
-
-  defp attr_to_string(parts) when is_list(parts) do
-    Enum.map_join(parts, "", fn
-      {:text, t} -> t
-      {:expression, {v}} -> to_string(v)
-      _ -> ""
-    end)
-  end
-
-  defp attr_to_string(_other), do: ""
 
   defp run_action(
          %Session{page: component, page_module: page_module, server: server} = session,

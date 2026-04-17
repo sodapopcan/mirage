@@ -148,4 +148,32 @@ defmodule HoloTest.DOM do
   defp expand_slots(node, _slots), do: node
 
   defp has_cid?(props), do: Map.has_key?(props, :cid)
+
+  def inner_text(node) do
+    case node do
+      {:element, _tag, _attrs, children} -> inner_text(children)
+      {:text, text} -> text
+      nodes when is_list(nodes) -> Enum.map_join(nodes, "", &inner_text/1)
+      _ -> ""
+    end
+  end
+
+  def find_attr(attrs, name) do
+    case Enum.find(attrs, fn {n, _} -> n == name end) do
+      {^name, value} -> value
+      _ -> nil
+    end
+  end
+
+  def attr_to_string(value) when is_binary(value), do: value
+
+  def attr_to_string(parts) when is_list(parts) do
+    Enum.map_join(parts, "", fn
+      {:text, t} -> t
+      {:expression, {v}} -> to_string(v)
+      _ -> ""
+    end)
+  end
+
+  def attr_to_string(_other), do: ""
 end
