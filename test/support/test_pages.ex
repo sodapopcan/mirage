@@ -5,7 +5,10 @@ defmodule HoloTest.TestLayout do
   @impl Hologram.Component
   def template do
     ~HOLO"""
-    <slot />
+    <html>
+    <head></head>
+    <body><slot /></body>
+    </html>
     """
   end
 end
@@ -400,9 +403,13 @@ defmodule HoloTest.AssertHasTextPage do
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <div>Item 1</div>
-    <div>Item 2</div>
-    <div>Item 3</div>
+    <h1>I'm a header</h1>
+
+    <ul>
+      <li><span>Item</span> 1</li>
+      <li><span>Item</span> 2</li>
+      <li><span>Item</span> 3</li>
+    </ul>
     """
   end
 end

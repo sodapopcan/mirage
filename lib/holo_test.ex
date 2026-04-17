@@ -203,7 +203,7 @@ defmodule HoloTest do
   """
   @spec open_browser(Session.t(), (String.t() -> any())) :: Session.t()
   def open_browser(%Session{} = session, open_fun \\ &open_with_system_cmd/1) do
-    html = wrap_html(session.ast)
+    html = ast_to_html(session.ast)
 
     path =
       Path.join(
@@ -214,16 +214,6 @@ defmodule HoloTest do
     File.write!(path, html)
     open_fun.(path)
     session
-  end
-
-  defp wrap_html(ast) do
-    body = ast_to_html(ast)
-
-    if body =~ ~r/<html[\s>]/i do
-      body
-    else
-      "<!DOCTYPE html><html><head></head><body>#{body}</body></html>"
-    end
   end
 
   defp ast_to_html(nodes) when is_list(nodes) do

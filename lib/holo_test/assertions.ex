@@ -51,24 +51,29 @@ defmodule HoloTest.Assertions do
   end
 
   defp assert_text(ast, text, nil) do
-    if collect_elements(ast) |> Enum.all?(&(String.trim(DOM.inner_text(&1)) != text)) do
+    if collect_all_elements(ast) |> Enum.all?(&(String.trim(DOM.inner_text(&1)) != text)) do
       raise "No element found with text: #{inspect(text)}"
     end
   end
 
   defp assert_text(ast, text, at) when is_integer(at) do
-    elements = collect_elements(ast)
-    count = length(elements)
+    case find_text_siblings(ast, text) do
+      nil ->
+        raise "No element found with text: #{inspect(text)}"
 
-    if at < 1 or at > count do
-      raise "Expected element at position #{at} but only found #{count} elements"
-    end
+      siblings ->
+        count = length(siblings)
 
-    element = Enum.at(elements, at - 1)
-    actual = String.trim(DOM.inner_text(element))
+        if at < 1 or at > count do
+          raise "Expected element at position #{at} but only found #{count} text elements"
+        end
 
-    if actual != text do
-      raise "Expected element at position #{at} to have text #{inspect(text)} but found #{inspect(actual)}"
+        element = Enum.at(siblings, at - 1)
+        actual = String.trim(DOM.inner_text(element))
+
+        if actual != text do
+          raise "Expected element at position #{at} to have text #{inspect(text)} but found #{inspect(actual)}"
+        end
     end
   end
 
@@ -94,21 +99,26 @@ defmodule HoloTest.Assertions do
   end
 
   defp refute_text(ast, text, nil) do
-    if collect_elements(ast) |> Enum.any?(&(String.trim(DOM.inner_text(&1)) == text)) do
+    if collect_all_elements(ast) |> Enum.any?(&(String.trim(DOM.inner_text(&1)) == text)) do
       raise "Expected no element with text: #{inspect(text)}"
     end
   end
 
   defp refute_text(ast, text, at) when is_integer(at) do
-    elements = collect_elements(ast)
-    count = length(elements)
+    case find_text_siblings(ast, text) do
+      nil ->
+        :ok
 
-    if at >= 1 and at <= count do
-      actual = String.trim(DOM.inner_text(Enum.at(elements, at - 1)))
+      siblings ->
+        count = length(siblings)
 
-      if actual == text do
-        raise "Expected element at position #{at} not to have text #{inspect(text)}"
-      end
+        if at >= 1 and at <= count do
+          actual = String.trim(DOM.inner_text(Enum.at(siblings, at - 1)))
+
+          if actual == text do
+            raise "Expected element at position #{at} not to have text #{inspect(text)}"
+          end
+        end
     end
   end
 
@@ -135,15 +145,46 @@ defmodule HoloTest.Assertions do
     DOM.attr_to_string(DOM.find_attr(attrs, "value"))
   end
 
-  defp collect_elements(nodes) when is_list(nodes) do
-    Enum.flat_map(nodes, &collect_elements/1)
+  # All elements in DFS order — used for without-:at existence checks.
+  defp collect_all_elements(nodes) when is_list(nodes) do
+    Enum.flat_map(nodes, &collect_all_elements/1)
   end
 
-  defp collect_elements({:element, _tag, _attrs, children} = node) do
-    [node | collect_elements(children)]
+  defp collect_all_elements({:element, _tag, _attrs, children} = node) do
+    [node | collect_all_elements(children)]
   end
 
-  defp collect_elements(_other), do: []
+  defp collect_all_elements(_other), do: []
+
+  # Finds the first element whose inner text matches `text`, then returns
+  # the text-bearing element siblings at that level (children of the same
+  # parent). Returns nil if no match is found.
+  defp find_text_siblings(nodes, text) when is_list(nodes) do
+    if Enum.any?(nodes, &text_match?(&1, text)) do
+      text_bearing_elements(nodes)
+    else
+      Enum.find_value(nodes, fn
+        {:element, _, _, children} -> find_text_siblings(children, text)
+        _ -> nil
+      end)
+    end
+  end
+
+  defp text_match?({:element, _, _, _} = el, text) do
+    String.trim(DOM.inner_text(el)) == text
+  end
+
+  defp text_match?(_, _), do: false
+
+  defp text_bearing_elements(nodes) do
+    Enum.filter(nodes, fn
+      {:element, _, _, children} -> Enum.any?(children, &non_blank_text?/1)
+      _ -> false
+    end)
+  end
+
+  defp non_blank_text?({:text, text}), do: String.trim(text) != ""
+  defp non_blank_text?(_), do: false
 
   defp collect_inputs(nodes) when is_list(nodes) do
     Enum.flat_map(nodes, &collect_inputs/1)
