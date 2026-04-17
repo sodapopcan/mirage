@@ -1,11 +1,5 @@
 defmodule Mirage.Query do
-  @moduledoc """
-  CSS selector querying for expanded Hologram AST nodes.
-
-  Uses Meeseeks to parse CSS selector strings into selector structs, then
-  matches them against the `{:element, tag, attrs, children}` tuples that
-  make up an expanded Hologram DOM.
-  """
+  @moduledoc false
 
   alias Mirage.DOM
   alias Meeseeks.Selector.Element
