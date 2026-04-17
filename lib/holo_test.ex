@@ -14,13 +14,14 @@ defmodule HoloTest do
     alias Hologram.Component
     alias Hologram.Server
 
-    defstruct [:page, :server, :ast, :page_module]
+    defstruct [:page, :server, :ast, :page_module, :params]
 
     @type t :: %__MODULE__{
             page: Component.t(),
             server: Server.t(),
             ast: any(),
-            page_module: module()
+            page_module: module(),
+            params: %{atom() => any()}
           }
   end
 
@@ -51,7 +52,7 @@ defmodule HoloTest do
     env = %{context: page.emitted_context, slots: []}
     ast = DOM.expand(root, env, server)
 
-    %Session{page: page, server: server, ast: ast, page_module: page_module}
+    %Session{page: page, server: server, ast: ast, page_module: page_module, params: params}
   end
 
   @doc """
@@ -255,7 +256,7 @@ defmodule HoloTest do
   """
   @spec open_browser(Session.t(), (String.t() -> any())) :: Session.t()
   def open_browser(%Session{} = session, open_fun \\ &open_with_system_cmd/1) do
-    html = ast_to_html(session.ast)
+    html = wrap_html(session.ast)
 
     path =
       Path.join(
@@ -266,6 +267,16 @@ defmodule HoloTest do
     File.write!(path, html)
     open_fun.(path)
     session
+  end
+
+  defp wrap_html(ast) do
+    body = ast_to_html(ast)
+
+    if body =~ ~r/<html[\s>]/i do
+      body
+    else
+      "<!DOCTYPE html><html><head></head><body>#{body}</body></html>"
+    end
   end
 
   defp ast_to_html(nodes) when is_list(nodes) do
@@ -570,6 +581,23 @@ defmodule HoloTest do
       page_module.command(cmd.name, cmd.params, new_server)
     end
 
-    %{session | page: new_component}
+    re_render(%{session | page: new_component, server: new_server})
+  end
+
+  defp re_render(%Session{page: page, server: server, page_module: page_module, params: params} = session) do
+    vars = Map.merge(params, page.state)
+    page_dom = page_module.template().(vars)
+
+    layout_props_dom =
+      page_module.__layout_props__()
+      |> Enum.into(%{cid: "layout"})
+      |> Map.merge(page.state)
+      |> Enum.map(fn {name, value} -> {to_string(name), [expression: {value}]} end)
+
+    root = {:component, page_module.__layout_module__(), layout_props_dom, page_dom}
+    env = %{context: page.emitted_context, slots: []}
+    ast = DOM.expand(root, env, server)
+
+    %{session | ast: ast}
   end
 end
