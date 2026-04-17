@@ -368,7 +368,17 @@ defmodule Holography do
       page_module.command(cmd.name, cmd.params, new_server)
     end
 
-    re_render(%{session | page: new_component, server: new_server})
+    # If the action triggered a page navigation, visit the new page.
+    case new_component.next_page do
+      nil ->
+        re_render(%{session | page: new_component, server: new_server})
+
+      {target_module, target_params} ->
+        visit(target_module, Map.new(target_params))
+
+      target_module ->
+        visit(target_module)
+    end
   end
 
   defp re_render(
