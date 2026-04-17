@@ -130,7 +130,7 @@ defmodule HoloTest do
   end
 
   @doc """
-  Finds an input by its associated label and triggers the input's `$action`
+  Finds an input by its associated label and triggers the input's `$change`
   and (if the input is inside a `<form>` with a `$change` attribute) the
   form's `$change` action. Each action receives `%{value: value}` merged
   into any params declared on the attribute itself; keys declared in `with:`
@@ -245,7 +245,7 @@ defmodule HoloTest do
   end
 
   defp trigger_input_action(session, {:element, _tag, attrs, _children}, value) do
-    case find_attr(attrs, "$action") do
+    case find_attr(attrs, "$change") do
       nil -> session
       action -> dispatch_action(session, action, %{value: value})
     end

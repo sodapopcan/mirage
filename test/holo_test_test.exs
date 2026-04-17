@@ -223,7 +223,7 @@ defmodule HoloTestTest do
   end
 
   describe "fill_in/3 — action dispatch" do
-    test "triggers the input's $action, passing the filled value as :value" do
+    test "triggers the input's $change, passing the filled value as :value" do
       session = HoloTest.visit(HoloTest.FillInPage)
 
       # Before: the page hasn't seen any input yet.
@@ -241,7 +241,7 @@ defmodule HoloTestTest do
         |> HoloTest.visit()
         |> HoloTest.fill_in("Email", with: "a@b.c")
 
-      # `$action={:set_field, field: :email}` + `value: "a@b.c"` ⇒ state[:email].
+      # `$change={:set_field, field: :email}` + `value: "a@b.c"` ⇒ state[:email].
       assert session.page.state.email == "a@b.c"
     end
 
@@ -262,7 +262,7 @@ defmodule HoloTestTest do
         |> HoloTest.visit()
         |> HoloTest.fill_in("Comment", with: "hi")
 
-      # The comment textarea is outside the <form>, so only its $action ran.
+      # The comment textarea is outside the <form>, so only its $change ran.
       assert session.page.state.comment == "hi"
       assert session.page.state.change_log == []
     end

@@ -77,7 +77,7 @@ defmodule HoloTest.FillInPage do
   @moduledoc """
   Page fixture for `fill_in/3`. Has a form with two labelled inputs (one
   wrapping, one `for`-referenced) and a `$change` handler at the form
-  level, plus a textarea *outside* the form whose `$action` fires without
+  level, plus a textarea *outside* the form whose `$change` fires without
   any form-level change.
   """
   use Hologram.Page
@@ -118,11 +118,11 @@ defmodule HoloTest.FillInPage do
   def template do
     ~HOLO"""
     <form $change={:form_changed}>
-      <label>Name<input $action={:update_name} /></label>
+      <label>Name<input $change={:update_name} /></label>
       <label for="email">Email</label>
-      <input id="email" $action={:set_field, field: :email} />
+      <input id="email" $change={:set_field, field: :email} />
     </form>
-    <label>Comment<textarea $action={:update_comment} /></label>
+    <label>Comment<textarea $change={:update_comment} /></label>
     """
   end
 end
@@ -272,7 +272,7 @@ defmodule HoloTest.FillInCommentPage do
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <!-- <label>Hidden<input $action={:x} /></label> -->
+    <!-- <label>Hidden<input $change={:x} /></label> -->
     """
   end
 end
@@ -293,7 +293,7 @@ defmodule HoloTest.FillInLabelTextPage do
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <label>Email address<input $action={:update} /></label>
+    <label>Email address<input $change={:update} /></label>
     """
   end
 end
@@ -318,7 +318,7 @@ defmodule HoloTest.FillInWhitespaceLabelPage do
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <label>{@text}<input $action={:update} /></label>
+    <label>{@text}<input $change={:update} /></label>
     """
   end
 end
@@ -335,7 +335,7 @@ defmodule HoloTest.FillInNestedLabelPage do
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <label><span>First </span><span>name</span><input $action={:update} /></label>
+    <label><span>First </span><span>name</span><input $change={:update} /></label>
     """
   end
 end
@@ -352,7 +352,7 @@ defmodule HoloTest.FillInDeepLabelPage do
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <div><section><label>Email<input $action={:update} /></label></section></div>
+    <div><section><label>Email<input $change={:update} /></label></section></div>
     """
   end
 end
@@ -369,8 +369,8 @@ defmodule HoloTest.FillInAmbiguousLabelPage do
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <label>Name<input $action={:update} /></label>
-    <label>Name<input $action={:update} /></label>
+    <label>Name<input $change={:update} /></label>
+    <label>Name<input $change={:update} /></label>
     """
   end
 end
