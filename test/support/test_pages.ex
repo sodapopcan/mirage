@@ -461,3 +461,117 @@ defmodule Holography.CommandPage do
     """
   end
 end
+
+defmodule Holography.LonghandActionPage do
+  @moduledoc false
+  use Hologram.Page
+
+  route "/longhand-action"
+  layout Holography.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, count: 0)
+  end
+
+  def action(:increment, _params, component) do
+    put_state(component, :count, component.state.count + 1)
+  end
+
+  def action(:add, %{amount: amount}, component) do
+    put_state(component, :count, component.state.count + amount)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button $click={action: :increment}>longhand increment</button>
+    <button $click={action: :add, params: %{amount: 10}}>longhand add 10</button>
+    <span id="count">{@count}</span>
+    """
+  end
+end
+
+defmodule Holography.DirectCommandPage do
+  @moduledoc false
+  use Hologram.Page
+
+  route "/direct-command"
+  layout Holography.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, status: "idle")
+  end
+
+  def action(:set_status, %{status: status}, component) do
+    put_state(component, :status, status)
+  end
+
+  def command(:do_work, _params, server) do
+    put_action(server, :set_status, status: "done")
+  end
+
+  def command(:do_work_with_params, %{label: label}, server) do
+    put_action(server, :set_status, status: label)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button $click={command: :do_work}>run command</button>
+    <button $click={command: :do_work_with_params, params: %{label: "finished"}}>run param command</button>
+    <span id="status">{@status}</span>
+    """
+  end
+end
+
+defmodule Holography.ActionChainPage do
+  @moduledoc false
+  use Hologram.Page
+
+  route "/action-chain"
+  layout Holography.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, log: [])
+  end
+
+  def action(:first, _params, component) do
+    component
+    |> put_state(:log, component.state.log ++ ["first"])
+    |> put_action(:second)
+  end
+
+  def action(:second, _params, component) do
+    put_state(component, :log, component.state.log ++ ["second"])
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button $click={:first}>chain</button>
+    <span id="log">{Enum.join(@log, ",")}</span>
+    """
+  end
+end
+
+defmodule Holography.PutPagePage do
+  @moduledoc false
+  use Hologram.Page
+
+  route "/put-page"
+  layout Holography.TestLayout
+
+  def action(:navigate, _params, component) do
+    put_page(component, Holography.AnotherPage)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button $click={:navigate}>go to other page</button>
+    """
+  end
+end

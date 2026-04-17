@@ -163,7 +163,7 @@ defmodule Holography do
         end
 
       value ->
-        dispatch_action(session, value, %{})
+        dispatch_event(session, value, %{})
     end
   end
 
@@ -328,31 +328,51 @@ defmodule Holography do
   defp trigger_input_action(session, {:element, _tag, attrs, _children}, value) do
     case DOM.find_attr(attrs, "$change") do
       nil -> session
-      action -> dispatch_action(session, action, %{value: value})
+      action -> dispatch_event(session, action, %{value: value})
     end
   end
 
   defp trigger_form_change(session, nil, _value), do: session
 
   defp trigger_form_change(session, form_change, value) do
-    dispatch_action(session, form_change, %{value: value})
+    dispatch_event(session, form_change, %{value: value})
   end
 
-  # Action with params, e.g. `$click={:write_file, path: @tmp_path}`.
-  defp dispatch_action(%Session{} = session, [{:expression, {name, params}}], extra)
-       when is_atom(name) and is_list(params) do
-    run_action(session, name, Map.merge(Map.new(params), extra))
-  end
-
-  # Bare atom action, e.g. `$click={:submit}` — evaluated as a 1-tuple.
-  defp dispatch_action(%Session{} = session, [{:expression, {name}}], extra)
+  # Bare atom action, e.g. `$click={:submit}`.
+  defp dispatch_event(%Session{} = session, [{:expression, {name}}], extra)
        when is_atom(name) do
     run_action(session, name, extra)
   end
 
-  # Attribute values that aren't one of the known expression shapes (e.g.
-  # a literal string like `$click="foo"`) are treated as no-ops.
-  defp dispatch_action(session, _other, _extra), do: session
+  # Action with params, e.g. `$click={:write_file, path: @tmp_path}`.
+  defp dispatch_event(%Session{} = session, [{:expression, {name, params}}], extra)
+       when is_atom(name) and is_list(params) do
+    run_action(session, name, Map.merge(Map.new(params), extra))
+  end
+
+  # Longhand action/command, e.g. `$click={action: :name}` or `$click={command: :name}`.
+  defp dispatch_event(%Session{} = session, [{:expression, {spec}}], extra)
+       when is_list(spec) do
+    cond do
+      Keyword.has_key?(spec, :action) ->
+        name = Keyword.fetch!(spec, :action)
+        params = Keyword.get(spec, :params, %{})
+        run_action(session, name, Map.merge(Map.new(params), extra))
+
+      Keyword.has_key?(spec, :command) ->
+        name = Keyword.fetch!(spec, :command)
+        params = Keyword.get(spec, :params, %{})
+        cmd = %Component.Command{name: name, params: Map.new(params)}
+        session = run_command(session, cmd)
+        re_render(session)
+
+      true ->
+        session
+    end
+  end
+
+  # Attribute values that aren't one of the known expression shapes are no-ops.
+  defp dispatch_event(session, _other, _extra), do: session
 
   defp run_action(
          %Session{page: component, page_module: page_module, server: server} = session,
@@ -366,12 +386,21 @@ defmodule Holography do
         %Server{} = server -> {component, server}
       end
 
-    session = %{session | page: new_component, server: new_server}
+    # Capture the side-effect instructions before clearing them from the
+    # component so they don't leak into chained actions.
+    next_action = new_component.next_action
+    next_command = new_component.next_command
+    next_page = new_component.next_page
+
+    clean_component =
+      %{new_component | next_action: nil, next_command: nil, next_page: nil}
+
+    session = %{session | page: clean_component, server: new_server}
 
     # 1. If the action emitted a command, run it server-side.
     #    The command may update the server and trigger a follow-up action.
     session =
-      if cmd = new_component.next_command do
+      if cmd = next_command do
         run_command(session, cmd)
       else
         session
@@ -379,14 +408,14 @@ defmodule Holography do
 
     # 2. If the action chained another action, run it.
     session =
-      if action = new_component.next_action do
+      if action = next_action do
         run_action(session, action.name, action.params)
       else
         session
       end
 
     # 3. If the action triggered a page navigation, visit the new page.
-    case new_component.next_page do
+    case next_page do
       nil ->
         re_render(session)
 

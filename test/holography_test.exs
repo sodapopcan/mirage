@@ -268,6 +268,69 @@ defmodule HolographyTest do
     end
   end
 
+  describe "click/3 — longhand action syntax" do
+    test "longhand action without params" do
+      session =
+        Holography.LonghandActionPage
+        |> Holography.visit()
+        |> Holography.click("longhand increment")
+
+      assert session.page.state.count == 1
+    end
+
+    test "longhand action with params" do
+      session =
+        Holography.LonghandActionPage
+        |> Holography.visit()
+        |> Holography.click("longhand add 10")
+
+      assert session.page.state.count == 10
+    end
+  end
+
+  describe "click/3 — direct command from event attribute" do
+    test "command without params triggers the command and its follow-up action" do
+      session =
+        Holography.DirectCommandPage
+        |> Holography.visit()
+        |> Holography.click("run command")
+
+      assert session.page.state.status == "done"
+    end
+
+    test "command with params" do
+      session =
+        Holography.DirectCommandPage
+        |> Holography.visit()
+        |> Holography.click("run param command")
+
+      assert session.page.state.status == "finished"
+    end
+  end
+
+  describe "click/3 — action chaining" do
+    test "an action that calls put_action chains to the next action" do
+      session =
+        Holography.ActionChainPage
+        |> Holography.visit()
+        |> Holography.click("chain")
+
+      assert session.page.state.log == ["first", "second"]
+    end
+  end
+
+  describe "click/3 — put_page navigation" do
+    test "an action that calls put_page navigates to the target page" do
+      session =
+        Holography.PutPagePage
+        |> Holography.visit()
+        |> Holography.click("go to other page")
+
+      assert session.page_module == Holography.AnotherPage
+      assert rendered_text(session.ast) =~ "I am the other page"
+    end
+  end
+
   # Recursively collects all text content from an expanded DOM AST so tests
   # can assert against the rendered page without caring about structure.
   defp rendered_text(nodes) when is_list(nodes) do
