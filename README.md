@@ -1,11 +1,29 @@
 # Mirage
 
-**TODO: Add description**
+Testing framework for [Hologram](http://hologram.page)
+
+## About
+
+Mirage provides testing helpers very similar to that of [`PhoenixTest`](https://hex.pm/packages/phoenix_test).
+
+Here is a quick example:
+
+```elixir
+MyApp.HomePage
+|> visit()
+|> click_link("Sign-up")
+|> fill_in("Name", with: "Bender Bending Rodríguez")
+|> fill_in("Password", with: "wanna-kill-all-humans?")
+|> click_button("Submit")
+|> assert_page(MyApp.WelcomePage)
+|> assert_has("p", "Welcome, Bender!")
+```
+
+Mirage tracks the state of the page under test, triggers actions, commands, and
+follows any navigation or redirects, as well as everyone's favourite debugging
+tool: `Mirage.open_browser/1`.
 
 ## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `mirage` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -14,8 +32,3 @@ def deps do
   ]
 end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/mirage>.
-

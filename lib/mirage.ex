@@ -31,8 +31,11 @@ defmodule Mirage do
   alias Mirage.Session
 
   @doc """
-  Visits a Hologram page module and returns a `Mirage.Session` containing
-  the initialized page struct and the expanded, layout-wrapped DOM.
+  Entry point to create a session.
+
+  Takes a `Hologram.Page` and, optional, any params.  It returns a session which
+  the rest of `Mirage` can use.
+
   """
   @spec visit(module(), %{atom() => any()}) :: Session.t()
   def visit(page_module, params \\ %{}) do
@@ -59,7 +62,7 @@ defmodule Mirage do
   Trigger an element's `$click` event.
 
   Any actions or commands will be run.  If the click triggers a page navigation,
-  the new page will be loaded into the `Mirage.Session`.
+  the new page will be loaded into the session.
 
   An element is matched by either its inner text or a test id.
 
@@ -79,13 +82,8 @@ defmodule Mirage do
   |> visit()
   |> fill_in("Name", with: "Bender")
   |> fill_in("Password", with: "killallhumans")
-  |> click("Go")
-  ```
-
-  ```
-  GameBoard
-  |> visit()
-  |> click(tid(foobar))
+  |> click("Submit")
+  |> assert_page(WelcomePage)
   ```
 
   ## Options
@@ -215,28 +213,34 @@ defmodule Mirage do
 
   Raises if no element matches or if more than one element matches.
 
-      session |> assert_has("button")
-      session |> assert_has("h1", text: "Welcome")
-      session |> assert_has("input#email", value: "alice@example.com")
+      session
+      |> assert_has("button")
+      |> assert_has("h1", "Welcome")
+      |> assert_has("input#email", value: "alice@example.com")
 
   ## Options
 
     * `:text` — also require the element's inner text (trimmed) to equal this value
     * `:value` — also require the element's `value` attribute to equal this value
+
   """
   @doc group: "Assertions"
   defdelegate assert_has(session, selector, text_or_opts \\ []), to: Mirage.Assertions
+  @doc false
   defdelegate assert_has(session, selector, text, opts), to: Mirage.Assertions
 
   @doc """
-  The opposite of `assert_has` — asserts that the session's DOM does *not*
-  contain any element matching the given CSS selector (and optional filters).
+  Asserts that the session's DOM does *not* contain any element matching the
+  given CSS selector (and optional filters).
 
-      session |> refute_has(".error")
-      session |> refute_has("p", text: "Deleted")
+      session
+      |> refute_has(".error")
+      |> refute_has("p", text: "Deleted")
+
   """
   @doc group: "Assertions"
   defdelegate refute_has(session, selector, text_or_opts \\ []), to: Mirage.Assertions
+  @doc false
   defdelegate refute_has(session, selector, text, opts), to: Mirage.Assertions
 
   @doc """
@@ -255,8 +259,10 @@ defmodule Mirage do
       |> assert_has("Alice")
 
   """
-  @spec open_browser(Session.t(), (String.t() -> any())) :: Session.t()
+  @spec open_browser(Session.t()) :: Session.t()
   defdelegate open_browser(session), to: Mirage.Browser
+
+  @doc false
   defdelegate open_browser(session, open_fun), to: Mirage.Browser
 
   # Walks the AST once, tracking the nearest enclosing `<form>`'s `$change`

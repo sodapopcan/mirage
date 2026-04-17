@@ -4,7 +4,6 @@ defmodule Mirage.Browser do
   alias Mirage.Session
   alias Mirage.DOM
 
-  @spec open_browser(Session.t(), (String.t() -> any())) :: Session.t()
   def open_browser(%Session{} = session, open_fun \\ &open_with_system_cmd/1) do
     html = ast_to_html(session.ast)
 
