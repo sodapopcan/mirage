@@ -212,6 +212,34 @@ defmodule HoloTest do
     session
   end
 
+  @doc """
+  The opposite of `assert_has` — asserts that the session's DOM does *not*
+  contain a matching node. Accepts the same arguments.
+  """
+  @spec refute_has(Session.t(), String.t() | keyword(), keyword()) :: Session.t()
+  def refute_has(session, text_or_opts, opts \\ [])
+
+  def refute_has(%Session{} = session, text, opts) when is_binary(text) do
+    if Keyword.has_key?(opts, :value) do
+      raise ArgumentError, "refute_has/3 accepts text or :value, not both"
+    end
+
+    refute_text(session.ast, text, Keyword.get(opts, :at))
+    session
+  end
+
+  def refute_has(%Session{} = session, opts, []) when is_list(opts) do
+    value = Keyword.get(opts, :value)
+    at = Keyword.get(opts, :at)
+
+    if is_nil(value) do
+      raise ArgumentError, "refute_has/2 requires text or :value"
+    end
+
+    refute_value(session.ast, value, at)
+    session
+  end
+
   defp assert_text(ast, text, nil) do
     if collect_elements(ast) |> Enum.all?(&(String.trim(inner_text(&1)) != text)) do
       raise "No element found with text: #{inspect(text)}"
@@ -252,6 +280,44 @@ defmodule HoloTest do
 
     if actual != value do
       raise "Expected input at position #{at} to have value #{inspect(value)} but found #{inspect(actual)}"
+    end
+  end
+
+  defp refute_text(ast, text, nil) do
+    if collect_elements(ast) |> Enum.any?(&(String.trim(inner_text(&1)) == text)) do
+      raise "Expected no element with text: #{inspect(text)}"
+    end
+  end
+
+  defp refute_text(ast, text, at) when is_integer(at) do
+    elements = collect_elements(ast)
+    count = length(elements)
+
+    if at >= 1 and at <= count do
+      actual = String.trim(inner_text(Enum.at(elements, at - 1)))
+
+      if actual == text do
+        raise "Expected element at position #{at} not to have text #{inspect(text)}"
+      end
+    end
+  end
+
+  defp refute_value(ast, value, nil) do
+    if collect_inputs(ast) |> Enum.any?(&(input_value(&1) == value)) do
+      raise "Expected no input with value: #{inspect(value)}"
+    end
+  end
+
+  defp refute_value(ast, value, at) when is_integer(at) do
+    inputs = collect_inputs(ast)
+    count = length(inputs)
+
+    if at >= 1 and at <= count do
+      actual = input_value(Enum.at(inputs, at - 1))
+
+      if actual == value do
+        raise "Expected input at position #{at} not to have value #{inspect(value)}"
+      end
     end
   end
 

@@ -366,6 +366,72 @@ defmodule HoloTestTest do
     end
   end
 
+  describe "refute_has — text" do
+    test "passes when no element's inner text matches" do
+      session = HoloTest.visit(HoloTest.AssertHasTextPage)
+      assert %Session{} = HoloTest.refute_has(session, "Missing")
+    end
+
+    test "raises when an element's inner text matches" do
+      session = HoloTest.visit(HoloTest.AssertHasTextPage)
+
+      assert_raise RuntimeError, ~r/Expected no element with text: "Item 1"/, fn ->
+        HoloTest.refute_has(session, "Item 1")
+      end
+    end
+
+    test ":at passes when the element at that position has different text" do
+      session = HoloTest.visit(HoloTest.AssertHasTextPage)
+      assert %Session{} = HoloTest.refute_has(session, "Item 2", at: 1)
+    end
+
+    test ":at raises when the element at that position has the given text" do
+      session = HoloTest.visit(HoloTest.AssertHasTextPage)
+
+      assert_raise RuntimeError, ~r/Expected element at position 1 not to have text "Item 1"/, fn ->
+        HoloTest.refute_has(session, "Item 1", at: 1)
+      end
+    end
+
+    test ":at passes when position is out of range" do
+      session = HoloTest.visit(HoloTest.AssertHasTextPage)
+      assert %Session{} = HoloTest.refute_has(session, "Item 1", at: 99)
+    end
+  end
+
+  describe "refute_has — :value" do
+    test "passes when no input's value matches" do
+      session = HoloTest.visit(HoloTest.AssertHasValuePage)
+      assert %Session{} = HoloTest.refute_has(session, value: "missing")
+    end
+
+    test "raises when an input's value matches" do
+      session = HoloTest.visit(HoloTest.AssertHasValuePage)
+
+      assert_raise RuntimeError, ~r/Expected no input with value: "alice"/, fn ->
+        HoloTest.refute_has(session, value: "alice")
+      end
+    end
+
+    test ":at passes when the input at that position has a different value" do
+      session = HoloTest.visit(HoloTest.AssertHasValuePage)
+      assert %Session{} = HoloTest.refute_has(session, value: "bob", at: 1)
+    end
+
+    test ":at raises when the input at that position has the given value" do
+      session = HoloTest.visit(HoloTest.AssertHasValuePage)
+
+      assert_raise RuntimeError, ~r/Expected input at position 1 not to have value "alice"/, fn ->
+        HoloTest.refute_has(session, value: "alice", at: 1)
+      end
+    end
+
+    test ":at passes when position is out of range" do
+      session = HoloTest.visit(HoloTest.AssertHasValuePage)
+      assert %Session{} = HoloTest.refute_has(session, value: "alice", at: 99)
+    end
+  end
+
   # Recursively collects all text content from an expanded DOM AST so tests
   # can assert against the rendered page without caring about structure.
   defp rendered_text(nodes) when is_list(nodes) do
