@@ -1,9 +1,9 @@
-defmodule Holography.MixProject do
+defmodule Mirage.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :holography,
+      app: :mirage,
       version: "0.1.0",
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -12,8 +12,8 @@ defmodule Holography.MixProject do
       aliases: aliases(),
 
       # Docs
-      name: "Holography",
-      source_url: "https://github.com/sodapopcan/holography",
+      name: "Mirage",
+      source_url: "https://github.com/sodapopcan/mirage",
       docs: [
         main: "readme",
         extras: ["README.md"]

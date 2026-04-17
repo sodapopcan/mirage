@@ -1,4 +1,4 @@
-defmodule Holography.Query do
+defmodule Mirage.Query do
   @moduledoc """
   CSS selector querying for expanded Hologram AST nodes.
 
@@ -7,7 +7,7 @@ defmodule Holography.Query do
   make up an expanded Hologram DOM.
   """
 
-  alias Holography.DOM
+  alias Mirage.DOM
   alias Meeseeks.Selector.Element
   alias Meeseeks.Selector.Element.{Namespace, Tag}
 

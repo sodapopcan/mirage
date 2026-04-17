@@ -1,4 +1,4 @@
-defmodule Holography do
+defmodule Mirage do
   @moduledoc """
   Test framework for the Hologram web framework.
 
@@ -27,11 +27,11 @@ defmodule Holography do
 
   alias Hologram.Component
   alias Hologram.Server
-  alias Holography.DOM
-  alias Holography.Session
+  alias Mirage.DOM
+  alias Mirage.Session
 
   @doc """
-  Visits a Hologram page module and returns a `Holography.Session` containing
+  Visits a Hologram page module and returns a `Mirage.Session` containing
   the initialized page struct and the expanded, layout-wrapped DOM.
   """
   @spec visit(module(), %{atom() => any()}) :: Session.t()
@@ -59,7 +59,7 @@ defmodule Holography do
   Trigger an element's `$click` event.
 
   Any actions or commands will be run.  If the click triggers a page navigation,
-  the new page will be loaded into the `Holography.Session`.
+  the new page will be loaded into the `Mirage.Session`.
 
   An element is matched by either its inner text or a test id.
 
@@ -225,8 +225,8 @@ defmodule Holography do
     * `:value` — also require the element's `value` attribute to equal this value
   """
   @doc group: "Assertions"
-  defdelegate assert_has(session, selector, text_or_opts \\ []), to: Holography.Assertions
-  defdelegate assert_has(session, selector, text, opts), to: Holography.Assertions
+  defdelegate assert_has(session, selector, text_or_opts \\ []), to: Mirage.Assertions
+  defdelegate assert_has(session, selector, text, opts), to: Mirage.Assertions
 
   @doc """
   The opposite of `assert_has` — asserts that the session's DOM does *not*
@@ -236,15 +236,15 @@ defmodule Holography do
       session |> refute_has("p", text: "Deleted")
   """
   @doc group: "Assertions"
-  defdelegate refute_has(session, selector, text_or_opts \\ []), to: Holography.Assertions
-  defdelegate refute_has(session, selector, text, opts), to: Holography.Assertions
+  defdelegate refute_has(session, selector, text_or_opts \\ []), to: Mirage.Assertions
+  defdelegate refute_has(session, selector, text, opts), to: Mirage.Assertions
 
   @doc """
   Asserts that we are on a specific page.  Useful after redirect.
   """
   @doc group: "Assertions"
   @spec assert_page(Session.t(), module()) :: Session.t() | no_return()
-  defdelegate assert_page(session, page), to: Holography.Assertions
+  defdelegate assert_page(session, page), to: Mirage.Assertions
 
   @doc """
   Opens the current page HTML in the default browser.
@@ -256,8 +256,8 @@ defmodule Holography do
 
   """
   @spec open_browser(Session.t(), (String.t() -> any())) :: Session.t()
-  defdelegate open_browser(session), to: Holography.Browser
-  defdelegate open_browser(session, open_fun), to: Holography.Browser
+  defdelegate open_browser(session), to: Mirage.Browser
+  defdelegate open_browser(session, open_fun), to: Mirage.Browser
 
   # Walks the AST once, tracking the nearest enclosing `<form>`'s `$change`
   # attribute. Returns `{labels, inputs_by_id}` where:

@@ -1,8 +1,8 @@
-defmodule Holography.Browser do
+defmodule Mirage.Browser do
   @moduledoc false
 
-  alias Holography.Session
-  alias Holography.DOM
+  alias Mirage.Session
+  alias Mirage.DOM
 
   @spec open_browser(Session.t(), (String.t() -> any())) :: Session.t()
   def open_browser(%Session{} = session, open_fun \\ &open_with_system_cmd/1) do
@@ -11,7 +11,7 @@ defmodule Holography.Browser do
     path =
       Path.join(
         System.tmp_dir!(),
-        "holography_#{System.unique_integer([:positive])}.html"
+        "mirage_#{System.unique_integer([:positive])}.html"
       )
 
     File.write!(path, html)

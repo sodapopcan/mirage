@@ -1,4 +1,4 @@
-defmodule Holography.TestLayout do
+defmodule Mirage.TestLayout do
   @moduledoc false
   use Hologram.Component
 
@@ -13,12 +13,12 @@ defmodule Holography.TestLayout do
   end
 end
 
-defmodule Holography.AnotherPage do
+defmodule Mirage.AnotherPage do
   @moduledoc false
   use Hologram.Page
 
   route "/another"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -28,22 +28,22 @@ defmodule Holography.AnotherPage do
   end
 end
 
-defmodule Holography.HomePage do
+defmodule Mirage.HomePage do
   @moduledoc false
   use Hologram.Page
 
   route "/"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <Hologram.UI.Link to={Holography.AnotherPage}>link to other page</Hologram.UI.Link>
+    <Hologram.UI.Link to={Mirage.AnotherPage}>link to other page</Hologram.UI.Link>
     """
   end
 end
 
-defmodule Holography.LinkWrapper do
+defmodule Mirage.LinkWrapper do
   @moduledoc """
   Thin custom component that wraps `Hologram.UI.Link`, forwarding its `to`
   prop and slot content. Used to verify that links still work when nested
@@ -61,22 +61,22 @@ defmodule Holography.LinkWrapper do
   end
 end
 
-defmodule Holography.WrappedLinkPage do
+defmodule Mirage.WrappedLinkPage do
   @moduledoc false
   use Hologram.Page
 
   route "/wrapped"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <Holography.LinkWrapper to={Holography.AnotherPage}>wrapped link to other page</Holography.LinkWrapper>
+    <Mirage.LinkWrapper to={Mirage.AnotherPage}>wrapped link to other page</Mirage.LinkWrapper>
     """
   end
 end
 
-defmodule Holography.FillInPage do
+defmodule Mirage.FillInPage do
   @moduledoc """
   Page fixture for `fill_in/3`. Has a form with two labelled inputs (one
   wrapping, one `for`-referenced) and a `$change` handler at the form
@@ -86,7 +86,7 @@ defmodule Holography.FillInPage do
   use Hologram.Page
 
   route "/fill-in"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def init(_params, component, _server) do
@@ -130,7 +130,7 @@ defmodule Holography.FillInPage do
   end
 end
 
-defmodule Holography.ClickPage do
+defmodule Mirage.ClickPage do
   @moduledoc """
   Single clickable button with intentionally verbose text so the same page
   can drive exact-match, substring-match, and no-match scenarios.
@@ -138,7 +138,7 @@ defmodule Holography.ClickPage do
   use Hologram.Page
 
   route "/click"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   def action(:save, _params, component), do: put_state(component, clicked: true)
 
@@ -150,7 +150,7 @@ defmodule Holography.ClickPage do
   end
 end
 
-defmodule Holography.ClickWhitespacePage do
+defmodule Mirage.ClickWhitespacePage do
   @moduledoc """
   Uses an expression-bound string so leading/trailing whitespace around
   the button's text survives the template parser and exercises the trim
@@ -159,7 +159,7 @@ defmodule Holography.ClickWhitespacePage do
   use Hologram.Page
 
   route "/click-whitespace"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def init(_params, component, _server) do
@@ -176,12 +176,12 @@ defmodule Holography.ClickWhitespacePage do
   end
 end
 
-defmodule Holography.ClickNestedTextPage do
+defmodule Mirage.ClickNestedTextPage do
   @moduledoc "Button text split across descendant elements."
   use Hologram.Page
 
   route "/click-nested-text"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   def action(:submit, _params, component), do: component
 
@@ -193,12 +193,12 @@ defmodule Holography.ClickNestedTextPage do
   end
 end
 
-defmodule Holography.ClickDeepPage do
+defmodule Mirage.ClickDeepPage do
   @moduledoc "Clickable anchor nested several elements deep."
   use Hologram.Page
 
   route "/click-deep"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   def action(:go, _params, component), do: component
 
@@ -210,12 +210,12 @@ defmodule Holography.ClickDeepPage do
   end
 end
 
-defmodule Holography.ClickNoAttrPage do
+defmodule Mirage.ClickNoAttrPage do
   @moduledoc "Button without a `$click` attribute — nothing to click."
   use Hologram.Page
 
   route "/click-no-attr"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -225,12 +225,12 @@ defmodule Holography.ClickNoAttrPage do
   end
 end
 
-defmodule Holography.ClickAmbiguousPage do
+defmodule Mirage.ClickAmbiguousPage do
   @moduledoc "Two clickable elements sharing the same text."
   use Hologram.Page
 
   route "/click-ambiguous"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   def action(:save, _params, component), do: component
 
@@ -243,7 +243,7 @@ defmodule Holography.ClickAmbiguousPage do
   end
 end
 
-defmodule Holography.ClickCommentPage do
+defmodule Mirage.ClickCommentPage do
   @moduledoc """
   The clickable button is inside an HTML comment — Hologram's parser
   treats everything between `<!--` and `-->` as text, so the button
@@ -252,7 +252,7 @@ defmodule Holography.ClickCommentPage do
   use Hologram.Page
 
   route "/click-comment"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -262,7 +262,7 @@ defmodule Holography.ClickCommentPage do
   end
 end
 
-defmodule Holography.FillInCommentPage do
+defmodule Mirage.FillInCommentPage do
   @moduledoc """
   Counterpart to `ClickCommentPage` for labels: a commented-out label
   must not be reachable via `fill_in/3`.
@@ -270,7 +270,7 @@ defmodule Holography.FillInCommentPage do
   use Hologram.Page
 
   route "/fill-in-comment"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -280,11 +280,11 @@ defmodule Holography.FillInCommentPage do
   end
 end
 
-defmodule Holography.ClickCommandPage do
+defmodule Mirage.ClickCommandPage do
   use Hologram.Page
 
   route "/command-page"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   def template do
     ~HOLO"""
@@ -298,7 +298,7 @@ defmodule Holography.ClickCommandPage do
   end
 end
 
-defmodule Holography.FillInLabelTextPage do
+defmodule Mirage.FillInLabelTextPage do
   @moduledoc """
   Single labelled input where the label text is longer than any single
   word — lets the same page cover exact-match, substring-match, and
@@ -307,7 +307,7 @@ defmodule Holography.FillInLabelTextPage do
   use Hologram.Page
 
   route "/fill-in-label-text"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   def action(:update, _params, component), do: component
 
@@ -319,7 +319,7 @@ defmodule Holography.FillInLabelTextPage do
   end
 end
 
-defmodule Holography.FillInWhitespaceLabelPage do
+defmodule Mirage.FillInWhitespaceLabelPage do
   @moduledoc """
   Expression-bound label text so surrounding whitespace survives parsing
   and exercises the trim in `text_matches?/3`.
@@ -327,7 +327,7 @@ defmodule Holography.FillInWhitespaceLabelPage do
   use Hologram.Page
 
   route "/fill-in-whitespace-label"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def init(_params, component, _server) do
@@ -344,12 +344,12 @@ defmodule Holography.FillInWhitespaceLabelPage do
   end
 end
 
-defmodule Holography.FillInNestedLabelPage do
+defmodule Mirage.FillInNestedLabelPage do
   @moduledoc "Label text split across descendant elements."
   use Hologram.Page
 
   route "/fill-in-nested-label"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   def action(:update, _params, component), do: component
 
@@ -361,12 +361,12 @@ defmodule Holography.FillInNestedLabelPage do
   end
 end
 
-defmodule Holography.FillInDeepLabelPage do
+defmodule Mirage.FillInDeepLabelPage do
   @moduledoc "Label nested several elements deep in the tree."
   use Hologram.Page
 
   route "/fill-in-deep-label"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   def action(:update, _params, component), do: component
 
@@ -378,12 +378,12 @@ defmodule Holography.FillInDeepLabelPage do
   end
 end
 
-defmodule Holography.FillInAmbiguousLabelPage do
+defmodule Mirage.FillInAmbiguousLabelPage do
   @moduledoc "Two labels with the same text."
   use Hologram.Page
 
   route "/fill-in-ambiguous-label"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   def action(:update, _params, component), do: component
 
@@ -396,12 +396,12 @@ defmodule Holography.FillInAmbiguousLabelPage do
   end
 end
 
-defmodule Holography.FillInOrphanLabelPage do
+defmodule Mirage.FillInOrphanLabelPage do
   @moduledoc "Label whose `for` attribute points at a non-existent input."
   use Hologram.Page
 
   route "/fill-in-orphan-label"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -411,12 +411,12 @@ defmodule Holography.FillInOrphanLabelPage do
   end
 end
 
-defmodule Holography.AssertHasTextPage do
+defmodule Mirage.AssertHasTextPage do
   @moduledoc false
   use Hologram.Page
 
   route "/assert-has-text"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -432,12 +432,12 @@ defmodule Holography.AssertHasTextPage do
   end
 end
 
-defmodule Holography.AssertHasValuePage do
+defmodule Mirage.AssertHasValuePage do
   @moduledoc false
   use Hologram.Page
 
   route "/assert-has-value"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -449,12 +449,12 @@ defmodule Holography.AssertHasValuePage do
   end
 end
 
-defmodule Holography.CommandPage do
+defmodule Mirage.CommandPage do
   @moduledoc false
   use Hologram.Page
 
   route "/command"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @doc """
   Action handler: emits a `:write_file` command that performs the side effect
@@ -480,12 +480,12 @@ defmodule Holography.CommandPage do
   end
 end
 
-defmodule Holography.LonghandActionPage do
+defmodule Mirage.LonghandActionPage do
   @moduledoc false
   use Hologram.Page
 
   route "/longhand-action"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def init(_params, component, _server) do
@@ -510,12 +510,12 @@ defmodule Holography.LonghandActionPage do
   end
 end
 
-defmodule Holography.DirectCommandPage do
+defmodule Mirage.DirectCommandPage do
   @moduledoc false
   use Hologram.Page
 
   route "/direct-command"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def init(_params, component, _server) do
@@ -544,12 +544,12 @@ defmodule Holography.DirectCommandPage do
   end
 end
 
-defmodule Holography.ActionChainPage do
+defmodule Mirage.ActionChainPage do
   @moduledoc false
   use Hologram.Page
 
   route "/action-chain"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   @impl Hologram.Page
   def init(_params, component, _server) do
@@ -575,15 +575,15 @@ defmodule Holography.ActionChainPage do
   end
 end
 
-defmodule Holography.PutPagePage do
+defmodule Mirage.PutPagePage do
   @moduledoc false
   use Hologram.Page
 
   route "/put-page"
-  layout Holography.TestLayout
+  layout Mirage.TestLayout
 
   def action(:navigate, _params, component) do
-    put_page(component, Holography.AnotherPage)
+    put_page(component, Mirage.AnotherPage)
   end
 
   @impl Hologram.Page

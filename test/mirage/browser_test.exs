@@ -1,13 +1,13 @@
-defmodule Holography.BrowserTest do
+defmodule Mirage.BrowserTest do
   use ExUnit.Case, async: true
 
-  alias Holography.Session
+  alias Mirage.Session
 
   describe "open_browser/2" do
     test "writes an HTML file and returns the session" do
-      session = Holography.visit(Holography.ClickPage)
+      session = Mirage.visit(Mirage.ClickPage)
 
-      session = Holography.open_browser(session, fn path -> send(self(), {:opened, path}) end)
+      session = Mirage.open_browser(session, fn path -> send(self(), {:opened, path}) end)
 
       assert %Session{} = session
       assert_receive {:opened, path}

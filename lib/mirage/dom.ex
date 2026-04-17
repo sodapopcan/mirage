@@ -1,4 +1,4 @@
-defmodule Holography.DOM do
+defmodule Mirage.DOM do
   @moduledoc false
 
   alias Hologram.Component

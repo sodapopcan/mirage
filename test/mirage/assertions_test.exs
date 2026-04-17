@@ -1,154 +1,154 @@
-defmodule Holography.AssertionsTest do
+defmodule Mirage.AssertionsTest do
   use ExUnit.Case, async: true
 
-  alias Holography.Session
+  alias Mirage.Session
   alias ExUnit.AssertionError
 
   describe "assert_has — selector only" do
     test "passes when exactly one element matches" do
-      session = Holography.visit(Holography.ClickPage)
-      assert %Session{} = Holography.assert_has(session, "button")
+      session = Mirage.visit(Mirage.ClickPage)
+      assert %Session{} = Mirage.assert_has(session, "button")
     end
 
     test "raises when no element matches" do
-      session = Holography.visit(Holography.ClickPage)
+      session = Mirage.visit(Mirage.ClickPage)
 
       assert_raise AssertionError,
                    ~r/Expected to find exactly 1 element matching "nav".*found 0/,
                    fn ->
-                     Holography.assert_has(session, "nav")
+                     Mirage.assert_has(session, "nav")
                    end
     end
 
     test "raises when more than one element matches" do
-      session = Holography.visit(Holography.AssertHasValuePage)
+      session = Mirage.visit(Mirage.AssertHasValuePage)
 
       assert_raise AssertionError,
                    ~r/Expected to find exactly 1 element matching "input".*found 3/,
                    fn ->
-                     Holography.assert_has(session, "input")
+                     Mirage.assert_has(session, "input")
                    end
     end
   end
 
   describe "assert_has — :text" do
     test "passes when exactly one element has the given text" do
-      session = Holography.visit(Holography.AssertHasTextPage)
-      assert %Session{} = Holography.assert_has(session, "li", text: "Item 1")
+      session = Mirage.visit(Mirage.AssertHasTextPage)
+      assert %Session{} = Mirage.assert_has(session, "li", text: "Item 1")
     end
 
     test "raises when no element has the given text" do
-      session = Holography.visit(Holography.AssertHasTextPage)
+      session = Mirage.visit(Mirage.AssertHasTextPage)
 
       assert_raise AssertionError, ~r/found 0/, fn ->
-        Holography.assert_has(session, "li", text: "Missing")
+        Mirage.assert_has(session, "li", text: "Missing")
       end
     end
 
     test "raises when multiple elements have the given text" do
-      session = Holography.visit(Holography.ClickAmbiguousPage)
+      session = Mirage.visit(Mirage.ClickAmbiguousPage)
 
       assert_raise AssertionError, ~r/found 2/, fn ->
-        Holography.assert_has(session, "*", text: "Save")
+        Mirage.assert_has(session, "*", text: "Save")
       end
     end
   end
 
   describe "assert_has — :value" do
     test "passes when exactly one element has the given value" do
-      session = Holography.visit(Holography.AssertHasValuePage)
-      assert %Session{} = Holography.assert_has(session, "input", value: "alice")
+      session = Mirage.visit(Mirage.AssertHasValuePage)
+      assert %Session{} = Mirage.assert_has(session, "input", value: "alice")
     end
 
     test "raises when no element has the given value" do
-      session = Holography.visit(Holography.AssertHasValuePage)
+      session = Mirage.visit(Mirage.AssertHasValuePage)
 
       assert_raise AssertionError, ~r/found 0/, fn ->
-        Holography.assert_has(session, "input", value: "missing")
+        Mirage.assert_has(session, "input", value: "missing")
       end
     end
   end
 
   describe "assert_has — :text and :value combined" do
     test "can filter by both text and value" do
-      session = Holography.visit(Holography.AssertHasValuePage)
+      session = Mirage.visit(Mirage.AssertHasValuePage)
       # inputs are void elements with no inner text — the combination narrows to zero
       assert_raise AssertionError, ~r/found 0/, fn ->
-        Holography.assert_has(session, "input", text: "alice", value: "alice")
+        Mirage.assert_has(session, "input", text: "alice", value: "alice")
       end
     end
   end
 
   describe "refute_has — selector only" do
     test "passes when no element matches" do
-      session = Holography.visit(Holography.ClickPage)
-      assert %Session{} = Holography.refute_has(session, "nav")
+      session = Mirage.visit(Mirage.ClickPage)
+      assert %Session{} = Mirage.refute_has(session, "nav")
     end
 
     test "raises when an element matches" do
-      session = Holography.visit(Holography.ClickPage)
+      session = Mirage.visit(Mirage.ClickPage)
 
       assert_raise AssertionError,
                    ~r/Expected not to find an element matching "button".*found 1/,
                    fn ->
-                     Holography.refute_has(session, "button")
+                     Mirage.refute_has(session, "button")
                    end
     end
   end
 
   describe "refute_has — :text" do
     test "passes when no element has the given text" do
-      session = Holography.visit(Holography.AssertHasTextPage)
-      assert %Session{} = Holography.refute_has(session, "li", text: "Missing")
+      session = Mirage.visit(Mirage.AssertHasTextPage)
+      assert %Session{} = Mirage.refute_has(session, "li", text: "Missing")
     end
 
     test "raises when an element has the given text" do
-      session = Holography.visit(Holography.AssertHasTextPage)
+      session = Mirage.visit(Mirage.AssertHasTextPage)
 
       assert_raise AssertionError, ~r/Expected not to find/, fn ->
-        Holography.refute_has(session, "li", text: "Item 1")
+        Mirage.refute_has(session, "li", text: "Item 1")
       end
     end
   end
 
   describe "refute_has — :value" do
     test "passes when no element has the given value" do
-      session = Holography.visit(Holography.AssertHasValuePage)
-      assert %Session{} = Holography.refute_has(session, "input", value: "missing")
+      session = Mirage.visit(Mirage.AssertHasValuePage)
+      assert %Session{} = Mirage.refute_has(session, "input", value: "missing")
     end
 
     test "raises when an element has the given value" do
-      session = Holography.visit(Holography.AssertHasValuePage)
+      session = Mirage.visit(Mirage.AssertHasValuePage)
 
       assert_raise AssertionError, ~r/Expected not to find/, fn ->
-        Holography.refute_has(session, "input", value: "alice")
+        Mirage.refute_has(session, "input", value: "alice")
       end
     end
   end
 
   describe "pipelining" do
     test "assert_has and refute_has return session for chaining" do
-      Holography.visit(Holography.AssertHasTextPage)
-      |> Holography.assert_has("h1", text: "I'm a header")
-      |> Holography.refute_has("h2")
+      Mirage.visit(Mirage.AssertHasTextPage)
+      |> Mirage.assert_has("h1", text: "I'm a header")
+      |> Mirage.refute_has("h2")
     end
   end
 
   describe "assert_page" do
     test "asserts that we are on a specific page" do
-      Holography.HomePage
-      |> Holography.visit()
-      |> Holography.click("link to other page")
-      |> Holography.assert_page(Holography.AnotherPage)
+      Mirage.HomePage
+      |> Mirage.visit()
+      |> Mirage.click("link to other page")
+      |> Mirage.assert_page(Mirage.AnotherPage)
     end
 
     test "raises if we are not on the given page" do
       assert_raise AssertionError,
-                   ~r/Expected current page to be Holography.NotThisPage but was Holography.HomePage/,
+                   ~r/Expected current page to be Mirage.NotThisPage but was Mirage.HomePage/,
                    fn ->
-                     Holography.HomePage
-                     |> Holography.visit()
-                     |> Holography.assert_page(Holography.NotThisPage)
+                     Mirage.HomePage
+                     |> Mirage.visit()
+                     |> Mirage.assert_page(Mirage.NotThisPage)
                    end
     end
   end

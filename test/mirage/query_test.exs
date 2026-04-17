@@ -1,7 +1,7 @@
-defmodule Holography.QueryTest do
+defmodule Mirage.QueryTest do
   use ExUnit.Case, async: true
 
-  alias Holography.Query
+  alias Mirage.Query
 
   # Helper to build element tuples concisely.
   defp el(tag, attrs \\ [], children \\ []) do
@@ -382,27 +382,27 @@ defmodule Holography.QueryTest do
     end
   end
 
-  describe "integration with Holography.visit" do
+  describe "integration with Mirage.visit" do
     test "queries expanded page AST by tag" do
-      session = Holography.visit(Holography.ClickPage)
+      session = Mirage.visit(Mirage.ClickPage)
       results = Query.query_all(session.ast, "button")
       assert length(results) == 1
     end
 
     test "queries expanded page AST by attribute" do
-      session = Holography.visit(Holography.AssertHasValuePage)
+      session = Mirage.visit(Mirage.AssertHasValuePage)
       results = Query.query_all(session.ast, "input[value=alice]")
       assert length(results) == 1
     end
 
     test "queries nested structure with descendant combinator" do
-      session = Holography.visit(Holography.AssertHasTextPage)
+      session = Mirage.visit(Mirage.AssertHasTextPage)
       results = Query.query_all(session.ast, "ul li")
       assert length(results) == 3
     end
 
     test "queries with child combinator" do
-      session = Holography.visit(Holography.AssertHasTextPage)
+      session = Mirage.visit(Mirage.AssertHasTextPage)
       spans_in_li = Query.query_all(session.ast, "li > span")
       assert length(spans_in_li) == 3
     end

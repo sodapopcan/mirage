@@ -1,11 +1,11 @@
-defmodule Holography.Assertions do
+defmodule Mirage.Assertions do
   @moduledoc false
 
   import ExUnit.Assertions
 
-  alias Holography.DOM
-  alias Holography.Query
-  alias Holography.Session
+  alias Mirage.DOM
+  alias Mirage.Query
+  alias Mirage.Session
 
   def assert_page(session, page_module) do
     remove_prefix = fn mod ->
