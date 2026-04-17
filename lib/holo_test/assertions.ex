@@ -147,14 +147,16 @@ defmodule HoloTest.Assertions do
 
   # All elements in DFS order — used for without-:at existence checks.
   defp collect_all_elements(nodes) when is_list(nodes) do
-    Enum.flat_map(nodes, &collect_all_elements/1)
+    nodes |> collect_all_elements([]) |> :lists.reverse()
   end
 
-  defp collect_all_elements({:element, _tag, _attrs, children} = node) do
-    [node | collect_all_elements(children)]
+  defp collect_all_elements([], acc), do: acc
+
+  defp collect_all_elements([{:element, _, _, children} = node | rest], acc) do
+    collect_all_elements(rest, collect_all_elements(children, [node | acc]))
   end
 
-  defp collect_all_elements(_other), do: []
+  defp collect_all_elements([_ | rest], acc), do: collect_all_elements(rest, acc)
 
   # Finds the first element whose inner text matches `text`, then returns
   # the text-bearing element siblings at that level (children of the same
@@ -187,17 +189,19 @@ defmodule HoloTest.Assertions do
   defp non_blank_text?(_), do: false
 
   defp collect_inputs(nodes) when is_list(nodes) do
-    Enum.flat_map(nodes, &collect_inputs/1)
+    nodes |> collect_inputs([]) |> :lists.reverse()
   end
 
-  defp collect_inputs({:element, tag, _attrs, children} = node)
+  defp collect_inputs([], acc), do: acc
+
+  defp collect_inputs([{:element, tag, _attrs, children} = node | rest], acc)
        when tag in ["input", "textarea", "select"] do
-    [node | collect_inputs(children)]
+    collect_inputs(rest, collect_inputs(children, [node | acc]))
   end
 
-  defp collect_inputs({:element, _tag, _attrs, children}) do
-    collect_inputs(children)
+  defp collect_inputs([{:element, _tag, _attrs, children} | rest], acc) do
+    collect_inputs(rest, collect_inputs(children, acc))
   end
 
-  defp collect_inputs(_other), do: []
+  defp collect_inputs([_ | rest], acc), do: collect_inputs(rest, acc)
 end

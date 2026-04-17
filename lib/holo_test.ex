@@ -84,20 +84,27 @@ defmodule HoloTest do
   end
 
   defp find_clickables(nodes, text, exact?) when is_list(nodes) do
-    Enum.flat_map(nodes, &find_clickables(&1, text, exact?))
+    nodes |> find_clickables(text, exact?, []) |> :lists.reverse()
   end
 
-  defp find_clickables({:element, _tag, attrs, children} = node, text, exact?) do
-    nested = find_clickables(children, text, exact?)
+  defp find_clickables([], _text, _exact?, acc), do: acc
 
-    if has_click_attr?(attrs) and text_matches?(DOM.inner_text(node), text, exact?) do
-      [node | nested]
-    else
-      nested
-    end
+  defp find_clickables([{:element, _tag, attrs, children} = node | rest], text, exact?, acc) do
+    acc = find_clickables(children, text, exact?, acc)
+
+    acc =
+      if has_click_attr?(attrs) and text_matches?(DOM.inner_text(node), text, exact?) do
+        [node | acc]
+      else
+        acc
+      end
+
+    find_clickables(rest, text, exact?, acc)
   end
 
-  defp find_clickables(_other, _text, _exact?), do: []
+  defp find_clickables([_ | rest], text, exact?, acc) do
+    find_clickables(rest, text, exact?, acc)
+  end
 
   defp has_click_attr?(attrs) do
     Enum.any?(attrs, fn
