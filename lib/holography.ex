@@ -157,7 +157,10 @@ defmodule Holography do
     # in the resolved AST that shows up as `[expression: {:__load_prefetched_page__, [to: Target]}]`.
     case DOM.find_attr(attrs, "$click") do
       [{:expression, {:__load_prefetched_page__, params}}] when is_list(params) ->
-        visit(Keyword.fetch!(params, :to))
+        case Keyword.fetch!(params, :to) do
+          {target_module, target_params} -> visit(target_module, Map.new(target_params))
+          target_module -> visit(target_module)
+        end
 
       value ->
         dispatch_action(session, value, %{})
@@ -363,21 +366,52 @@ defmodule Holography do
         %Server{} = server -> {component, server}
       end
 
-    # If the action emitted a command, run it server-side.
-    if cmd = new_component.next_command do
-      page_module.command(cmd.name, cmd.params, new_server)
-    end
+    session = %{session | page: new_component, server: new_server}
 
-    # If the action triggered a page navigation, visit the new page.
+    # 1. If the action emitted a command, run it server-side.
+    #    The command may update the server and trigger a follow-up action.
+    session =
+      if cmd = new_component.next_command do
+        run_command(session, cmd)
+      else
+        session
+      end
+
+    # 2. If the action chained another action, run it.
+    session =
+      if action = new_component.next_action do
+        run_action(session, action.name, action.params)
+      else
+        session
+      end
+
+    # 3. If the action triggered a page navigation, visit the new page.
     case new_component.next_page do
       nil ->
-        re_render(%{session | page: new_component, server: new_server})
+        re_render(session)
 
       {target_module, target_params} ->
         visit(target_module, Map.new(target_params))
 
       target_module ->
         visit(target_module)
+    end
+  end
+
+  defp run_command(%Session{page_module: page_module, server: server} = session, cmd) do
+    new_server =
+      case page_module.command(cmd.name, cmd.params, server) do
+        %Server{} = s -> s
+        _ -> server
+      end
+
+    session = %{session | server: new_server}
+
+    # If the command triggered a follow-up action, run it on the page component.
+    if action = new_server.next_action do
+      run_action(session, action.name, action.params)
+    else
+      session
     end
   end
 
