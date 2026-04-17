@@ -1,9 +1,9 @@
-defmodule HoloTest.MixProject do
+defmodule Holography.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :holo_test,
+      app: :holography,
       version: "0.1.0",
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),

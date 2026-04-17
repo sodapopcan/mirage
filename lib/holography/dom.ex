@@ -1,4 +1,4 @@
-defmodule HoloTest.DOM do
+defmodule Holography.DOM do
   @moduledoc false
 
   alias Hologram.Component

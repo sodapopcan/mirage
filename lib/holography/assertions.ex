@@ -1,8 +1,8 @@
-defmodule HoloTest.Assertions do
+defmodule Holography.Assertions do
   @moduledoc false
 
-  alias HoloTest.DOM
-  alias HoloTest.Session
+  alias Holography.DOM
+  alias Holography.Session
 
   def assert_has(session, text_or_opts), do: assert_has(session, text_or_opts, [])
 

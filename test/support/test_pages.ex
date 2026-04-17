@@ -1,4 +1,4 @@
-defmodule HoloTest.TestLayout do
+defmodule Holography.TestLayout do
   @moduledoc false
   use Hologram.Component
 
@@ -13,12 +13,12 @@ defmodule HoloTest.TestLayout do
   end
 end
 
-defmodule HoloTest.AnotherPage do
+defmodule Holography.AnotherPage do
   @moduledoc false
   use Hologram.Page
 
   route "/another"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -28,22 +28,22 @@ defmodule HoloTest.AnotherPage do
   end
 end
 
-defmodule HoloTest.HomePage do
+defmodule Holography.HomePage do
   @moduledoc false
   use Hologram.Page
 
   route "/"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <Hologram.UI.Link to={HoloTest.AnotherPage}>link to other page</Hologram.UI.Link>
+    <Hologram.UI.Link to={Holography.AnotherPage}>link to other page</Hologram.UI.Link>
     """
   end
 end
 
-defmodule HoloTest.LinkWrapper do
+defmodule Holography.LinkWrapper do
   @moduledoc """
   Thin custom component that wraps `Hologram.UI.Link`, forwarding its `to`
   prop and slot content. Used to verify that links still work when nested
@@ -61,22 +61,22 @@ defmodule HoloTest.LinkWrapper do
   end
 end
 
-defmodule HoloTest.WrappedLinkPage do
+defmodule Holography.WrappedLinkPage do
   @moduledoc false
   use Hologram.Page
 
   route "/wrapped"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <HoloTest.LinkWrapper to={HoloTest.AnotherPage}>wrapped link to other page</HoloTest.LinkWrapper>
+    <Holography.LinkWrapper to={Holography.AnotherPage}>wrapped link to other page</Holography.LinkWrapper>
     """
   end
 end
 
-defmodule HoloTest.FillInPage do
+defmodule Holography.FillInPage do
   @moduledoc """
   Page fixture for `fill_in/3`. Has a form with two labelled inputs (one
   wrapping, one `for`-referenced) and a `$change` handler at the form
@@ -86,7 +86,7 @@ defmodule HoloTest.FillInPage do
   use Hologram.Page
 
   route "/fill-in"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def init(_params, component, _server) do
@@ -130,7 +130,7 @@ defmodule HoloTest.FillInPage do
   end
 end
 
-defmodule HoloTest.ClickPage do
+defmodule Holography.ClickPage do
   @moduledoc """
   Single clickable button with intentionally verbose text so the same page
   can drive exact-match, substring-match, and no-match scenarios.
@@ -138,7 +138,7 @@ defmodule HoloTest.ClickPage do
   use Hologram.Page
 
   route "/click"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   def action(:save, _params, component), do: put_state(component, clicked: true)
 
@@ -150,7 +150,7 @@ defmodule HoloTest.ClickPage do
   end
 end
 
-defmodule HoloTest.ClickWhitespacePage do
+defmodule Holography.ClickWhitespacePage do
   @moduledoc """
   Uses an expression-bound string so leading/trailing whitespace around
   the button's text survives the template parser and exercises the trim
@@ -159,7 +159,7 @@ defmodule HoloTest.ClickWhitespacePage do
   use Hologram.Page
 
   route "/click-whitespace"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def init(_params, component, _server) do
@@ -176,12 +176,12 @@ defmodule HoloTest.ClickWhitespacePage do
   end
 end
 
-defmodule HoloTest.ClickNestedTextPage do
+defmodule Holography.ClickNestedTextPage do
   @moduledoc "Button text split across descendant elements."
   use Hologram.Page
 
   route "/click-nested-text"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   def action(:submit, _params, component), do: component
 
@@ -193,12 +193,12 @@ defmodule HoloTest.ClickNestedTextPage do
   end
 end
 
-defmodule HoloTest.ClickDeepPage do
+defmodule Holography.ClickDeepPage do
   @moduledoc "Clickable anchor nested several elements deep."
   use Hologram.Page
 
   route "/click-deep"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   def action(:go, _params, component), do: component
 
@@ -210,12 +210,12 @@ defmodule HoloTest.ClickDeepPage do
   end
 end
 
-defmodule HoloTest.ClickNoAttrPage do
+defmodule Holography.ClickNoAttrPage do
   @moduledoc "Button without a `$click` attribute — nothing to click."
   use Hologram.Page
 
   route "/click-no-attr"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -225,12 +225,12 @@ defmodule HoloTest.ClickNoAttrPage do
   end
 end
 
-defmodule HoloTest.ClickAmbiguousPage do
+defmodule Holography.ClickAmbiguousPage do
   @moduledoc "Two clickable elements sharing the same text."
   use Hologram.Page
 
   route "/click-ambiguous"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   def action(:save, _params, component), do: component
 
@@ -243,7 +243,7 @@ defmodule HoloTest.ClickAmbiguousPage do
   end
 end
 
-defmodule HoloTest.ClickCommentPage do
+defmodule Holography.ClickCommentPage do
   @moduledoc """
   The clickable button is inside an HTML comment — Hologram's parser
   treats everything between `<!--` and `-->` as text, so the button
@@ -252,7 +252,7 @@ defmodule HoloTest.ClickCommentPage do
   use Hologram.Page
 
   route "/click-comment"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -262,7 +262,7 @@ defmodule HoloTest.ClickCommentPage do
   end
 end
 
-defmodule HoloTest.FillInCommentPage do
+defmodule Holography.FillInCommentPage do
   @moduledoc """
   Counterpart to `ClickCommentPage` for labels: a commented-out label
   must not be reachable via `fill_in/3`.
@@ -270,7 +270,7 @@ defmodule HoloTest.FillInCommentPage do
   use Hologram.Page
 
   route "/fill-in-comment"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -280,7 +280,7 @@ defmodule HoloTest.FillInCommentPage do
   end
 end
 
-defmodule HoloTest.FillInLabelTextPage do
+defmodule Holography.FillInLabelTextPage do
   @moduledoc """
   Single labelled input where the label text is longer than any single
   word — lets the same page cover exact-match, substring-match, and
@@ -289,7 +289,7 @@ defmodule HoloTest.FillInLabelTextPage do
   use Hologram.Page
 
   route "/fill-in-label-text"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   def action(:update, _params, component), do: component
 
@@ -301,7 +301,7 @@ defmodule HoloTest.FillInLabelTextPage do
   end
 end
 
-defmodule HoloTest.FillInWhitespaceLabelPage do
+defmodule Holography.FillInWhitespaceLabelPage do
   @moduledoc """
   Expression-bound label text so surrounding whitespace survives parsing
   and exercises the trim in `text_matches?/3`.
@@ -309,7 +309,7 @@ defmodule HoloTest.FillInWhitespaceLabelPage do
   use Hologram.Page
 
   route "/fill-in-whitespace-label"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def init(_params, component, _server) do
@@ -326,12 +326,12 @@ defmodule HoloTest.FillInWhitespaceLabelPage do
   end
 end
 
-defmodule HoloTest.FillInNestedLabelPage do
+defmodule Holography.FillInNestedLabelPage do
   @moduledoc "Label text split across descendant elements."
   use Hologram.Page
 
   route "/fill-in-nested-label"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   def action(:update, _params, component), do: component
 
@@ -343,12 +343,12 @@ defmodule HoloTest.FillInNestedLabelPage do
   end
 end
 
-defmodule HoloTest.FillInDeepLabelPage do
+defmodule Holography.FillInDeepLabelPage do
   @moduledoc "Label nested several elements deep in the tree."
   use Hologram.Page
 
   route "/fill-in-deep-label"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   def action(:update, _params, component), do: component
 
@@ -360,12 +360,12 @@ defmodule HoloTest.FillInDeepLabelPage do
   end
 end
 
-defmodule HoloTest.FillInAmbiguousLabelPage do
+defmodule Holography.FillInAmbiguousLabelPage do
   @moduledoc "Two labels with the same text."
   use Hologram.Page
 
   route "/fill-in-ambiguous-label"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   def action(:update, _params, component), do: component
 
@@ -378,12 +378,12 @@ defmodule HoloTest.FillInAmbiguousLabelPage do
   end
 end
 
-defmodule HoloTest.FillInOrphanLabelPage do
+defmodule Holography.FillInOrphanLabelPage do
   @moduledoc "Label whose `for` attribute points at a non-existent input."
   use Hologram.Page
 
   route "/fill-in-orphan-label"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -393,12 +393,12 @@ defmodule HoloTest.FillInOrphanLabelPage do
   end
 end
 
-defmodule HoloTest.AssertHasTextPage do
+defmodule Holography.AssertHasTextPage do
   @moduledoc false
   use Hologram.Page
 
   route "/assert-has-text"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -414,12 +414,12 @@ defmodule HoloTest.AssertHasTextPage do
   end
 end
 
-defmodule HoloTest.AssertHasValuePage do
+defmodule Holography.AssertHasValuePage do
   @moduledoc false
   use Hologram.Page
 
   route "/assert-has-value"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @impl Hologram.Page
   def template do
@@ -431,12 +431,12 @@ defmodule HoloTest.AssertHasValuePage do
   end
 end
 
-defmodule HoloTest.CommandPage do
+defmodule Holography.CommandPage do
   @moduledoc false
   use Hologram.Page
 
   route "/command"
-  layout HoloTest.TestLayout
+  layout Holography.TestLayout
 
   @doc """
   Action handler: emits a `:write_file` command that performs the side effect

@@ -1,4 +1,4 @@
-defmodule HoloTest do
+defmodule Holography do
   @moduledoc """
   Test framework for the Hologram web framework.
 
@@ -8,7 +8,7 @@ defmodule HoloTest do
 
   defmodule Session do
     @moduledoc """
-    Represents a test session — the state of a page after a `HoloTest.visit/2`.
+    Represents a test session — the state of a page after a `Holography.visit/2`.
     """
 
     alias Hologram.Component
@@ -28,11 +28,11 @@ defmodule HoloTest do
   alias Hologram.Component
   alias Hologram.Page
   alias Hologram.Server
-  alias HoloTest.DOM
-  alias HoloTest.Session
+  alias Holography.DOM
+  alias Holography.Session
 
   @doc """
-  Visits a Hologram page module and returns a `HoloTest.Session` containing
+  Visits a Hologram page module and returns a `Holography.Session` containing
   the initialized page struct and the expanded, layout-wrapped DOM.
   """
   @spec visit(Page.t(), %{atom() => any()}) :: Session.t()
@@ -187,13 +187,13 @@ defmodule HoloTest do
 
   Without `:at`, the assertion passes when at least one match exists.
   """
-  defdelegate assert_has(session, text_or_opts, opts \\ []), to: HoloTest.Assertions
+  defdelegate assert_has(session, text_or_opts, opts \\ []), to: Holography.Assertions
 
   @doc """
   The opposite of `assert_has` — asserts that the session's DOM does *not*
   contain a matching node. Accepts the same arguments.
   """
-  defdelegate refute_has(session, text_or_opts, opts \\ []), to: HoloTest.Assertions
+  defdelegate refute_has(session, text_or_opts, opts \\ []), to: Holography.Assertions
 
   @doc """
   Opens the current page HTML in the default browser. Useful for
@@ -215,7 +215,7 @@ defmodule HoloTest do
     path =
       Path.join(
         System.tmp_dir!(),
-        "holo_test_#{System.unique_integer([:positive])}.html"
+        "holography_#{System.unique_integer([:positive])}.html"
       )
 
     File.write!(path, html)
