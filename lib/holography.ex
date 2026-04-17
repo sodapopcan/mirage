@@ -338,6 +338,12 @@ defmodule Holography do
     dispatch_event(session, form_change, %{value: value})
   end
 
+  # Text syntax action, e.g. `$click="my_action"`.
+  defp dispatch_event(%Session{} = session, [{:text, name}], extra)
+       when is_binary(name) do
+    run_action(session, String.to_existing_atom(name), extra)
+  end
+
   # Bare atom action, e.g. `$click={:submit}`.
   defp dispatch_event(%Session{} = session, [{:expression, {name}}], extra)
        when is_atom(name) do

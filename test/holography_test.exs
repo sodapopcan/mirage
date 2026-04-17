@@ -5,6 +5,8 @@ defmodule HolographyTest do
   alias Hologram.Server
   alias Hologram.Component
 
+  import ExUnit.CaptureIO
+
   doctest Holography
 
   describe "click/3" do
@@ -139,6 +141,14 @@ defmodule HolographyTest do
       # The `:write_file` action emitted a `:write_file` command, which ran
       # server-side and wrote the payload to disk.
       assert File.read!(tmp_path) == "written by command"
+    end
+
+    test "clicks a command with no params" do
+      assert capture_io(fn ->
+        Holography.ClickCommandPage
+        |> Holography.visit()
+        |> Holography.click("No params")
+      end) == "No params!\n"
     end
   end
 

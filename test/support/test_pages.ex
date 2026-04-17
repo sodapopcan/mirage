@@ -280,6 +280,24 @@ defmodule Holography.FillInCommentPage do
   end
 end
 
+defmodule Holography.ClickCommandPage do
+  use Hologram.Page
+
+  route "/command-page"
+  layout Holography.TestLayout
+
+  def template do
+    ~HOLO"""
+    <button $click={command: :no_params}>No params</button>
+    """
+  end
+
+  def command(:no_params, _params, server) do
+    IO.puts("No params!")
+    server
+  end
+end
+
 defmodule Holography.FillInLabelTextPage do
   @moduledoc """
   Single labelled input where the label text is longer than any single
