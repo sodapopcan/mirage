@@ -90,10 +90,6 @@ defmodule Holography do
   ## Options
   - `:exact` Set to `false` to match on a substring of an element.
     Default is `true` meaning you must provide an exact match.
-  - `:tid` The `data-testid` of the target element.
-  - `:role` The `role` attribute of the target element.
-  - `:placeholder` The `placeholder` attribute of the target element.
-  - `:alt` The `alt` text of an image element.
 
   """
   @spec click(Session.t(), String.t(), keyword()) :: Session.t()
@@ -121,8 +117,13 @@ defmodule Holography do
   defp find_clickables([{:element, _tag, attrs, children} = node | rest], text, exact?, acc) do
     acc = find_clickables(children, text, exact?, acc)
 
+    matches? =
+      node
+      |> DOM.inner_text()
+      |> text_matches?(text, exact?)
+
     acc =
-      if has_click_attr?(attrs) and text_matches?(DOM.inner_text(node), text, exact?) do
+      if has_click_attr?(attrs) and matches? do
         [node | acc]
       else
         acc
@@ -142,8 +143,13 @@ defmodule Holography do
     end)
   end
 
-  defp text_matches?(actual, expected, true), do: String.trim(actual) == expected
-  defp text_matches?(actual, expected, false), do: String.contains?(actual, expected)
+  defp text_matches?(actual, expected, exact?) do
+    if exact? do
+      String.trim(actual) == expected
+    else
+      String.contains?(actual, expected)
+    end
+  end
 
   defp handle_click(session, {:element, _tag, attrs, _children}) do
     # Hologram.UI.Link expands `$click={:__load_prefetched_page__, to: @to}` —
@@ -227,17 +233,13 @@ defmodule Holography do
   defdelegate refute_has(session, text_or_opts, opts \\ []), to: Holography.Assertions
 
   @doc """
-  Opens the current page HTML in the default browser. Useful for
-  debugging tests — insert it anywhere in a pipeline and it returns
-  the session unchanged.
+  Opens the current page HTML in the default browser.
 
       session
       |> fill_in("Name", with: "Alice")
       |> open_browser()
       |> assert_has("Alice")
 
-  Accepts an optional function for opening the file (defaults to the
-  system browser).
   """
   @spec open_browser(Session.t(), (String.t() -> any())) :: Session.t()
   defdelegate open_browser(session), to: Holography.Browser
@@ -365,7 +367,9 @@ defmodule Holography do
     re_render(%{session | page: new_component, server: new_server})
   end
 
-  defp re_render(%Session{page: page, server: server, page_module: page_module, params: params} = session) do
+  defp re_render(
+         %Session{page: page, server: server, page_module: page_module, params: params} = session
+       ) do
     vars = Map.merge(params, page.state)
     page_dom = page_module.template().(vars)
 
