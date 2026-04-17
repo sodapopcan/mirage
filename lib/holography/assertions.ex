@@ -1,9 +1,19 @@
 defmodule Holography.Assertions do
   @moduledoc false
 
+  require ExUnit.Case
+
   alias Holography.DOM
   alias Holography.Query
   alias Holography.Session
+
+  def assert_page(session, page_module) do
+    if session.page_module != page_module do
+      raise "Expected #{session.page_module} to be #{page_module}"
+    end
+
+    session
+  end
 
   def assert_has(session, selector, text_or_opts \\ [])
 

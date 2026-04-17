@@ -83,9 +83,11 @@ defmodule Holography.AssertionsTest do
     test "raises when an element matches" do
       session = Holography.visit(Holography.ClickPage)
 
-      assert_raise RuntimeError, ~r/Expected not to find an element matching "button".*found 1/, fn ->
-        Holography.refute_has(session, "button")
-      end
+      assert_raise RuntimeError,
+                   ~r/Expected not to find an element matching "button".*found 1/,
+                   fn ->
+                     Holography.refute_has(session, "button")
+                   end
     end
   end
 
@@ -124,6 +126,23 @@ defmodule Holography.AssertionsTest do
       Holography.visit(Holography.AssertHasTextPage)
       |> Holography.assert_has("h1", text: "I'm a header")
       |> Holography.refute_has("h2")
+    end
+  end
+
+  describe "assert_page" do
+    test "asserts that we are on a specific page" do
+      Holography.HomePage
+      |> Holography.visit()
+      |> Holography.click("link to other page")
+      |> Holography.assert_page(Holography.AnotherPage)
+    end
+
+    test "raises if we are not on the given page" do
+      assert_raise RuntimeError, fn ->
+        Holography.HomePage
+        |> Holography.visit()
+        |> Holography.assert_page(Holography.NotThisPage)
+      end
     end
   end
 end

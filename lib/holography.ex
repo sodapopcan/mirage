@@ -240,6 +240,13 @@ defmodule Holography do
   defdelegate refute_has(session, selector, text, opts), to: Holography.Assertions
 
   @doc """
+  Asserts that we are on a specific page.  Useful after redirect.
+  """
+  @doc group: "Assertions"
+  @spec assert_page(Session.t(), module()) :: Session.t() | no_return()
+  defdelegate assert_page(session, page), to: Holography.Assertions
+
+  @doc """
   Opens the current page HTML in the default browser.
 
       session
