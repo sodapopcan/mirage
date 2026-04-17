@@ -174,40 +174,41 @@ defmodule HoloTest do
   @doc """
   Asserts that the session's DOM contains a matching node.
 
-  Exactly one of `:text` or `:value` must be given:
+  Text is passed as the second argument; for value matching pass
+  `value:` as an option instead:
 
-    * `:text` — matches any element whose inner text (tags stripped, whitespace
-      trimmed) equals the given string.
-    * `:value` — matches any `<input>`, `<textarea>`, or `<select>` whose
-      `value` attribute equals the given string.
+      session |> assert_has("Hello")
+      session |> assert_has("Item 1", at: 1)
+      session |> assert_has(value: "alice", at: 1)
 
   Pass `:at` (1-based) to select the nth element in document order and assert
   that it has the expected text or value. This verifies ordering — e.g.
-  `assert_has(text: "A", at: 1) |> assert_has(text: "B", at: 2)` proves
-  "A" appears before "B" in the DOM.
+  `assert_has("A", at: 1) |> assert_has("B", at: 2)` proves "A" appears
+  before "B" in the DOM.
 
   Without `:at`, the assertion passes when at least one match exists.
   """
-  @spec assert_has(Session.t(), keyword()) :: Session.t()
-  def assert_has(%Session{} = session, opts) do
-    text = Keyword.get(opts, :text)
+  @spec assert_has(Session.t(), String.t() | keyword(), keyword()) :: Session.t()
+  def assert_has(session, text_or_opts, opts \\ [])
+
+  def assert_has(%Session{} = session, text, opts) when is_binary(text) do
+    if Keyword.has_key?(opts, :value) do
+      raise ArgumentError, "assert_has/3 accepts text or :value, not both"
+    end
+
+    assert_text(session.ast, text, Keyword.get(opts, :at))
+    session
+  end
+
+  def assert_has(%Session{} = session, opts, []) when is_list(opts) do
     value = Keyword.get(opts, :value)
     at = Keyword.get(opts, :at)
 
-    case {text, value} do
-      {nil, nil} ->
-        raise ArgumentError, "assert_has/2 requires either :text or :value"
-
-      {_, nil} ->
-        assert_text(session.ast, text, at)
-
-      {nil, _} ->
-        assert_value(session.ast, value, at)
-
-      {_, _} ->
-        raise ArgumentError, "assert_has/2 accepts :text or :value, not both"
+    if is_nil(value) do
+      raise ArgumentError, "assert_has/2 requires text or :value"
     end
 
+    assert_value(session.ast, value, at)
     session
   end
 

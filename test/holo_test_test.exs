@@ -268,25 +268,25 @@ defmodule HoloTestTest do
     end
   end
 
-  describe "assert_has/2 — :text" do
+  describe "assert_has — text" do
     test "passes when an element's inner text matches" do
       session = HoloTest.visit(HoloTest.AssertHasTextPage)
-      assert %Session{} = HoloTest.assert_has(session, text: "Item 1")
+      assert %Session{} = HoloTest.assert_has(session, "Item 1")
     end
 
     test "raises when no element's inner text matches" do
       session = HoloTest.visit(HoloTest.AssertHasTextPage)
 
       assert_raise RuntimeError, ~r/No element found with text: "Missing"/, fn ->
-        HoloTest.assert_has(session, text: "Missing")
+        HoloTest.assert_has(session, "Missing")
       end
     end
 
     test ":at verifies ordering — items in correct positions pass" do
       HoloTest.visit(HoloTest.AssertHasTextPage)
-      |> HoloTest.assert_has(text: "Item 1", at: 1)
-      |> HoloTest.assert_has(text: "Item 2", at: 2)
-      |> HoloTest.assert_has(text: "Item 3", at: 3)
+      |> HoloTest.assert_has("Item 1", at: 1)
+      |> HoloTest.assert_has("Item 2", at: 2)
+      |> HoloTest.assert_has("Item 3", at: 3)
     end
 
     test ":at raises when the element at that position has different text" do
@@ -295,7 +295,7 @@ defmodule HoloTestTest do
       assert_raise RuntimeError,
                    ~r/Expected element at position 1 to have text "Item 2" but found "Item 1"/,
                    fn ->
-                     HoloTest.assert_has(session, text: "Item 2", at: 1)
+                     HoloTest.assert_has(session, "Item 2", at: 1)
                    end
     end
 
@@ -303,12 +303,12 @@ defmodule HoloTestTest do
       session = HoloTest.visit(HoloTest.AssertHasTextPage)
 
       assert_raise RuntimeError, ~r/Expected element at position 99 but only found/, fn ->
-        HoloTest.assert_has(session, text: "Item 1", at: 99)
+        HoloTest.assert_has(session, "Item 1", at: 99)
       end
     end
   end
 
-  describe "assert_has/2 — :value" do
+  describe "assert_has — :value" do
     test "passes when an input's value attribute matches" do
       session = HoloTest.visit(HoloTest.AssertHasValuePage)
       assert %Session{} = HoloTest.assert_has(session, value: "alice")
@@ -348,19 +348,19 @@ defmodule HoloTestTest do
     end
   end
 
-  describe "assert_has/2 — validation" do
-    test "raises when both :text and :value are given" do
+  describe "assert_has — validation" do
+    test "raises when text and :value are both given" do
       session = HoloTest.visit(HoloTest.AssertHasTextPage)
 
-      assert_raise ArgumentError, ~r/accepts :text or :value, not both/, fn ->
-        HoloTest.assert_has(session, text: "Item 1", value: "x")
+      assert_raise ArgumentError, ~r/accepts text or :value, not both/, fn ->
+        HoloTest.assert_has(session, "Item 1", value: "x")
       end
     end
 
-    test "raises when neither :text nor :value is given" do
+    test "raises when neither text nor :value is given" do
       session = HoloTest.visit(HoloTest.AssertHasTextPage)
 
-      assert_raise ArgumentError, ~r/requires either :text or :value/, fn ->
+      assert_raise ArgumentError, ~r/requires text or :value/, fn ->
         HoloTest.assert_has(session, [])
       end
     end
