@@ -171,6 +171,118 @@ defmodule HoloTest do
     end
   end
 
+  @doc """
+  Asserts that the session's DOM contains a matching node.
+
+  Exactly one of `:text` or `:value` must be given:
+
+    * `:text` — matches any element whose inner text (tags stripped, whitespace
+      trimmed) equals the given string.
+    * `:value` — matches any `<input>`, `<textarea>`, or `<select>` whose
+      `value` attribute equals the given string.
+
+  Pass `:at` (1-based) to select the nth element in document order and assert
+  that it has the expected text or value. This verifies ordering — e.g.
+  `assert_has(text: "A", at: 1) |> assert_has(text: "B", at: 2)` proves
+  "A" appears before "B" in the DOM.
+
+  Without `:at`, the assertion passes when at least one match exists.
+  """
+  @spec assert_has(Session.t(), keyword()) :: Session.t()
+  def assert_has(%Session{} = session, opts) do
+    text = Keyword.get(opts, :text)
+    value = Keyword.get(opts, :value)
+    at = Keyword.get(opts, :at)
+
+    case {text, value} do
+      {nil, nil} ->
+        raise ArgumentError, "assert_has/2 requires either :text or :value"
+
+      {_, nil} ->
+        assert_text(session.ast, text, at)
+
+      {nil, _} ->
+        assert_value(session.ast, value, at)
+
+      {_, _} ->
+        raise ArgumentError, "assert_has/2 accepts :text or :value, not both"
+    end
+
+    session
+  end
+
+  defp assert_text(ast, text, nil) do
+    if collect_elements(ast) |> Enum.all?(&(String.trim(inner_text(&1)) != text)) do
+      raise "No element found with text: #{inspect(text)}"
+    end
+  end
+
+  defp assert_text(ast, text, at) when is_integer(at) do
+    elements = collect_elements(ast)
+    count = length(elements)
+
+    if at < 1 or at > count do
+      raise "Expected element at position #{at} but only found #{count} elements"
+    end
+
+    element = Enum.at(elements, at - 1)
+    actual = String.trim(inner_text(element))
+
+    if actual != text do
+      raise "Expected element at position #{at} to have text #{inspect(text)} but found #{inspect(actual)}"
+    end
+  end
+
+  defp assert_value(ast, value, nil) do
+    if collect_inputs(ast) |> Enum.all?(&(input_value(&1) != value)) do
+      raise "No element found with value: #{inspect(value)}"
+    end
+  end
+
+  defp assert_value(ast, value, at) when is_integer(at) do
+    inputs = collect_inputs(ast)
+    count = length(inputs)
+
+    if at < 1 or at > count do
+      raise "Expected input at position #{at} but only found #{count} inputs"
+    end
+
+    actual = input_value(Enum.at(inputs, at - 1))
+
+    if actual != value do
+      raise "Expected input at position #{at} to have value #{inspect(value)} but found #{inspect(actual)}"
+    end
+  end
+
+  defp input_value({:element, _tag, attrs, _children}) do
+    attr_to_string(find_attr(attrs, "value"))
+  end
+
+  defp collect_elements(nodes) when is_list(nodes) do
+    Enum.flat_map(nodes, &collect_elements/1)
+  end
+
+  defp collect_elements({:element, _tag, _attrs, children} = node) do
+    [node | collect_elements(children)]
+  end
+
+  defp collect_elements(_other), do: []
+
+  defp collect_inputs(nodes) when is_list(nodes) do
+    Enum.flat_map(nodes, &collect_inputs/1)
+  end
+
+  defp collect_inputs({:element, tag, _attrs, children} = node)
+       when tag in ["input", "textarea", "select"] do
+    [node | collect_inputs(children)]
+  end
+
+  defp collect_inputs({:element, _tag, _attrs, children}) do
+    collect_inputs(children)
+  end
+
+  defp collect_inputs(_other), do: []
+
   # Walks the AST once, tracking the nearest enclosing `<form>`'s `$change`
   # attribute. Returns `{labels, inputs_by_id}` where:
   #   * labels = [{label_node, wrapped_input_or_nil, form_change_or_nil}, ...]

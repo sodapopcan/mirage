@@ -390,6 +390,40 @@ defmodule HoloTest.FillInOrphanLabelPage do
   end
 end
 
+defmodule HoloTest.AssertHasTextPage do
+  @moduledoc false
+  use Hologram.Page
+
+  route "/assert-has-text"
+  layout HoloTest.TestLayout
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <div>Item 1</div>
+    <div>Item 2</div>
+    <div>Item 3</div>
+    """
+  end
+end
+
+defmodule HoloTest.AssertHasValuePage do
+  @moduledoc false
+  use Hologram.Page
+
+  route "/assert-has-value"
+  layout HoloTest.TestLayout
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <input value="alice" />
+    <input value="bob" />
+    <input value="carol" />
+    """
+  end
+end
+
 defmodule HoloTest.CommandPage do
   @moduledoc false
   use Hologram.Page
