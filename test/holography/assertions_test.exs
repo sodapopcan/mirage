@@ -2,6 +2,7 @@ defmodule Holography.AssertionsTest do
   use ExUnit.Case, async: true
 
   alias Holography.Session
+  alias ExUnit.AssertionError
 
   describe "assert_has — selector only" do
     test "passes when exactly one element matches" do
@@ -12,17 +13,21 @@ defmodule Holography.AssertionsTest do
     test "raises when no element matches" do
       session = Holography.visit(Holography.ClickPage)
 
-      assert_raise RuntimeError, ~r/Expected to find an element matching "nav".*found none/, fn ->
-        Holography.assert_has(session, "nav")
-      end
+      assert_raise AssertionError,
+                   ~r/Expected to find exactly 1 element matching "nav".*found 0/,
+                   fn ->
+                     Holography.assert_has(session, "nav")
+                   end
     end
 
     test "raises when more than one element matches" do
       session = Holography.visit(Holography.AssertHasValuePage)
 
-      assert_raise RuntimeError, ~r/Expected to find 1 element matching "input".*found 3/, fn ->
-        Holography.assert_has(session, "input")
-      end
+      assert_raise AssertionError,
+                   ~r/Expected to find exactly 1 element matching "input".*found 3/,
+                   fn ->
+                     Holography.assert_has(session, "input")
+                   end
     end
   end
 
@@ -35,7 +40,7 @@ defmodule Holography.AssertionsTest do
     test "raises when no element has the given text" do
       session = Holography.visit(Holography.AssertHasTextPage)
 
-      assert_raise RuntimeError, ~r/found none/, fn ->
+      assert_raise AssertionError, ~r/found 0/, fn ->
         Holography.assert_has(session, "li", text: "Missing")
       end
     end
@@ -43,7 +48,7 @@ defmodule Holography.AssertionsTest do
     test "raises when multiple elements have the given text" do
       session = Holography.visit(Holography.ClickAmbiguousPage)
 
-      assert_raise RuntimeError, ~r/found 2/, fn ->
+      assert_raise AssertionError, ~r/found 2/, fn ->
         Holography.assert_has(session, "*", text: "Save")
       end
     end
@@ -58,7 +63,7 @@ defmodule Holography.AssertionsTest do
     test "raises when no element has the given value" do
       session = Holography.visit(Holography.AssertHasValuePage)
 
-      assert_raise RuntimeError, ~r/found none/, fn ->
+      assert_raise AssertionError, ~r/found 0/, fn ->
         Holography.assert_has(session, "input", value: "missing")
       end
     end
@@ -68,7 +73,7 @@ defmodule Holography.AssertionsTest do
     test "can filter by both text and value" do
       session = Holography.visit(Holography.AssertHasValuePage)
       # inputs are void elements with no inner text — the combination narrows to zero
-      assert_raise RuntimeError, ~r/found none/, fn ->
+      assert_raise AssertionError, ~r/found 0/, fn ->
         Holography.assert_has(session, "input", text: "alice", value: "alice")
       end
     end
@@ -83,7 +88,7 @@ defmodule Holography.AssertionsTest do
     test "raises when an element matches" do
       session = Holography.visit(Holography.ClickPage)
 
-      assert_raise RuntimeError,
+      assert_raise AssertionError,
                    ~r/Expected not to find an element matching "button".*found 1/,
                    fn ->
                      Holography.refute_has(session, "button")
@@ -100,7 +105,7 @@ defmodule Holography.AssertionsTest do
     test "raises when an element has the given text" do
       session = Holography.visit(Holography.AssertHasTextPage)
 
-      assert_raise RuntimeError, ~r/Expected not to find/, fn ->
+      assert_raise AssertionError, ~r/Expected not to find/, fn ->
         Holography.refute_has(session, "li", text: "Item 1")
       end
     end
@@ -115,7 +120,7 @@ defmodule Holography.AssertionsTest do
     test "raises when an element has the given value" do
       session = Holography.visit(Holography.AssertHasValuePage)
 
-      assert_raise RuntimeError, ~r/Expected not to find/, fn ->
+      assert_raise AssertionError, ~r/Expected not to find/, fn ->
         Holography.refute_has(session, "input", value: "alice")
       end
     end
@@ -138,11 +143,13 @@ defmodule Holography.AssertionsTest do
     end
 
     test "raises if we are not on the given page" do
-      assert_raise RuntimeError, fn ->
-        Holography.HomePage
-        |> Holography.visit()
-        |> Holography.assert_page(Holography.NotThisPage)
-      end
+      assert_raise AssertionError,
+                   ~r/Expected current page to be Holography.NotThisPage but was Holography.HomePage/,
+                   fn ->
+                     Holography.HomePage
+                     |> Holography.visit()
+                     |> Holography.assert_page(Holography.NotThisPage)
+                   end
     end
   end
 end

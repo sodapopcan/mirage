@@ -1,62 +1,67 @@
 defmodule Holography.Assertions do
   @moduledoc false
 
-  require ExUnit.Case
+  import ExUnit.Assertions
 
   alias Holography.DOM
   alias Holography.Query
   alias Holography.Session
 
   def assert_page(session, page_module) do
-    if session.page_module != page_module do
-      raise "Expected #{session.page_module} to be #{page_module}"
+    remove_prefix = fn mod ->
+      mod
+      |> to_string()
+      |> String.replace(~r/^Elixir\./, "")
     end
+
+    current_module = remove_prefix.(session.page_module)
+    expected_module = remove_prefix.(page_module)
+
+    assert session.page_module == page_module,
+           "Expected current page to be #{expected_module} but was #{current_module}"
 
     session
   end
 
   def assert_has(session, selector, text_or_opts \\ [])
 
-  def assert_has(session, selector, text) when is_binary(text),
-    do: assert_has(session, selector, text: text)
-
-  def assert_has(%Session{} = session, selector, opts) when is_binary(selector) and is_list(opts) do
-    matches = find_matches(session.ast, selector, opts)
-
-    case matches do
-      [] ->
-        raise "Expected to find an element matching #{describe(selector, opts)}, but found none"
-
-      [_node] ->
-        session
-
-      nodes ->
-        raise "Expected to find 1 element matching #{describe(selector, opts)}, but found #{length(nodes)}"
-    end
+  def assert_has(session, selector, text) when is_binary(text) do
+    assert_has(session, selector, text: text)
   end
 
-  def assert_has(session, selector, text, opts) when is_binary(text) and is_list(opts),
-    do: assert_has(session, selector, Keyword.put(opts, :text, text))
+  def assert_has(%Session{} = session, selector, opts)
+      when is_binary(selector) and is_list(opts) do
+    matches = find_matches(session.ast, selector, opts)
+
+    assert match?([_], matches),
+           "Expected to find exactly 1 element matching #{describe(selector, opts)}, but found #{length(matches)}"
+
+    session
+  end
+
+  def assert_has(session, selector, text, opts) when is_binary(text) and is_list(opts) do
+    assert_has(session, selector, Keyword.put(opts, :text, text))
+  end
 
   def refute_has(session, selector, text_or_opts \\ [])
 
-  def refute_has(session, selector, text) when is_binary(text),
-    do: refute_has(session, selector, text: text)
-
-  def refute_has(%Session{} = session, selector, opts) when is_binary(selector) and is_list(opts) do
-    matches = find_matches(session.ast, selector, opts)
-
-    case matches do
-      [] ->
-        session
-
-      nodes ->
-        raise "Expected not to find an element matching #{describe(selector, opts)}, but found #{length(nodes)}"
-    end
+  def refute_has(session, selector, text) when is_binary(text) do
+    refute_has(session, selector, text: text)
   end
 
-  def refute_has(session, selector, text, opts) when is_binary(text) and is_list(opts),
-    do: refute_has(session, selector, Keyword.put(opts, :text, text))
+  def refute_has(%Session{} = session, selector, opts)
+      when is_binary(selector) and is_list(opts) do
+    matches = find_matches(session.ast, selector, opts)
+
+    assert match?([], matches),
+           "Expected not to find an element matching #{describe(selector, opts)}, found #{length(matches)}"
+
+    session
+  end
+
+  def refute_has(session, selector, text, opts) when is_binary(text) and is_list(opts) do
+    refute_has(session, selector, Keyword.put(opts, :text, text))
+  end
 
   defp find_matches(ast, selector, opts) do
     text = Keyword.get(opts, :text)
