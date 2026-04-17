@@ -17,11 +17,11 @@ defmodule Holography.DOM do
     |> List.flatten()
   end
 
-  def expand({:component, module, props_dom, children_dom}, env, server) do
-    expanded_children = expand_slots(children_dom, env.slots)
+  def expand({:component, module, props, children}, env, server) do
+    expanded_children = expand_slots(children, env.slots)
 
     props =
-      props_dom
+      props
       |> cast_props(module)
       |> inject_props_from_context(module, env.context)
       |> inject_default_prop_values(module)
@@ -86,14 +86,14 @@ defmodule Holography.DOM do
     end
   end
 
-  defp cast_props(props_dom, module) do
+  defp cast_props(props, module) do
     allowed =
       [
         "cid"
         | for({name, _, opts} <- module.__props__(), !opts[:from_context], do: to_string(name))
       ]
 
-    props_dom
+    props
     |> Enum.filter(fn {name, _} -> name in allowed end)
     |> Enum.map(&evaluate_prop_value/1)
     |> Enum.map(fn {name, value} -> {String.to_existing_atom(name), value} end)
@@ -135,8 +135,8 @@ defmodule Holography.DOM do
     nodes |> Enum.map(&expand_slots(&1, slots)) |> List.flatten()
   end
 
-  defp expand_slots({:component, module, props_dom, children_dom}, slots) do
-    {:component, module, props_dom, expand_slots(children_dom, slots)}
+  defp expand_slots({:component, module, props, children}, slots) do
+    {:component, module, props, expand_slots(children, slots)}
   end
 
   defp expand_slots({:element, "slot", _, []}, slots), do: slots[:default]
