@@ -12,11 +12,13 @@ defmodule HoloTest do
     """
 
     alias Hologram.Component
+    alias Hologram.Server
 
-    defstruct [:page, :ast, :page_module]
+    defstruct [:page, :server, :ast, :page_module]
 
     @type t :: %__MODULE__{
             page: Component.t(),
+            server: Server.t(),
             ast: any(),
             page_module: module()
           }
@@ -49,7 +51,7 @@ defmodule HoloTest do
     env = %{context: page.emitted_context, slots: []}
     ast = DOM.expand(root, env, server)
 
-    %Session{page: page, ast: ast, page_module: page_module}
+    %Session{page: page, server: server, ast: ast, page_module: page_module}
   end
 
   @doc """
@@ -290,12 +292,16 @@ defmodule HoloTest do
 
   defp attr_to_string(_other), do: ""
 
-  defp run_action(%Session{page: component, page_module: page_module} = session, name, params) do
+  defp run_action(
+         %Session{page: component, page_module: page_module, server: server} = session,
+         name,
+         params
+       ) do
     {new_component, new_server} =
       case page_module.action(name, params, component) do
-        {%Component{} = c, %Server{} = s} -> {c, s}
-        %Component{} = c -> {c, %Server{}}
-        %Server{} = s -> {component, s}
+        {%Component{} = component, %Server{} = server} -> {component, server}
+        %Component{} = component -> {component, server}
+        %Server{} = server -> {component, server}
       end
 
     # If the action emitted a command, run it server-side.

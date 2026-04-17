@@ -2,13 +2,24 @@ defmodule HoloTestTest do
   use ExUnit.Case, async: true
 
   alias HoloTest.Session
+  alias Hologram.Server
+  alias Hologram.Component
 
   doctest HoloTest
 
   describe "click/3" do
     test "returns the session when a clickable element's text matches exactly" do
-      session = HoloTest.visit(HoloTest.ClickPage)
-      assert %Session{} = HoloTest.click(session, "Save changes now")
+      session =
+        HoloTest.ClickPage
+        |> HoloTest.visit()
+        |> HoloTest.click("Save changes now")
+
+      assert %Session{
+        page_module: HoloTest.ClickPage,
+        page: %Component{},
+        server: %Server{},
+        ast: [_]
+      } = session
     end
 
     test "trims surrounding whitespace when matching exactly" do
