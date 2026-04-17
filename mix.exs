@@ -9,7 +9,15 @@ defmodule Holography.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      aliases: aliases()
+      aliases: aliases(),
+
+      # Docs
+      name: "Holography",
+      source_url: "https://github.com/sodapopcan/holography",
+      docs: [
+        main: "readme",
+        extras: ["README.md"]
+      ]
     ]
   end
 
@@ -49,7 +57,8 @@ defmodule Holography.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:hologram, "~> 0.8"}
+      {:hologram, "~> 0.8"},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true}
     ]
   end
 end

@@ -8,7 +8,7 @@ defmodule Holography do
 
   defmodule Session do
     @moduledoc """
-    Represents a test session — the state of a page after a `Holography.visit/2`.
+    State container for a test.
     """
 
     alias Hologram.Component
@@ -26,7 +26,6 @@ defmodule Holography do
   end
 
   alias Hologram.Component
-  alias Hologram.Page
   alias Hologram.Server
   alias Holography.DOM
   alias Holography.Session
@@ -35,7 +34,7 @@ defmodule Holography do
   Visits a Hologram page module and returns a `Holography.Session` containing
   the initialized page struct and the expanded, layout-wrapped DOM.
   """
-  @spec visit(Page.t(), %{atom() => any()}) :: Session.t()
+  @spec visit(module(), %{atom() => any()}) :: Session.t()
   def visit(page_module, params \\ %{}) do
     {page, server} = DOM.init_component(page_module, params, %Server{})
 
@@ -56,16 +55,46 @@ defmodule Holography do
   end
 
   @doc """
-  Finds and "clicks" an element that has a `$click` attribute and whose inner
-  text (with all descendant tags stripped) matches `text`.
+  Trigger an element's `$click` event.
 
-  If the click triggers a page navigation (`Hologram.UI.Link`), the session
-  is replaced with one for the linked page. If the click's action emits a
-  command, that command is executed server-side before returning.
+  Any actions or commands will be run.  If the click triggers a page navigation,
+  the new page will be loaded into the `Holography.Session`.
 
-  Matches exactly by default; pass `exact: false` to match substrings instead.
-  Raises if no matching clickable element is found, or if more than one
-  matches (ambiguous match).
+  An element is matched by either its inner text or a test id.
+
+  If the target element is a submit button, it will trigger the `$submit` event
+  of its form.
+
+  ## Examples
+
+  ```
+  HomePage
+  |> visit()
+  |> click("Sign up")
+  ```
+
+  ```
+  SignUpPage
+  |> visit()
+  |> fill_in("Name", with: "Bender")
+  |> fill_in("Password", with: "killallhumans")
+  |> click("Go")
+  ```
+
+  ```
+  GameBoard
+  |> visit()
+  |> click(tid(foobar))
+  ```
+
+  ## Options
+  - `:exact` Set to `false` to match on a substring of an element.
+    Default is `true` meaning you must provide an exact match.
+  - `:tid` The `data-testid` of the target element.
+  - `:role` The `role` attribute of the target element.
+  - `:placeholder` The `placeholder` attribute of the target element.
+  - `:alt` The `alt` text of an image element.
+
   """
   @spec click(Session.t(), String.t(), keyword()) :: Session.t()
   def click(session, text, opts \\ []) do
@@ -187,12 +216,14 @@ defmodule Holography do
 
   Without `:at`, the assertion passes when at least one match exists.
   """
+  @doc group: "Assertions"
   defdelegate assert_has(session, text_or_opts, opts \\ []), to: Holography.Assertions
 
   @doc """
   The opposite of `assert_has` — asserts that the session's DOM does *not*
   contain a matching node. Accepts the same arguments.
   """
+  @doc group: "Assertions"
   defdelegate refute_has(session, text_or_opts, opts \\ []), to: Holography.Assertions
 
   @doc """
