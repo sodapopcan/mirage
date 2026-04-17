@@ -222,7 +222,8 @@ defmodule Holography do
     * `:value` — also require the element's `value` attribute to equal this value
   """
   @doc group: "Assertions"
-  defdelegate assert_has(session, selector, opts \\ []), to: Holography.Assertions
+  defdelegate assert_has(session, selector, text_or_opts \\ []), to: Holography.Assertions
+  defdelegate assert_has(session, selector, text, opts), to: Holography.Assertions
 
   @doc """
   The opposite of `assert_has` — asserts that the session's DOM does *not*
@@ -232,7 +233,8 @@ defmodule Holography do
       session |> refute_has("p", text: "Deleted")
   """
   @doc group: "Assertions"
-  defdelegate refute_has(session, selector, opts \\ []), to: Holography.Assertions
+  defdelegate refute_has(session, selector, text_or_opts \\ []), to: Holography.Assertions
+  defdelegate refute_has(session, selector, text, opts), to: Holography.Assertions
 
   @doc """
   Opens the current page HTML in the default browser.
