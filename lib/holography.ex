@@ -48,7 +48,8 @@ defmodule Holography do
       |> Enum.map(fn {name, value} -> {to_string(name), [expression: {value}]} end)
 
     root = {:component, page_module.__layout_module__(), layout_props_dom, page_dom}
-    env = %{context: page.emitted_context, slots: []}
+    context = Map.merge(runtime_context(), page.emitted_context)
+    env = %{context: context, slots: []}
     ast = DOM.expand(root, env, server)
 
     %Session{page: page, server: server, ast: ast, page_module: page_module, params: params}
@@ -206,31 +207,32 @@ defmodule Holography do
   end
 
   @doc """
-  Asserts that the session's DOM contains a matching node.
+  Asserts that the session's DOM contains exactly one element matching the
+  given CSS selector (and optional filters).
 
-  Text is passed as the second argument; for value matching pass
-  `value:` as an option instead:
+  Raises if no element matches or if more than one element matches.
 
-      session |> assert_has("Hello")
-      session |> assert_has("Item 1", at: 1)
-      session |> assert_has(value: "alice", at: 1)
+      session |> assert_has("button")
+      session |> assert_has("h1", text: "Welcome")
+      session |> assert_has("input#email", value: "alice@example.com")
 
-  Pass `:at` (1-based) to select the nth element in document order and assert
-  that it has the expected text or value. This verifies ordering — e.g.
-  `assert_has("A", at: 1) |> assert_has("B", at: 2)` proves "A" appears
-  before "B" in the DOM.
+  ## Options
 
-  Without `:at`, the assertion passes when at least one match exists.
+    * `:text` — also require the element's inner text (trimmed) to equal this value
+    * `:value` — also require the element's `value` attribute to equal this value
   """
   @doc group: "Assertions"
-  defdelegate assert_has(session, text_or_opts, opts \\ []), to: Holography.Assertions
+  defdelegate assert_has(session, selector, opts \\ []), to: Holography.Assertions
 
   @doc """
   The opposite of `assert_has` — asserts that the session's DOM does *not*
-  contain a matching node. Accepts the same arguments.
+  contain any element matching the given CSS selector (and optional filters).
+
+      session |> refute_has(".error")
+      session |> refute_has("p", text: "Deleted")
   """
   @doc group: "Assertions"
-  defdelegate refute_has(session, text_or_opts, opts \\ []), to: Holography.Assertions
+  defdelegate refute_has(session, selector, opts \\ []), to: Holography.Assertions
 
   @doc """
   Opens the current page HTML in the default browser.
@@ -380,9 +382,19 @@ defmodule Holography do
       |> Enum.map(fn {name, value} -> {to_string(name), [expression: {value}]} end)
 
     root = {:component, page_module.__layout_module__(), layout_props_dom, page_dom}
-    env = %{context: page.emitted_context, slots: []}
+    context = Map.merge(runtime_context(), page.emitted_context)
+    env = %{context: context, slots: []}
     ast = DOM.expand(root, env, server)
 
     %{session | ast: ast}
+  end
+
+  defp runtime_context do
+    %{
+      {Hologram.Runtime, :initial_page?} => false,
+      {Hologram.Runtime, :page_mounted?} => true,
+      {Hologram.Runtime, :page_digest} => "test",
+      {Hologram.Runtime, :csrf_token} => "test"
+    }
   end
 end
