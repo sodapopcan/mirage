@@ -28,7 +28,18 @@ defmodule Mirage.DOM do
 
     {component_struct, server} =
       if has_cid?(props) do
-        init_component(module, props, server)
+        cid = props[:cid]
+        existing = Process.get(:mirage_components, %{})
+
+        case Map.fetch(existing, cid) do
+          {:ok, {^module, existing_component}} ->
+            {existing_component, server}
+
+          _ ->
+            {comp, srv} = init_component(module, props, server)
+            Process.put(:mirage_components, Map.put(existing, cid, {module, comp}))
+            {comp, srv}
+        end
       else
         {%Component{}, server}
       end

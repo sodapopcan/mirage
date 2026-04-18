@@ -20,7 +20,8 @@ defmodule Mirage do
       :scope,
       checked_radios: %{},
       checked_checkboxes: MapSet.new(),
-      selected_options: %{}
+      selected_options: %{},
+      components: %{}
     ]
 
     @type t :: %__MODULE__{
@@ -32,7 +33,8 @@ defmodule Mirage do
             scope: tuple() | nil,
             checked_radios: map(),
             checked_checkboxes: any(),
-            selected_options: map()
+            selected_options: map(),
+            components: map()
           }
   end
 
@@ -65,9 +67,19 @@ defmodule Mirage do
     root = {:component, page_module.__layout_module__(), layout_props_dom, page_dom}
     context = Map.merge(runtime_context(), page.emitted_context)
     env = %{context: context, slots: []}
-    ast = DOM.expand(root, env, server)
 
-    %Session{page: page, server: server, ast: ast, page_module: page_module, params: params}
+    Process.delete(:mirage_components)
+    ast = DOM.expand(root, env, server)
+    components = Process.delete(:mirage_components) || %{}
+
+    %Session{
+      page: page,
+      server: server,
+      ast: ast,
+      page_module: page_module,
+      params: params,
+      components: components
+    }
   end
 
   @doc """

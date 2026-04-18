@@ -1211,6 +1211,122 @@ defmodule Mirage.WithinFieldsetPage do
   end
 end
 
+# ---------------------------------------------------------------------------
+# target test pages
+# ---------------------------------------------------------------------------
+
+defmodule Mirage.KillCounter do
+  @moduledoc false
+  use Hologram.Component
+
+  prop :cid, :string
+
+  @impl Hologram.Component
+  def init(_props, component, server) do
+    {put_state(component, kills: 0), server}
+  end
+
+  def action(:increment_kills, _params, component) do
+    put_state(component, :kills, component.state.kills + 1)
+  end
+
+  def action(:add_kills, %{amount: amount}, component) do
+    put_state(component, :kills, component.state.kills + amount)
+  end
+
+  @impl Hologram.Component
+  def template do
+    ~HOLO"""
+    <div id={@cid}>
+      <span class="kills">{@kills}</span>
+    </div>
+    """
+  end
+end
+
+defmodule Mirage.TargetPage do
+  @moduledoc "Page with a stateful child component and buttons targeting it."
+  use Hologram.Page
+
+  route "/target"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, page_clicks: 0)
+  end
+
+  def action(:page_click, _params, component) do
+    put_state(component, :page_clicks, component.state.page_clicks + 1)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <Mirage.KillCounter cid="baba_yaga" />
+    <button $click={action: :increment_kills, target: "baba_yaga"}>Kill</button>
+    <button $click={action: :add_kills, target: "baba_yaga", params: %{amount: 5}}>Multi kill</button>
+    <button $click={:page_click}>Page click</button>
+    <span id="page-clicks">{@page_clicks}</span>
+    """
+  end
+end
+
+defmodule Mirage.TargetCommandPage do
+  @moduledoc "Page where a command targets a stateful component."
+  use Hologram.Page
+
+  route "/target-command"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, status: "idle")
+  end
+
+  def action(:set_status, %{status: status}, component) do
+    put_state(component, :status, status)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <Mirage.CommandCounter cid="worker" />
+    <button $click={command: :do_work, target: "worker"}>Work</button>
+    <span id="status">{@status}</span>
+    """
+  end
+end
+
+defmodule Mirage.CommandCounter do
+  @moduledoc false
+  use Hologram.Component
+
+  prop :cid, :string
+
+  @impl Hologram.Component
+  def init(_props, component, server) do
+    {put_state(component, work_count: 0), server}
+  end
+
+  def action(:set_work, %{count: count}, component) do
+    put_state(component, :work_count, count)
+  end
+
+  def command(:do_work, _params, server) do
+    put_action(server, :set_work, count: 42)
+  end
+
+  @impl Hologram.Component
+  def template do
+    ~HOLO"""
+    <div id={@cid}>
+      <span class="count">{@work_count}</span>
+    </div>
+    """
+  end
+end
+
 defmodule Mirage.IfBlockPage do
   @moduledoc false
   use Hologram.Page

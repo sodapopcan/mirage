@@ -114,19 +114,22 @@ defmodule Mirage.Events do
   end
 
   # Longhand action/command, e.g. `$click={action: :name}` or `$click={command: :name}`.
+  # Optionally includes `target: "cid"` to dispatch to a stateful component.
   def dispatch_event(%Session{} = session, [{:expression, {spec}}], extra)
       when is_list(spec) do
+    target = Keyword.get(spec, :target)
+
     cond do
       Keyword.has_key?(spec, :action) ->
         name = Keyword.fetch!(spec, :action)
         params = Keyword.get(spec, :params, %{})
-        run_action(session, name, Map.merge(Map.new(params), extra))
+        run_action(session, name, Map.merge(Map.new(params), extra), target)
 
       Keyword.has_key?(spec, :command) ->
         name = Keyword.fetch!(spec, :command)
         params = Keyword.get(spec, :params, %{})
         cmd = %Component.Command{name: name, params: Map.new(params)}
-        session = run_command(session, cmd)
+        session = run_command(session, cmd, target)
         re_render(session)
 
       true ->
@@ -280,10 +283,57 @@ defmodule Mirage.Events do
   # Private — action/command lifecycle
   # ---------------------------------------------------------------------------
 
+  defp run_action(session, name, params, target \\ nil)
+
+  defp run_action(%Session{components: components} = session, name, params, target)
+       when is_binary(target) do
+    case Map.fetch(components, target) do
+      {:ok, {module, component}} ->
+        {new_component, new_server} =
+          case module.action(name, params, component) do
+            {%Component{} = c, %Server{} = s} -> {c, s}
+            %Component{} = c -> {c, session.server}
+            %Server{} = s -> {component, s}
+          end
+
+        next_action = new_component.next_action
+        next_command = new_component.next_command
+
+        clean_component =
+          %{new_component | next_action: nil, next_command: nil, next_page: nil}
+
+        session = %{
+          session
+          | server: new_server,
+            components: Map.put(components, target, {module, clean_component})
+        }
+
+        session =
+          if cmd = next_command do
+            run_command(session, cmd, target)
+          else
+            session
+          end
+
+        session =
+          if action = next_action do
+            run_action(session, action.name, action.params, target)
+          else
+            session
+          end
+
+        re_render(session)
+
+      :error ->
+        raise "No component found with cid: #{inspect(target)}"
+    end
+  end
+
   defp run_action(
          %Session{page: component, page_module: page_module, server: server} = session,
          name,
-         params
+         params,
+         _target
        ) do
     {new_component, new_server} =
       case page_module.action(name, params, component) do
@@ -327,7 +377,36 @@ defmodule Mirage.Events do
     end
   end
 
-  defp run_command(%Session{page_module: page_module, server: server} = session, cmd) do
+  defp run_command(session, cmd, target \\ nil)
+
+  defp run_command(
+         %Session{components: components} = session,
+         cmd,
+         target
+       )
+       when is_binary(target) do
+    case Map.fetch(components, target) do
+      {:ok, {module, _component}} ->
+        new_server =
+          case module.command(cmd.name, cmd.params, session.server) do
+            %Server{} = s -> s
+            _ -> session.server
+          end
+
+        session = %{session | server: new_server}
+
+        if action = new_server.next_action do
+          run_action(session, action.name, action.params, target)
+        else
+          session
+        end
+
+      :error ->
+        raise "No component found with cid: #{inspect(target)}"
+    end
+  end
+
+  defp run_command(%Session{page_module: page_module, server: server} = session, cmd, _target) do
     new_server =
       case page_module.command(cmd.name, cmd.params, server) do
         %Server{} = s -> s
@@ -344,7 +423,13 @@ defmodule Mirage.Events do
   end
 
   defp re_render(
-         %Session{page: page, server: server, page_module: page_module, params: params} = session
+         %Session{
+           page: page,
+           server: server,
+           page_module: page_module,
+           params: params,
+           components: components
+         } = session
        ) do
     vars = Map.merge(params, page.state)
     page_dom = page_module.template().(vars)
@@ -358,9 +443,12 @@ defmodule Mirage.Events do
     root = {:component, page_module.__layout_module__(), layout_props_dom, page_dom}
     context = Map.merge(runtime_context(), page.emitted_context)
     env = %{context: context, slots: []}
-    ast = DOM.expand(root, env, server)
 
-    %{session | ast: ast}
+    Process.put(:mirage_components, components)
+    ast = DOM.expand(root, env, server)
+    updated_components = Process.delete(:mirage_components) || %{}
+
+    %{session | ast: ast, components: updated_components}
   end
 
   defp runtime_context do
