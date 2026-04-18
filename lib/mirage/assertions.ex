@@ -5,6 +5,7 @@ defmodule Mirage.Assertions do
 
   alias Mirage.DOM
   alias Mirage.Query
+  alias Mirage.Scoped
   alias Mirage.Session
 
   def assert_page(session, page_module) do
@@ -68,7 +69,7 @@ defmodule Mirage.Assertions do
     value = Keyword.get(opts, :value)
     exact? = Keyword.get(opts, :exact, true)
 
-    scoped_selector = scope_selector(scope, selector)
+    scoped_selector = Scoped.scope_selector(scope, selector)
     results = Query.query_all(ast, scoped_selector)
 
     results
@@ -97,9 +98,6 @@ defmodule Mirage.Assertions do
       DOM.attr_to_string(DOM.find_attr(attrs, "value")) == value
     end)
   end
-
-  defp scope_selector(nil, selector), do: selector
-  defp scope_selector(parent, selector), do: "#{parent} #{selector}"
 
   defp describe(selector, opts) do
     parts = [inspect(selector)]

@@ -28,7 +28,7 @@ defmodule Mirage do
 
   alias Mirage.DOM
   alias Mirage.Events
-  alias Mirage.Query
+  alias Mirage.Scoped
   alias Mirage.Session
 
   @doc """
@@ -71,14 +71,8 @@ defmodule Mirage do
       end)
 
   """
-  @spec within(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
-  def within(%Session{} = session, selector, fun) when is_binary(selector) and is_function(fun, 1) do
-    new_scope = scope_selector(session.scope, selector)
-    validate_scope!(session.ast, new_scope)
-    scoped = %{session | scope: new_scope}
-    result = fun.(scoped)
-    %{result | scope: session.scope}
-  end
+  @doc group: "Scoped"
+  defdelegate within(session, selector, fun), to: Scoped
 
   @doc """
   Scopes to the `<article>` whose first heading (h1–h6) matches `header`.
@@ -89,11 +83,8 @@ defmodule Mirage do
       end)
 
   """
-  @spec within_article(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
-  def within_article(%Session{} = session, header, fun)
-      when is_binary(header) and is_function(fun, 1) do
-    within_tag(session, "article", header, fun)
-  end
+  @doc group: "Scoped"
+  defdelegate within_article(session, header, fun), to: Scoped
 
   @doc """
   Scopes to the `<section>` whose first heading (h1–h6) matches `header`.
@@ -104,39 +95,8 @@ defmodule Mirage do
       end)
 
   """
-  @spec within_section(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
-  def within_section(%Session{} = session, header, fun)
-      when is_binary(header) and is_function(fun, 1) do
-    within_tag(session, "section", header, fun)
-  end
-
-  defp within_tag(session, tag, header, fun) do
-    ast = scoped_ast(session)
-    matches = Query.query_all(ast, tag)
-
-    match =
-      Enum.filter(matches, fn node ->
-        DOM.first_header_text(node) == header
-      end)
-
-    case match do
-      [{:element, _, _, _} = node] ->
-        prev_ast = session.ast
-        prev_scope = session.scope
-        scoped = %{session | ast: [node], scope: nil}
-        result = fun.(scoped)
-        %{result | ast: prev_ast, scope: prev_scope}
-
-      [] ->
-        raise "No <#{tag}> found with header #{inspect(header)}"
-
-      many ->
-        raise "Ambiguous match: found #{length(many)} <#{tag}> elements with header #{inspect(header)}"
-    end
-  end
-
-  defp scope_selector(nil, selector), do: selector
-  defp scope_selector(parent, selector), do: "#{parent} #{selector}"
+  @doc group: "Scoped"
+  defdelegate within_section(session, header, fun), to: Scoped
 
   @doc """
   Click on a button by its text.
@@ -237,7 +197,7 @@ defmodule Mirage do
     exact? = Keyword.get(opts, :exact, true)
     value = Keyword.fetch!(opts, :with)
 
-    ast = scoped_ast(session)
+    ast = Scoped.scoped_ast(session)
     {labels, inputs_by_id} = collect_form_nodes(ast, nil)
 
     matches =
@@ -407,17 +367,6 @@ defmodule Mirage do
 
   defp trigger_form_change(session, form_change, value) do
     Events.dispatch_event(session, form_change, %{value: value})
-  end
-
-  defp scoped_ast(%Session{ast: ast, scope: nil}), do: ast
-  defp scoped_ast(%Session{ast: ast, scope: scope}), do: [validate_scope!(ast, scope)]
-
-  defp validate_scope!(ast, scope) do
-    case Query.query_all(ast, scope) do
-      [node] -> node
-      [] -> raise "Scope selector #{inspect(scope)} matched no elements"
-      nodes -> raise "Scope selector #{inspect(scope)} matched #{length(nodes)} elements, expected 1"
-    end
   end
 
   defp runtime_context do

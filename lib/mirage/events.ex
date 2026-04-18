@@ -5,6 +5,7 @@ defmodule Mirage.Events do
   alias Hologram.Server
   alias Mirage.DOM
   alias Mirage.Query
+  alias Mirage.Scoped
   alias Mirage.Session
 
   # ---------------------------------------------------------------------------
@@ -107,7 +108,7 @@ defmodule Mirage.Events do
     text = Keyword.get(opts, :text)
     exact? = Keyword.get(opts, :exact, true)
 
-    scoped_selector = scope_selector(session.scope, selector)
+    scoped_selector = Scoped.scope_selector(session.scope, selector)
 
     matches =
       session.ast
@@ -143,9 +144,6 @@ defmodule Mirage.Events do
       value -> dispatch_event(session, value, %{})
     end
   end
-
-  defp scope_selector(nil, selector), do: selector
-  defp scope_selector(parent, selector), do: "#{parent} #{selector}"
 
   defp has_attr?(attrs, name) do
     Enum.any?(attrs, fn

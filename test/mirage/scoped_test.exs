@@ -1,4 +1,4 @@
-defmodule Mirage.WithinTest do
+defmodule Mirage.ScopingTest do
   use ExUnit.Case, async: true
 
   describe "within/3" do
