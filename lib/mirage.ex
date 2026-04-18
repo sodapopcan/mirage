@@ -307,6 +307,7 @@ defmodule Mirage do
 
       [entry] ->
         {input, form_change} = Input.resolve_input(entry, inputs_by_id, label)
+        Input.validate_interactive!(input, label)
 
         session
         |> Input.trigger_input_action(input, value)
