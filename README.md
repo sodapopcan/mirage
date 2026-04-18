@@ -23,6 +23,12 @@ Mirage tracks the state of the page under test, triggers actions, commands, and
 follows any navigation or redirects, as well as everyone's favourite debugging
 tool: `Mirage.open_browser/1`.
 
+## Note on AI use
+
+This library is currently super-alpha.  It was made with heavy LLM-assisted as
+it's something that has been blocking progress on another project of mine.
+I have not finished the full vetting process yet.
+
 ## Installation
 
 ```elixir
