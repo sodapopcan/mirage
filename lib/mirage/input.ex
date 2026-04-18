@@ -26,13 +26,13 @@ defmodule Mirage.Input do
         name =
           case DOM.find_attr(attrs, "name") do
             nil -> nil
-            v -> DOM.attr_to_string(v)
+            value -> DOM.attr_to_string(value)
           end
 
         value =
           case DOM.find_attr(attrs, "value") do
             nil -> ""
-            v -> DOM.attr_to_string(v)
+            value -> DOM.attr_to_string(value)
           end
 
         session
@@ -66,13 +66,13 @@ defmodule Mirage.Input do
         name =
           case DOM.find_attr(attrs, "name") do
             nil -> nil
-            v -> DOM.attr_to_string(v)
+            value -> DOM.attr_to_string(value)
           end
 
         value =
           case DOM.find_attr(attrs, "value") do
             nil -> "on"
-            v -> DOM.attr_to_string(v)
+            value -> DOM.attr_to_string(value)
           end
 
         session
@@ -106,13 +106,13 @@ defmodule Mirage.Input do
         name =
           case DOM.find_attr(attrs, "name") do
             nil -> nil
-            v -> DOM.attr_to_string(v)
+            name -> DOM.attr_to_string(name)
           end
 
         value =
           case DOM.find_attr(attrs, "value") do
             nil -> "on"
-            v -> DOM.attr_to_string(v)
+            value -> DOM.attr_to_string(value)
           end
 
         session
@@ -156,7 +156,7 @@ defmodule Mirage.Input do
             name =
               case DOM.find_attr(attrs, "name") do
                 nil -> nil
-                v -> DOM.attr_to_string(v)
+                value -> DOM.attr_to_string(value)
               end
 
             multiple? = DOM.find_attr(attrs, "multiple") != nil
@@ -228,7 +228,6 @@ defmodule Mirage.Input do
   # attribute. Returns `{labels, inputs_by_id}` where:
   #   * labels = [{label_node, wrapped_input_or_nil, form_change_or_nil}, ...]
   #   * inputs_by_id = %{"id" => {input_node, form_change_or_nil}}
-  @doc false
   def collect_form_nodes(nodes, form_change) when is_list(nodes) do
     Enum.reduce(nodes, {[], %{}}, fn node, {labels, inputs} ->
       {l, i} = collect_form_nodes(node, form_change)
@@ -236,19 +235,16 @@ defmodule Mirage.Input do
     end)
   end
 
-  @doc false
   def collect_form_nodes({:element, "form", attrs, children}, _form_change) do
     collect_form_nodes(children, DOM.find_attr(attrs, "$change"))
   end
 
-  @doc false
   def collect_form_nodes({:element, "label", _attrs, children} = node, form_change) do
     {nested_labels, nested_inputs} = collect_form_nodes(children, form_change)
     wrapped = find_nested_input(children)
     {[{node, wrapped, form_change} | nested_labels], nested_inputs}
   end
 
-  @doc false
   def collect_form_nodes({:element, tag, attrs, children} = node, form_change)
       when tag in ["input", "textarea", "select"] do
     {nested_labels, nested_inputs} = collect_form_nodes(children, form_change)
@@ -262,20 +258,27 @@ defmodule Mirage.Input do
     {nested_labels, inputs}
   end
 
-  @doc false
   def collect_form_nodes({:element, _tag, _attrs, children}, form_change) do
     collect_form_nodes(children, form_change)
   end
 
-  @doc false
   def collect_form_nodes(_other, _form_change), do: {[], %{}}
 
-  @doc false
+  defp find_nested_input(nodes) when is_list(nodes) do
+    Enum.find_value(nodes, &find_nested_input/1)
+  end
+
+  defp find_nested_input({:element, tag, _attrs, _children} = node)
+       when tag in ["input", "textarea", "select"],
+       do: node
+
+  defp find_nested_input({:element, _tag, _attrs, children}), do: find_nested_input(children)
+  defp find_nested_input(_other), do: nil
+
   def resolve_input({_label, {:element, _, _, _} = input, form_change}, _by_id, _label_text) do
     {input, form_change}
   end
 
-  @doc false
   def resolve_input({{:element, "label", attrs, _children}, nil, _fc}, by_id, label_text) do
     case DOM.find_attr(attrs, "for") do
       nil ->
@@ -294,7 +297,6 @@ defmodule Mirage.Input do
     end
   end
 
-  @doc false
   def trigger_input_action(session, {:element, _tag, attrs, _children}, value) do
     case DOM.find_attr(attrs, "$change") do
       nil -> session
@@ -302,28 +304,11 @@ defmodule Mirage.Input do
     end
   end
 
-  @doc false
   def trigger_form_change(session, nil, _value), do: session
 
-  @doc false
   def trigger_form_change(session, form_change, value) do
     Events.dispatch_event(session, form_change, %{value: value})
   end
-
-  # ---------------------------------------------------------------------------
-  # Private
-  # ---------------------------------------------------------------------------
-
-  defp find_nested_input(nodes) when is_list(nodes) do
-    Enum.find_value(nodes, &find_nested_input/1)
-  end
-
-  defp find_nested_input({:element, tag, _attrs, _children} = node)
-       when tag in ["input", "textarea", "select"],
-       do: node
-
-  defp find_nested_input({:element, _tag, _attrs, children}), do: find_nested_input(children)
-  defp find_nested_input(_other), do: nil
 
   # Computes the visible text of a label node, excluding any nested form
   # control elements. Necessary for select labels whose inner_text would
@@ -357,7 +342,7 @@ defmodule Mirage.Input do
     value =
       case DOM.find_attr(attrs, "value") do
         nil -> text
-        v -> DOM.attr_to_string(v)
+        value -> DOM.attr_to_string(value)
       end
 
     [{text, value}]
@@ -373,7 +358,7 @@ defmodule Mirage.Input do
   defp input_value({:element, "input", attrs, _}) do
     case DOM.find_attr(attrs, "value") do
       nil -> ""
-      v -> DOM.attr_to_string(v)
+      value -> DOM.attr_to_string(value)
     end
   end
 
@@ -385,7 +370,7 @@ defmodule Mirage.Input do
     type =
       case DOM.find_attr(attrs, "type") do
         nil -> "text"
-        v -> DOM.attr_to_string(v)
+        type -> DOM.attr_to_string(type)
       end
 
     unless type in @text_input_types do
