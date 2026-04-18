@@ -799,3 +799,135 @@ defmodule Mirage.EventCommentPage do
     """
   end
 end
+
+# ---------------------------------------------------------------------------
+# choose/2 test pages
+# ---------------------------------------------------------------------------
+
+defmodule Mirage.ChoosePage do
+  @moduledoc "Page with two radio options under distinct labels."
+  use Hologram.Page
+
+  route "/choose"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, choice: nil)
+  end
+
+  def action(:pick, %{value: value}, component) do
+    put_state(component, choice: value)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Yes<input type="radio" value="yes" $change={:pick} /></label>
+    <label>No<input type="radio" value="no" $change={:pick} /></label>
+    """
+  end
+end
+
+defmodule Mirage.ChooseCheckedPage do
+  @moduledoc "Radio buttons with checked bound to state, to test open_browser output."
+  use Hologram.Page
+
+  route "/choose-checked"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, choice: nil)
+  end
+
+  def action(:pick, %{value: value}, component) do
+    put_state(component, choice: value)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Yes<input type="radio" value="yes" checked={@choice == "yes"} $change={:pick} /></label>
+    <label>No<input type="radio" value="no" checked={@choice == "no"} $change={:pick} /></label>
+    """
+  end
+end
+
+defmodule Mirage.ChooseAmbiguousPage do
+  @moduledoc "Two radio buttons sharing the same label text."
+  use Hologram.Page
+
+  route "/choose-ambiguous"
+  layout Mirage.TestLayout
+
+  def action(:pick, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Option<input type="radio" value="a" $change={:pick} /></label>
+    <label>Option<input type="radio" value="b" $change={:pick} /></label>
+    """
+  end
+end
+
+defmodule Mirage.ChooseInputFirstPage do
+  @moduledoc "Input comes before label text, like <label><input /> foo</label>."
+  use Hologram.Page
+
+  route "/choose-input-first"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, choice: nil)
+  end
+
+  def action(:pick, %{value: value}, component) do
+    put_state(component, choice: value)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>
+      <input type="radio" value="foo" $change={:pick} /> foo
+    </label>
+    <label>
+      <input type="radio" value="bar" $change={:pick} /> bar
+    </label>
+    """
+  end
+end
+
+defmodule Mirage.ChooseFormPage do
+  @moduledoc "Radio buttons inside a form with a $change handler."
+  use Hologram.Page
+
+  route "/choose-form"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, choice: nil, change_log: [])
+  end
+
+  def action(:pick, %{value: value}, component) do
+    put_state(component, choice: value)
+  end
+
+  def action(:form_changed, %{value: value}, component) do
+    put_state(component, change_log: component.state.change_log ++ [value])
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <form $change={:form_changed}>
+      <label>Yes<input type="radio" value="yes" $change={:pick} /></label>
+      <label>No<input type="radio" value="no" $change={:pick} /></label>
+    </form>
+    """
+  end
+end

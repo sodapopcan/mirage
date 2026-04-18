@@ -37,6 +37,92 @@ defmodule MirageTest do
     end
   end
 
+  describe "choose/2" do
+    test "dispatches $change with the radio button's value attribute" do
+      session =
+        Mirage.ChoosePage
+        |> Mirage.visit()
+        |> Mirage.choose("Yes")
+
+      assert session.page.state.choice == "yes"
+    end
+
+    test "chooses among multiple options" do
+      session =
+        Mirage.ChoosePage
+        |> Mirage.visit()
+        |> Mirage.choose("No")
+
+      assert session.page.state.choice == "no"
+    end
+
+    test "matches substrings when exact: false" do
+      session =
+        Mirage.ChoosePage
+        |> Mirage.visit()
+        |> Mirage.choose("Ye", exact: false)
+
+      assert session.page.state.choice == "yes"
+    end
+
+    test "raises when no label matches" do
+      session = Mirage.visit(Mirage.ChoosePage)
+
+      assert_raise RuntimeError, ~r/No radio button found with label: "Maybe"/, fn ->
+        Mirage.choose(session, "Maybe")
+      end
+    end
+
+    test "raises when more than one label matches" do
+      session = Mirage.visit(Mirage.ChooseAmbiguousPage)
+
+      assert_raise RuntimeError, ~r/Ambiguous match: found 2 labels matching: "Option"/, fn ->
+        Mirage.choose(session, "Option")
+      end
+    end
+  end
+
+  describe "choose/2 — wrapped label" do
+    test "finds a radio input wrapped inside its label (text first)" do
+      session =
+        Mirage.ChoosePage
+        |> Mirage.visit()
+        |> Mirage.choose("Yes")
+
+      assert session.page.state.choice == "yes"
+    end
+
+    test "finds a radio input when the input comes before the label text" do
+      session =
+        Mirage.ChooseInputFirstPage
+        |> Mirage.visit()
+        |> Mirage.choose("foo")
+
+      assert session.page.state.choice == "foo"
+    end
+  end
+
+  describe "choose/2 — form dispatch" do
+    test "also triggers the enclosing form's $change action" do
+      session =
+        Mirage.ChooseFormPage
+        |> Mirage.visit()
+        |> Mirage.choose("Yes")
+
+      assert session.page.state.choice == "yes"
+      assert session.page.state.change_log == ["yes"]
+    end
+
+    test "does not trigger a form $change when the radio is outside a form" do
+      session =
+        Mirage.ChoosePage
+        |> Mirage.visit()
+        |> Mirage.choose("Yes")
+
+      assert session.page.state.choice == "yes"
+    end
+  end
+
   describe "fill_in/3" do
     test "fills an input wrapped by a label matching exactly" do
       session = Mirage.visit(Mirage.FillInPage)

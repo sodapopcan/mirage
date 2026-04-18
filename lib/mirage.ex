@@ -14,7 +14,7 @@ defmodule Mirage do
     alias Hologram.Component
     alias Hologram.Server
 
-    defstruct [:page, :server, :ast, :page_module, :params, :scope]
+    defstruct [:page, :server, :ast, :page_module, :params, :scope, checked_radios: %{}]
 
     @type t :: %__MODULE__{
             page: Component.t(),
@@ -22,7 +22,8 @@ defmodule Mirage do
             ast: any(),
             page_module: module(),
             params: %{atom() => any()},
-            scope: {:element, String.t(), list(), list()} | nil
+            scope: {:element, String.t(), list(), list()} | nil,
+            checked_radios: %{optional(String.t() | nil) => String.t()}
           }
   end
 
@@ -211,6 +212,65 @@ defmodule Mirage do
         session
         |> trigger_input_action(input, value)
         |> trigger_form_change(form_change, value)
+
+      [_ | _] = many ->
+        raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
+    end
+  end
+
+  @doc """
+  Selects a radio button by its associated label text and dispatches the
+  input's `$change` event with the radio's `value` attribute.
+
+  Labels may wrap the input or reference it via a `for`/`id` pair.
+
+  Matches exactly by default; pass `exact: false` to match substrings.
+  Raises if no matching radio button is found, or if more than one matches.
+
+  ## Example
+
+  ```elixir
+  visit(SignUpPage)
+  |> choose("Female")
+  |> assert_has("p", "Selected: female")
+  ```
+  """
+  @doc group: "Events"
+  @spec choose(Session.t(), String.t(), keyword()) :: Session.t()
+  def choose(session, label, opts \\ []) do
+    exact? = Keyword.get(opts, :exact, true)
+
+    {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
+
+    matches =
+      Enum.filter(labels, fn {node, _wrapped, _form_change} ->
+        DOM.text_matches?(DOM.inner_text(node), label, exact?)
+      end)
+
+    case matches do
+      [] ->
+        raise "No radio button found with label: #{inspect(label)}"
+
+      [entry] ->
+        {input, form_change} = resolve_input(entry, inputs_by_id, label)
+        {:element, _, attrs, _} = input
+
+        name =
+          case DOM.find_attr(attrs, "name") do
+            nil -> nil
+            v -> DOM.attr_to_string(v)
+          end
+
+        value =
+          case DOM.find_attr(attrs, "value") do
+            nil -> ""
+            v -> DOM.attr_to_string(v)
+          end
+
+        session
+        |> trigger_input_action(input, value)
+        |> trigger_form_change(form_change, value)
+        |> Map.update!(:checked_radios, &Map.put(&1, name, value))
 
       [_ | _] = many ->
         raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
