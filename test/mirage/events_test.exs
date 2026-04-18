@@ -106,10 +106,10 @@ defmodule Mirage.EventsTest do
 
     test "clicks a command with no params" do
       assert capture_io(fn ->
-        Mirage.ClickCommandPage
-        |> Mirage.visit()
-        |> Mirage.click("button", "No params")
-      end) == "No params!\n"
+               Mirage.ClickCommandPage
+               |> Mirage.visit()
+               |> Mirage.click("button", "No params")
+             end) == "No params!\n"
     end
   end
 

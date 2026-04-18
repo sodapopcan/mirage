@@ -5,7 +5,8 @@ defmodule Mirage.Scoped do
   alias Mirage.Query
   alias Mirage.Session
 
-  def within(%Session{} = session, selector, fun) when is_binary(selector) and is_function(fun, 1) do
+  def within(%Session{} = session, selector, fun)
+      when is_binary(selector) and is_function(fun, 1) do
     node = find_scope_node!(query_ast(session), selector)
     prev_scope = session.scope
     result = fun.(%{session | scope: node})
@@ -54,9 +55,14 @@ defmodule Mirage.Scoped do
 
   defp find_scope_node!(ast, selector) do
     case Query.query_all(ast, selector) do
-      [node] -> node
-      [] -> raise "Scope selector #{inspect(selector)} matched no elements"
-      nodes -> raise "Scope selector #{inspect(selector)} matched #{length(nodes)} elements, expected 1"
+      [node] ->
+        node
+
+      [] ->
+        raise "Scope selector #{inspect(selector)} matched no elements"
+
+      nodes ->
+        raise "Scope selector #{inspect(selector)} matched #{length(nodes)} elements, expected 1"
     end
   end
 end
