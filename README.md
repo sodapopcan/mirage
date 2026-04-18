@@ -1,6 +1,6 @@
 # Mirage
 
-Testing framework for [Hologram](http://hologram.page)
+Web testing library for [Hologram](http://hologram.page)
 
 ## About
 
