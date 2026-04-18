@@ -7,7 +7,8 @@ defmodule Mirage.Browser do
   def open_browser(%Session{} = session, open_fun \\ &open_with_system_cmd/1) do
     config = %{
       static_dir: Path.join(File.cwd!(), "priv/static"),
-      checked_radios: session.checked_radios
+      checked_radios: session.checked_radios,
+      checked_checkboxes: session.checked_checkboxes
     }
 
     html = ast_to_html(session.ast, config)
@@ -40,7 +41,7 @@ defmodule Mirage.Browser do
   end
 
   defp ast_to_html({:element, "input", attrs, children}, config) do
-    attr_str = attrs |> maybe_check_radio(config.checked_radios) |> attrs_to_string()
+    attr_str = attrs |> maybe_check_radio(config) |> attrs_to_string()
     "<input#{attr_str}>#{ast_to_html(children, config)}</input>"
   end
 
@@ -54,24 +55,32 @@ defmodule Mirage.Browser do
 
   defp ast_to_html(_other, _config), do: ""
 
-  # Adds `checked` to a radio input based on session-tracked selections,
+  # Adds `checked` to radio/checkbox inputs based on session-tracked selections,
   # but only when the template hasn't already bound `checked` itself.
-  defp maybe_check_radio(attrs, checked_radios) do
+  defp maybe_check_radio(attrs, config) do
     type = attrs |> DOM.find_attr("type") |> attr_string()
-
     already_has_checked = Enum.any?(attrs, fn {name, _} -> name == "checked" end)
 
-    if type == "radio" and not already_has_checked do
+    if already_has_checked do
+      attrs
+    else
       name = attrs |> DOM.find_attr("name") |> attr_string()
       value = attrs |> DOM.find_attr("value") |> attr_string()
 
-      if Map.get(checked_radios, name) == value do
-        attrs ++ [{"checked", true}]
-      else
-        attrs
-      end
-    else
-      attrs
+      checked =
+        case type do
+          "radio" ->
+            Map.get(config.checked_radios, name) == value
+
+          "checkbox" ->
+            value_key = value || "on"
+            MapSet.member?(config.checked_checkboxes, {name, value_key})
+
+          _ ->
+            false
+        end
+
+      if checked, do: attrs ++ [{"checked", true}], else: attrs
     end
   end
 

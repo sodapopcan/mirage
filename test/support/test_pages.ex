@@ -931,3 +931,54 @@ defmodule Mirage.ChooseFormPage do
     """
   end
 end
+
+# ---------------------------------------------------------------------------
+# check/2 test pages
+# ---------------------------------------------------------------------------
+
+defmodule Mirage.CheckPage do
+  @moduledoc "Page with two independent checkboxes under distinct labels."
+  use Hologram.Page
+
+  route "/check"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, newsletter: false, terms: false)
+  end
+
+  def action(:toggle_newsletter, %{value: _value}, component) do
+    put_state(component, newsletter: true)
+  end
+
+  def action(:toggle_terms, %{value: _value}, component) do
+    put_state(component, terms: true)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Newsletter<input type="checkbox" name="newsletter" value="yes" $change={:toggle_newsletter} /></label>
+    <label>Terms<input type="checkbox" name="terms" value="yes" $change={:toggle_terms} /></label>
+    """
+  end
+end
+
+defmodule Mirage.CheckAmbiguousPage do
+  @moduledoc "Two checkboxes sharing the same label text."
+  use Hologram.Page
+
+  route "/check-ambiguous"
+  layout Mirage.TestLayout
+
+  def action(:toggle, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Accept<input type="checkbox" name="a" value="yes" $change={:toggle} /></label>
+    <label>Accept<input type="checkbox" name="b" value="yes" $change={:toggle} /></label>
+    """
+  end
+end

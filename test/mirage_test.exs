@@ -123,6 +123,88 @@ defmodule MirageTest do
     end
   end
 
+  describe "check/2" do
+    test "dispatches $change with the checkbox's value attribute" do
+      session =
+        Mirage.CheckPage
+        |> Mirage.visit()
+        |> Mirage.check("Newsletter")
+
+      assert session.page.state.newsletter == true
+    end
+
+    test "multiple checkboxes can be checked independently" do
+      session =
+        Mirage.CheckPage
+        |> Mirage.visit()
+        |> Mirage.check("Newsletter")
+        |> Mirage.check("Terms")
+
+      assert session.page.state.newsletter == true
+      assert session.page.state.terms == true
+    end
+
+    test "matches substrings when exact: false" do
+      session =
+        Mirage.CheckPage
+        |> Mirage.visit()
+        |> Mirage.check("News", exact: false)
+
+      assert session.page.state.newsletter == true
+    end
+
+    test "raises when no label matches" do
+      session = Mirage.visit(Mirage.CheckPage)
+
+      assert_raise RuntimeError, ~r/No checkbox found with label: "Missing"/, fn ->
+        Mirage.check(session, "Missing")
+      end
+    end
+
+    test "raises when more than one label matches" do
+      session = Mirage.visit(Mirage.CheckAmbiguousPage)
+
+      assert_raise RuntimeError, ~r/Ambiguous match: found 2 labels matching: "Accept"/, fn ->
+        Mirage.check(session, "Accept")
+      end
+    end
+  end
+
+  describe "check/2 — open_browser" do
+    test "injects checked on the checked checkbox" do
+      session =
+        Mirage.CheckPage
+        |> Mirage.visit()
+        |> Mirage.check("Newsletter")
+        |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
+
+      assert_receive {:opened, path}
+      html = File.read!(path)
+
+      assert html =~ ~r/name="newsletter"[^>]* checked/
+      refute html =~ ~r/name="terms"[^>]* checked/
+
+      File.rm(path)
+    end
+
+    test "multiple checked checkboxes all show checked" do
+      session =
+        Mirage.CheckPage
+        |> Mirage.visit()
+        |> Mirage.check("Newsletter")
+        |> Mirage.check("Terms")
+        |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
+
+      assert_receive {:opened, path}
+      html = File.read!(path)
+
+      assert html =~ ~r/name="newsletter"[^>]* checked/
+      assert html =~ ~r/name="terms"[^>]* checked/
+
+      File.rm(path)
+    end
+  end
+
   describe "fill_in/3" do
     test "fills an input wrapped by a label matching exactly" do
       session = Mirage.visit(Mirage.FillInPage)
