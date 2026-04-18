@@ -229,6 +229,27 @@ defmodule Mirage.ScopingTest do
         Mirage.within_section(session, "Nope", fn s -> s end)
       end
     end
+
+    test "accepts a CSS selector to match a different element type" do
+      Mirage.WithinSectionSelectorPage
+      |> Mirage.visit()
+      |> Mirage.within_section("div[role=article]", "Alpha", fn session ->
+        session
+        |> Mirage.assert_has("p", "Alpha content")
+        |> Mirage.refute_has("p", "Beta content")
+      end)
+    end
+
+    test "scopes click with a custom selector" do
+      session =
+        Mirage.WithinSectionSelectorPage
+        |> Mirage.visit()
+        |> Mirage.within_section("div[role=article]", "Beta", fn session ->
+          Mirage.click(session, "button", "Go")
+        end)
+
+      assert session.page.state.clicked == :second
+    end
   end
 
   describe "within_fieldset/3" do

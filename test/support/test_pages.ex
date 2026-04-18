@@ -680,6 +680,41 @@ defmodule Mirage.WithinArticlePage do
   end
 end
 
+defmodule Mirage.WithinSectionSelectorPage do
+  @moduledoc """
+  Page with div[role=article] elements identified by headings, for testing
+  within_section with a custom CSS selector.
+  """
+  use Hologram.Page
+
+  route "/within-section-selector"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, clicked: nil)
+  end
+
+  def action(:first, _params, component), do: put_state(component, clicked: :first)
+  def action(:second, _params, component), do: put_state(component, clicked: :second)
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <div role="article">
+      <h2>Alpha</h2>
+      <p>Alpha content</p>
+      <button $click={:first}>Go</button>
+    </div>
+    <div role="article">
+      <h2>Beta</h2>
+      <p>Beta content</p>
+      <button $click={:second}>Go</button>
+    </div>
+    """
+  end
+end
+
 defmodule Mirage.WithinNestedHeaderPage do
   @moduledoc """
   Page where the heading is nested inside another element within the

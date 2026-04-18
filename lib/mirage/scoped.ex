@@ -23,6 +23,11 @@ defmodule Mirage.Scoped do
     within_tag(session, "section", header, fun)
   end
 
+  def within_section(%Session{} = session, selector, header, fun)
+      when is_binary(selector) and is_binary(header) and is_function(fun, 1) do
+    within_tag(session, selector, header, fun)
+  end
+
   def within_fieldset(%Session{} = session, legend, fun)
       when is_binary(legend) and is_function(fun, 1) do
     matches =
