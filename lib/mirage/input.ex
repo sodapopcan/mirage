@@ -180,7 +180,17 @@ defmodule Mirage.Input do
     end
   end
 
-  def select_text(session, label, text, opts \\ []) do
+  def select_text(session, label, text_or_opts \\ [])
+
+  def select_text(session, label, text) when is_binary(text) do
+    select_text(session, label, text, [])
+  end
+
+  def select_text(session, label, opts) when is_list(opts) do
+    select_text(session, label, nil, opts)
+  end
+
+  def select_text(session, label, text, opts) when is_list(opts) do
     exact? = Keyword.get(opts, :exact, true)
 
     {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
@@ -198,11 +208,12 @@ defmodule Mirage.Input do
         {input, _form_change} = resolve_input(entry, inputs_by_id, label)
         validate_text_input!(input, label)
 
+        selected = text || input_value(input)
         {:element, _, attrs, _} = input
 
         case DOM.find_attr(attrs, "$select") do
           nil -> session
-          action -> Events.dispatch_event(session, action, %{text: text})
+          action -> Events.dispatch_event(session, action, %{text: selected})
         end
 
       [_ | _] = many ->
@@ -355,6 +366,17 @@ defmodule Mirage.Input do
 
   defp collect_options({:element, "optgroup", _attrs, children}), do: collect_options(children)
   defp collect_options(_other), do: []
+
+  defp input_value({:element, "textarea", _attrs, children}) do
+    DOM.inner_text({:element, "textarea", [], children})
+  end
+
+  defp input_value({:element, "input", attrs, _}) do
+    case DOM.find_attr(attrs, "value") do
+      nil -> ""
+      v -> DOM.attr_to_string(v)
+    end
+  end
 
   @text_input_types ~w(text email password search tel url number)
 

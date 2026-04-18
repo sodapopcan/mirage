@@ -299,21 +299,28 @@ defmodule Mirage do
   Triggers a `$select` event on a text input or textarea identified by its
   associated label text.
 
-  The event receives `%{text: text}` where `text` is the string passed as the
-  third argument, representing the text the user selected.
+  The event receives `%{text: text}` where `text` is the selected text.
+  When `text` is omitted, all text in the input is selected (read from the
+  input's `value` attribute or the textarea's inner text).
 
   Raises if the label does not point to an input that accepts text (i.e. raises
   for checkboxes, radios, selects, and non-text input types).
 
-  ## Example
+  ## Examples
 
       session
       |> fill_in("Bio", with: "Hello world")
       |> select_text("Bio", "world")
 
+      session
+      |> fill_in("Bio", with: "Hello world")
+      |> select_text("Bio")
+
   """
-  @spec select_text(Session.t(), String.t(), String.t(), keyword()) :: Session.t()
-  defdelegate select_text(session, label, text, opts \\ []), to: Input
+  @spec select_text(Session.t(), String.t(), String.t() | keyword()) :: Session.t()
+  defdelegate select_text(session, label, text_or_opts \\ []), to: Input
+  @doc false
+  defdelegate select_text(session, label, text, opts), to: Input
 
   @doc """
   Asserts that the session's DOM contains exactly one element matching the

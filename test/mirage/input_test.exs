@@ -404,5 +404,32 @@ defmodule Mirage.InputTest do
 
       assert session.page.state.selected == "selected"
     end
+
+    test "selects all text in a textarea when text is omitted" do
+      session =
+        Mirage.SelectTextPage
+        |> Mirage.visit()
+        |> Mirage.select_text("Bio")
+
+      assert session.page.state.selected == "Hello world"
+    end
+
+    test "selects all text in an input when text is omitted" do
+      session =
+        Mirage.SelectTextPage
+        |> Mirage.visit()
+        |> Mirage.select_text("Username")
+
+      assert session.page.state.selected == "alice"
+    end
+
+    test "selects empty string when input has no value and text is omitted" do
+      session =
+        Mirage.SelectTextPage
+        |> Mirage.visit()
+        |> Mirage.select_text("Secret")
+
+      assert session.page.state.selected == ""
+    end
   end
 end

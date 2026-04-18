@@ -1169,8 +1169,8 @@ defmodule Mirage.SelectTextPage do
   @impl Hologram.Page
   def template do
     ~HOLO"""
-    <label>Bio<textarea $select={:text_selected}></textarea></label>
-    <label>Username<input type="text" $select={:text_selected} /></label>
+    <label>Bio<textarea $select={:text_selected}>Hello world</textarea></label>
+    <label>Username<input type="text" value="alice" $select={:text_selected} /></label>
     <label>Secret<input type="password" $select={:text_selected} /></label>
     <label>Agree<input type="checkbox" value="yes" $change={:noop} /></label>
     <label>Pick<input type="radio" value="a" $change={:noop} /></label>
