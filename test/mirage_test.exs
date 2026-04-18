@@ -24,6 +24,22 @@ defmodule MirageTest do
     end
   end
 
+  describe "click_button/2" do
+    test "clicks on a button" do
+      Mirage.HomePage
+      |> Mirage.visit()
+      |> Mirage.click_button("I button to the same page")
+      |> Mirage.assert_page(Mirage.AnotherPage)
+    end
+
+    test "accepts opts" do
+      Mirage.HomePage
+      |> Mirage.visit()
+      |> Mirage.click_button("I button to", exact: false)
+      |> Mirage.assert_page(Mirage.AnotherPage)
+    end
+  end
+
   describe "fill_in/3" do
     test "fills an input wrapped by a label matching exactly" do
       session = Mirage.visit(Mirage.FillInPage)

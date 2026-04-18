@@ -69,6 +69,17 @@ defmodule Mirage do
   end
 
   @doc """
+  Like `Mirage.click/3` but specifically clicks on a button.
+
+  This is simply a short-hand for `click(session, "button", "Shop now!")`.  If you
+  need to be more specific, use `Mirage.click/3`.
+
+  """
+  def click_button(session, text, opts \\ []) do
+    click(session, "button", text, opts)
+  end
+
+  @doc """
   Trigger a `$click` event on the element matching the given CSS selector.
 
   Any actions or commands will be run.  If the click triggers a page navigation,

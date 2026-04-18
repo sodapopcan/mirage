@@ -40,6 +40,7 @@ defmodule Mirage.HomePage do
     ~HOLO"""
     <Hologram.UI.Link to={Mirage.AnotherPage}>link to other page</Hologram.UI.Link>
     <a href="#" $click={:link}>I link to the same page</a>
+    <button type="button" $click={:link}>I button to the same page</button>
     """
   end
 
