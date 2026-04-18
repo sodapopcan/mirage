@@ -4,7 +4,8 @@ Web testing library for [Hologram](http://hologram.page)
 
 ## About
 
-Mirage provides testing helpers very similar to that of [`PhoenixTest`](https://hex.pm/packages/phoenix_test).
+Mirage allows for headless testing of hologram pages and components.  Its
+API is very similar to that of [`PhoenixTest`](https://hex.pm/packages/phoenix_test).
 
 Here is a quick example:
 
@@ -32,25 +33,53 @@ test "it counts" do
 end
 ```
 
-Mirage tracks the state of the page under test, triggers actions, commands, and
-follows any navigation or redirects, as well as everyone's favourite debugging
-tool: `Mirage.open_browser/1`.
+Mirage tracks the page under test, triggers actions, commands, and follows any
+navigation or redirects.  It also includes everyone's favourite debugging tool:
+`open_browser/1`!
 
 ## Installation
 
 ```elixir
 def deps do
   [
-    {:mirage, "~> 0.0.1", only: :test, runtime: false}
+    {:mirage, "~> 0.0.1", only: :test, runtime: false},
   ]
 end
 ```
 
-To use Mirage, just `import` it into your tests or your custom `CaseTemplate`
-implementation.
+To use Mirage, just `import` it into your tests:
 
 ```elixir
-import Mirage
+defmodule MyApp.MyTest do
+  use ExUnit.Case
+  import Mirage
+
+  test "it works" do
+    MyApp.HomePage
+    |> visit()
+    # ...
+  end
+end
+```
+
+Or use a custom case:
+
+```
+defmodule MyApp.FeatureCase do
+  use ExUnit.CaseTemplate
+
+  using do
+    quote do
+      import Mirage
+    end
+  end
+end
+
+defmodule MyApp.MyTest do
+  use MyApp.FeatureCase
+
+  # ...
+end
 ```
 
 ## Note on adapted code
