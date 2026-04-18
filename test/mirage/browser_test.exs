@@ -5,11 +5,10 @@ defmodule Mirage.BrowserTest do
 
   describe "open_browser/2 — radio checked state" do
     test "injects checked on the chosen radio when template has no checked binding" do
-      session =
-        Mirage.ChoosePage
-        |> Mirage.visit()
-        |> Mirage.choose("Yes")
-        |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
+      Mirage.ChoosePage
+      |> Mirage.visit()
+      |> Mirage.choose("Yes")
+      |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
 
       assert_receive {:opened, path}
       html = File.read!(path)
@@ -21,11 +20,10 @@ defmodule Mirage.BrowserTest do
     end
 
     test "respects checked binding from template, does not double-add" do
-      session =
-        Mirage.ChooseCheckedPage
-        |> Mirage.visit()
-        |> Mirage.choose("Yes")
-        |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
+      Mirage.ChooseCheckedPage
+      |> Mirage.visit()
+      |> Mirage.choose("Yes")
+      |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
 
       assert_receive {:opened, path}
       html = File.read!(path)
