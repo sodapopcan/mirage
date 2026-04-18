@@ -434,13 +434,19 @@ defmodule Mirage.Events do
     vars = Map.merge(params, page.state)
     page_dom = page_module.template().(vars)
 
-    layout_props_dom =
-      page_module.__layout_props__()
-      |> Enum.into(%{cid: "layout"})
-      |> Map.merge(page.state)
-      |> Enum.map(fn {name, value} -> {to_string(name), [expression: {value}]} end)
+    root =
+      if function_exported?(page_module, :__layout_module__, 0) do
+        layout_props_dom =
+          page_module.__layout_props__()
+          |> Enum.into(%{cid: "layout"})
+          |> Map.merge(page.state)
+          |> Enum.map(fn {name, value} -> {to_string(name), [expression: {value}]} end)
 
-    root = {:component, page_module.__layout_module__(), layout_props_dom, page_dom}
+        {:component, page_module.__layout_module__(), layout_props_dom, page_dom}
+      else
+        page_dom
+      end
+
     context = Map.merge(runtime_context(), page.emitted_context)
     env = %{context: context, slots: []}
 

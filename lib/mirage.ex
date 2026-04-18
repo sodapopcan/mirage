@@ -83,6 +83,61 @@ defmodule Mirage do
   end
 
   @doc """
+  Mount a component in isolation for testing.
+
+  Takes a `Hologram.Component` module and an optional keyword list.  Returns a
+  session that can be used with the rest of the `Mirage` API just like one
+  created by `visit/2`, but without a page or layout wrapper.
+
+  ## Options
+
+    * `:props` — a map of props to pass to the component
+    * `:context` — a map of context values; props declared with `from_context`
+      will be populated from this map
+
+  ## Example
+
+      MyApp.Counter
+      |> Mirage.mount(props: %{cid: "counter"})
+      |> Mirage.click("button", "Increment")
+      |> Mirage.assert_has("span", "1")
+
+  """
+  @spec mount(module(), [props: map(), context: map()]) :: Session.t()
+  def mount(component_module, opts \\ []) do
+    props = Keyword.get(opts, :props, %{})
+    context = Keyword.get(opts, :context, %{})
+
+    props =
+      props
+      |> DOM.inject_props_from_context(component_module, context)
+      |> DOM.inject_default_prop_values(component_module)
+
+    server = %Hologram.Server{}
+    {component, server} = DOM.init_component(component_module, props, server)
+
+    vars = Map.merge(props, component.state)
+    template_dom = component_module.template().(vars)
+
+    merged_context = Map.merge(runtime_context(), component.emitted_context)
+    merged_context = Map.merge(merged_context, context)
+    env = %{context: merged_context, slots: []}
+
+    Process.delete(:mirage_components)
+    ast = DOM.expand(template_dom, env, server)
+    components = Process.delete(:mirage_components) || %{}
+
+    %Session{
+      page: component,
+      server: server,
+      ast: ast,
+      page_module: component_module,
+      params: props,
+      components: components
+    }
+  end
+
+  @doc """
   Scopes all operations within the given block to descendants of the element
   matching `selector`.
 

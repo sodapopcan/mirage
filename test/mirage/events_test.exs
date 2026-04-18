@@ -177,6 +177,55 @@ defmodule Mirage.EventsTest do
   end
 
   # ---------------------------------------------------------------------------
+  # mount — testing components in isolation
+  # ---------------------------------------------------------------------------
+
+  describe "mount/2" do
+    test "mounts a component and renders its template" do
+      session = Mirage.mount(Mirage.KillCounter, props: %{cid: "test"})
+
+      assert %Session{} = session
+      assert session.page.state.kills == 0
+      assert rendered_text(session.ast) =~ "0"
+    end
+
+    test "actions work on a mounted component" do
+      session =
+        Mirage.KillCounter
+        |> Mirage.mount(props: %{cid: "test"})
+        |> Mirage.click("button", "Kill")
+
+      assert session.page.state.kills == 1
+      assert rendered_text(session.ast) =~ "1"
+    end
+
+    test "state persists across interactions" do
+      session =
+        Mirage.KillCounter
+        |> Mirage.mount(props: %{cid: "test"})
+        |> Mirage.click("button", "Kill")
+        |> Mirage.click("button", "Kill")
+        |> Mirage.click("button", "Kill")
+
+      assert session.page.state.kills == 3
+    end
+
+    test "mounts with default props when none given" do
+      session = Mirage.mount(Mirage.MountableCounter)
+      assert session.page.state.count == 0
+    end
+
+    test "populates from_context props via :context option" do
+      session =
+        Mirage.mount(Mirage.ContextCounter,
+          context: %{{Mirage.ContextCounter, :initial_count} => 10}
+        )
+
+      assert session.page.state.count == 10
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # target — dispatching to stateful child components
   # ---------------------------------------------------------------------------
 
@@ -185,7 +234,7 @@ defmodule Mirage.EventsTest do
       session =
         Mirage.TargetPage
         |> Mirage.visit()
-        |> Mirage.click("button", "Kill")
+        |> Mirage.click("button", "Target kill")
 
       {_module, component} = session.components["baba_yaga"]
       assert component.state.kills == 1
@@ -205,9 +254,9 @@ defmodule Mirage.EventsTest do
       session =
         Mirage.TargetPage
         |> Mirage.visit()
-        |> Mirage.click("button", "Kill")
-        |> Mirage.click("button", "Kill")
-        |> Mirage.click("button", "Kill")
+        |> Mirage.click("button", "Target kill")
+        |> Mirage.click("button", "Target kill")
+        |> Mirage.click("button", "Target kill")
 
       {_module, component} = session.components["baba_yaga"]
       assert component.state.kills == 3
@@ -217,7 +266,7 @@ defmodule Mirage.EventsTest do
       session =
         Mirage.TargetPage
         |> Mirage.visit()
-        |> Mirage.click("button", "Kill")
+        |> Mirage.click("button", "Target kill")
         |> Mirage.click("button", "Page click")
 
       {_module, component} = session.components["baba_yaga"]
@@ -229,8 +278,8 @@ defmodule Mirage.EventsTest do
       session =
         Mirage.TargetPage
         |> Mirage.visit()
-        |> Mirage.click("button", "Kill")
-        |> Mirage.click("button", "Kill")
+        |> Mirage.click("button", "Target kill")
+        |> Mirage.click("button", "Target kill")
 
       assert rendered_text(session.ast) =~ "2"
     end

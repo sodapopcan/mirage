@@ -1239,6 +1239,57 @@ defmodule Mirage.KillCounter do
     ~HOLO"""
     <div id={@cid}>
       <span class="kills">{@kills}</span>
+      <button $click={:increment_kills}>Kill</button>
+    </div>
+    """
+  end
+end
+
+defmodule Mirage.MountableCounter do
+  @moduledoc false
+  use Hologram.Component
+
+  @impl Hologram.Component
+  def init(_props, component, server) do
+    {put_state(component, count: 0), server}
+  end
+
+  def action(:increment, _params, component) do
+    put_state(component, :count, component.state.count + 1)
+  end
+
+  @impl Hologram.Component
+  def template do
+    ~HOLO"""
+    <div>
+      <span class="count">{@count}</span>
+      <button $click={:increment}>Add</button>
+    </div>
+    """
+  end
+end
+
+defmodule Mirage.ContextCounter do
+  @moduledoc false
+  use Hologram.Component
+
+  prop :initial_count, :integer, from_context: {Mirage.ContextCounter, :initial_count}
+
+  @impl Hologram.Component
+  def init(props, component, server) do
+    {put_state(component, count: props[:initial_count] || 0), server}
+  end
+
+  def action(:increment, _params, component) do
+    put_state(component, :count, component.state.count + 1)
+  end
+
+  @impl Hologram.Component
+  def template do
+    ~HOLO"""
+    <div>
+      <span class="count">{@count}</span>
+      <button $click={:increment}>Add</button>
     </div>
     """
   end
@@ -1264,7 +1315,7 @@ defmodule Mirage.TargetPage do
   def template do
     ~HOLO"""
     <Mirage.KillCounter cid="baba_yaga" />
-    <button $click={action: :increment_kills, target: "baba_yaga"}>Kill</button>
+    <button $click={action: :increment_kills, target: "baba_yaga"}>Target kill</button>
     <button $click={action: :add_kills, target: "baba_yaga", params: %{amount: 5}}>Multi kill</button>
     <button $click={:page_click}>Page click</button>
     <span id="page-clicks">{@page_clicks}</span>

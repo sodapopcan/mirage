@@ -9,14 +9,27 @@ Mirage provides testing helpers very similar to that of [`PhoenixTest`](https://
 Here is a quick example:
 
 ```elixir
-MyApp.HomePage
-|> visit(%{my_param: "Some param"})
-|> click_link("Sign-up")
-|> fill_in("Name", with: "Bender Bending Rodríguez")
-|> fill_in("Password", with: "wanna-kill-all-humans?")
-|> click_button("Submit")
-|> assert_page(MyApp.WelcomePage)
-|> assert_has("p", "Welcome, Bender!")
+test "it works" do
+  MyApp.HomePage
+  |> visit(%{my_param: "Some param"})
+  |> click_link("Sign-up")
+  |> fill_in("Name", with: "Bender Bending Rodríguez")
+  |> fill_in("Password", with: "wanna-kill-all-humans?")
+  |> click_button("Submit")
+  |> assert_page(MyApp.WelcomePage)
+  |> assert_has("p", "Welcome, Bender!")
+end
+```
+
+You can also test components in isolation:
+
+```elixir
+test "it counts" do
+  MyApp.Counter
+  |> mount(props: %{count: 0})
+  |> click_button("+")
+  |> assert_has("span", "1")
+end
 ```
 
 Mirage tracks the state of the page under test, triggers actions, commands, and
@@ -31,6 +44,13 @@ def deps do
     {:mirage, "~> 0.0.1", only: :test, runtime: false}
   ]
 end
+```
+
+To use Mirage, just `import` it into your tests or your custom `CaseTemplate`
+implementation.
+
+```elixir
+import Mirage
 ```
 
 ## Note on adapted code

@@ -122,7 +122,8 @@ defmodule Mirage.DOM do
   defp prop_part_to_string({:text, text}), do: text
   defp prop_part_to_string({:expression, {value}}), do: to_string(value)
 
-  defp inject_props_from_context(props, module, context) do
+  @doc false
+  def inject_props_from_context(props, module, context) do
     extras =
       for {name, _type, opts} <- module.__props__(),
           opts[:from_context] && Map.has_key?(context, opts[:from_context]),
@@ -132,7 +133,8 @@ defmodule Mirage.DOM do
     Map.merge(props, extras)
   end
 
-  defp inject_default_prop_values(props, module) do
+  @doc false
+  def inject_default_prop_values(props, module) do
     Enum.reduce(module.__props__(), props, fn {name, _type, opts}, acc ->
       if !Map.has_key?(acc, name) and Keyword.has_key?(opts, :default) do
         Map.put(acc, name, opts[:default])
