@@ -81,7 +81,7 @@ defmodule Mirage do
       |> within(".sidebar", fn session ->
         session
         |> assert_has("a", "Home")
-        |> click("a", "Home")
+        |> click_link("Home")
       end)
 
   """
@@ -92,7 +92,7 @@ defmodule Mirage do
 
       session
       |> within_article("Blog Post", fn session ->
-        session |> assert_has("p", "Post content")
+        assert_has(session, "p", "Post content")
       end)
 
   """
@@ -103,7 +103,7 @@ defmodule Mirage do
 
       session
       |> within_section("Settings", fn session ->
-        session |> assert_has("input#email")
+        assert_has(session, "Send me update", "No")
       end)
 
   """
@@ -114,7 +114,7 @@ defmodule Mirage do
 
       session
       |> within_fieldset("Account", fn session ->
-        session |> assert_has("input#username")
+        assert_has(session, "input#username")
       end)
 
   """
@@ -134,8 +134,9 @@ defmodule Mirage do
   @doc """
   Click on a button by its text.
 
-  This is simply a short-hand for `Mirage.click/3` with `"button"` as its selector.
-  Also handles `<input type="submit">` inside a form with a `$submit` handler.
+  If it's a button inside a form, it will trigger the form's `$submit` event.
+
+  This is otherwise short-hand for `Mirage.click/3` with `"button"` as its selector.
 
   """
   @spec click_button(Session.t(), String.t(), keyword(any())) :: Session.t()
@@ -154,20 +155,16 @@ defmodule Mirage do
 
   ## Examples
 
-  ```
-  HomePage
-  |> visit()
-  |> click("button")
-  ```
+      SignUpPage
+      |> visit()
+      |> fill_in("Name", with: "Bender")
+      |> fill_in("Password", with: "killallhumans")
+      |> click("button", "Submit")
+      |> assert_page(WelcomePage)
 
-  ```
-  SignUpPage
-  |> visit()
-  |> fill_in("Name", with: "Bender")
-  |> fill_in("Password", with: "killallhumans")
-  |> click("button", "Submit")
-  |> assert_page(WelcomePage)
-  ```
+      HomePage
+      |> visit()
+      |> click("button", "Log out")
 
   ## Options
   - `:text` Match on the element's inner text.
@@ -175,7 +172,6 @@ defmodule Mirage do
     Default is `true` meaning you must provide an exact match.
 
   """
-  @doc group: "Events"
   @spec click(Session.t(), String.t(), String.t() | keyword()) :: Session.t()
   defdelegate click(session, selector, text_or_opts \\ []), to: Events
   @doc false
@@ -185,8 +181,8 @@ defmodule Mirage do
   Trigger a focus event on an element.
 
   Accepts the same options as `Mirage.click/3`.
+
   """
-  @doc group: "Events"
   defdelegate focus(session, selector, text_or_opts \\ []), to: Events
   @doc false
   defdelegate focus(session, selector, text, opts), to: Events
@@ -196,7 +192,6 @@ defmodule Mirage do
 
   Accepts the same options as `Mirage.click/3`.
   """
-  @doc group: "Events"
   defdelegate blur(session, selector, text_or_opts \\ []), to: Events
   @doc false
   defdelegate blur(session, selector, text, opts), to: Events
