@@ -82,6 +82,34 @@ defmodule Mirage.WrappedLinkPage do
   end
 end
 
+defmodule Mirage.NonInteractivePage do
+  @moduledoc "Page with hidden, disabled, and readonly inputs of various types."
+  use Hologram.Page
+
+  route "/non-interactive"
+  layout Mirage.TestLayout
+
+  def action(:noop, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Hidden input<input type="hidden" value="secret" $change={:noop} /></label>
+    <label>Hidden attr<input hidden value="secret" $change={:noop} /></label>
+    <label>Disabled input<input disabled $change={:noop} /></label>
+    <label>Readonly input<input readonly $change={:noop} /></label>
+    <label>Disabled textarea<textarea disabled $change={:noop} /></label>
+    <label>Readonly textarea<textarea readonly $change={:noop} /></label>
+    <label>Hidden textarea<textarea hidden $change={:noop} /></label>
+    <label>Disabled select<select disabled $change={:noop}><option value="a">A</option></select></label>
+    <label>Hidden select<select hidden $change={:noop}><option value="a">A</option></select></label>
+    <label>Disabled radio<input type="radio" value="x" disabled $change={:noop} /></label>
+    <label>Disabled checkbox<input type="checkbox" value="x" disabled $change={:noop} /></label>
+    <label>Normal input<input $change={:noop} /></label>
+    """
+  end
+end
+
 defmodule Mirage.FillInPage do
   @moduledoc """
   Page fixture for `fill_in/3`. Has a form with two labelled inputs (one

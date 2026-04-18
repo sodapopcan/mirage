@@ -21,6 +21,7 @@ defmodule Mirage.Input do
 
       [entry] ->
         {input, form_change} = resolve_input(entry, inputs_by_id, label)
+        validate_interactive!(input, label)
         {:element, _, attrs, _} = input
 
         name =
@@ -61,6 +62,7 @@ defmodule Mirage.Input do
 
       [entry] ->
         {input, form_change} = resolve_input(entry, inputs_by_id, label)
+        validate_interactive!(input, label)
         {:element, _, attrs, _} = input
 
         name =
@@ -101,6 +103,7 @@ defmodule Mirage.Input do
 
       [entry] ->
         {input, form_change} = resolve_input(entry, inputs_by_id, label)
+        validate_interactive!(input, label)
         {:element, _, attrs, _} = input
 
         name =
@@ -141,6 +144,7 @@ defmodule Mirage.Input do
 
       [entry] ->
         {select_node, form_change} = resolve_input(entry, inputs_by_id, label)
+        validate_interactive!(select_node, label)
         {:element, _, attrs, children} = select_node
 
         option_matches =
@@ -205,6 +209,7 @@ defmodule Mirage.Input do
 
       [entry] ->
         {input, _form_change} = resolve_input(entry, inputs_by_id, label)
+        validate_interactive!(input, label)
         validate_text_input!(input, label)
 
         selected = text || input_value(input)
@@ -362,16 +367,39 @@ defmodule Mirage.Input do
     end
   end
 
+  @doc false
+  def validate_interactive!({:element, tag, attrs, _}, label) do
+    cond do
+      DOM.find_attr(attrs, "hidden") != nil ->
+        raise "Input with label #{inspect(label)} is hidden and cannot be interacted with"
+
+      tag == "input" && input_type(attrs) == "hidden" ->
+        raise "Input with label #{inspect(label)} is hidden and cannot be interacted with"
+
+      DOM.find_attr(attrs, "disabled") != nil ->
+        raise "Input with label #{inspect(label)} is disabled and cannot be interacted with"
+
+      DOM.find_attr(attrs, "readonly") != nil ->
+        raise "Input with label #{inspect(label)} is readonly and cannot be interacted with"
+
+      true ->
+        :ok
+    end
+  end
+
+  defp input_type(attrs) do
+    case DOM.find_attr(attrs, "type") do
+      nil -> "text"
+      v -> DOM.attr_to_string(v)
+    end
+  end
+
   @text_input_types ~w(text email password search tel url number)
 
   defp validate_text_input!({:element, "textarea", _, _}, _label), do: :ok
 
   defp validate_text_input!({:element, "input", attrs, _}, label) do
-    type =
-      case DOM.find_attr(attrs, "type") do
-        nil -> "text"
-        type -> DOM.attr_to_string(type)
-      end
+    type = input_type(attrs)
 
     unless type in @text_input_types do
       raise "Label #{inspect(label)} points to an input[type=#{type}], which does not accept text selection"

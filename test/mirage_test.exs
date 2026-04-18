@@ -135,6 +135,101 @@ defmodule MirageTest do
     end
   end
 
+  describe "non-interactive inputs" do
+    test "fill_in raises for type=hidden input" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/is hidden/, fn ->
+        Mirage.fill_in(session, "Hidden input", with: "x")
+      end
+    end
+
+    test "fill_in raises for input with hidden attribute" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/is hidden/, fn ->
+        Mirage.fill_in(session, "Hidden attr", with: "x")
+      end
+    end
+
+    test "fill_in raises for disabled input" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/is disabled/, fn ->
+        Mirage.fill_in(session, "Disabled input", with: "x")
+      end
+    end
+
+    test "fill_in raises for readonly input" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/is readonly/, fn ->
+        Mirage.fill_in(session, "Readonly input", with: "x")
+      end
+    end
+
+    test "fill_in raises for disabled textarea" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/is disabled/, fn ->
+        Mirage.fill_in(session, "Disabled textarea", with: "x")
+      end
+    end
+
+    test "fill_in raises for readonly textarea" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/is readonly/, fn ->
+        Mirage.fill_in(session, "Readonly textarea", with: "x")
+      end
+    end
+
+    test "fill_in still works for normal input" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+      assert %Session{} = Mirage.fill_in(session, "Normal input", with: "hello")
+    end
+
+    test "select raises for disabled select" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/is disabled/, fn ->
+        Mirage.select(session, "Disabled select", "A")
+      end
+    end
+
+    test "select raises for hidden select" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/is hidden/, fn ->
+        Mirage.select(session, "Hidden select", "A")
+      end
+    end
+
+    test "choose raises for disabled radio" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/is disabled/, fn ->
+        Mirage.choose(session, "Disabled radio")
+      end
+    end
+
+    test "check raises for disabled checkbox" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/is disabled/, fn ->
+        Mirage.check(session, "Disabled checkbox")
+      end
+    end
+
+    test "uncheck raises for disabled checkbox" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/is disabled/, fn ->
+        Mirage.uncheck(session, "Disabled checkbox")
+      end
+    end
+  end
+
   describe "fill_in/3 — action dispatch" do
     test "triggers the input's $change, passing the filled value as :value" do
       session = Mirage.visit(Mirage.FillInPage)
