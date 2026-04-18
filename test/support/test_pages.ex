@@ -1149,3 +1149,32 @@ defmodule Mirage.SelectFormPage do
     """
   end
 end
+
+defmodule Mirage.SelectTextPage do
+  @moduledoc false
+  use Hologram.Page
+
+  route "/select-text"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, server) do
+    {put_state(component, selected: nil), server}
+  end
+
+  def action(:text_selected, %{text: text}, component) do
+    put_state(component, selected: text)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Bio<textarea $select={:text_selected}></textarea></label>
+    <label>Username<input type="text" $select={:text_selected} /></label>
+    <label>Secret<input type="password" $select={:text_selected} /></label>
+    <label>Agree<input type="checkbox" value="yes" $change={:noop} /></label>
+    <label>Pick<input type="radio" value="a" $change={:noop} /></label>
+    <label>Fruit<select $change={:noop}><option>Apple</option></select></label>
+    """
+  end
+end

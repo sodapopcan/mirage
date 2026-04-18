@@ -335,4 +335,74 @@ defmodule Mirage.InputTest do
       File.rm(path)
     end
   end
+
+  describe "select_text/3" do
+    test "triggers $select on a textarea" do
+      session =
+        Mirage.SelectTextPage
+        |> Mirage.visit()
+        |> Mirage.select_text("Bio", "some text")
+
+      assert session.page.state.selected == "some text"
+    end
+
+    test "triggers $select on a text input" do
+      session =
+        Mirage.SelectTextPage
+        |> Mirage.visit()
+        |> Mirage.select_text("Username", "user1")
+
+      assert session.page.state.selected == "user1"
+    end
+
+    test "triggers $select on a password input" do
+      session =
+        Mirage.SelectTextPage
+        |> Mirage.visit()
+        |> Mirage.select_text("Secret", "hunter2")
+
+      assert session.page.state.selected == "hunter2"
+    end
+
+    test "raises for checkbox input" do
+      session = Mirage.visit(Mirage.SelectTextPage)
+
+      assert_raise RuntimeError, ~r/does not accept text selection/, fn ->
+        Mirage.select_text(session, "Agree", "x")
+      end
+    end
+
+    test "raises for radio input" do
+      session = Mirage.visit(Mirage.SelectTextPage)
+
+      assert_raise RuntimeError, ~r/does not accept text selection/, fn ->
+        Mirage.select_text(session, "Pick", "x")
+      end
+    end
+
+    test "raises for select element" do
+      session = Mirage.visit(Mirage.SelectTextPage)
+
+      assert_raise RuntimeError, ~r/does not accept text selection/, fn ->
+        Mirage.select_text(session, "Fruit", "x")
+      end
+    end
+
+    test "raises when no label matches" do
+      session = Mirage.visit(Mirage.SelectTextPage)
+
+      assert_raise RuntimeError, ~r/No text input found with label: "Missing"/, fn ->
+        Mirage.select_text(session, "Missing", "x")
+      end
+    end
+
+    test "matches substrings when exact: false" do
+      session =
+        Mirage.SelectTextPage
+        |> Mirage.visit()
+        |> Mirage.select_text("Bio", "selected", exact: false)
+
+      assert session.page.state.selected == "selected"
+    end
+  end
 end

@@ -4,7 +4,7 @@ defmodule Mirage.Input do
   alias Mirage.DOM
   alias Mirage.Events
   alias Mirage.Scoped
-  alias Mirage.Session
+
 
   def choose(session, label, opts \\ []) do
     exact? = Keyword.get(opts, :exact, true)
@@ -180,6 +180,36 @@ defmodule Mirage.Input do
     end
   end
 
+  def select_text(session, label, text, opts \\ []) do
+    exact? = Keyword.get(opts, :exact, true)
+
+    {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
+
+    matches =
+      Enum.filter(labels, fn {node, _wrapped, _form_change} ->
+        DOM.text_matches?(label_text_without_inputs(node), label, exact?)
+      end)
+
+    case matches do
+      [] ->
+        raise "No text input found with label: #{inspect(label)}"
+
+      [entry] ->
+        {input, _form_change} = resolve_input(entry, inputs_by_id, label)
+        validate_text_input!(input, label)
+
+        {:element, _, attrs, _} = input
+
+        case DOM.find_attr(attrs, "$select") do
+          nil -> session
+          action -> Events.dispatch_event(session, action, %{text: text})
+        end
+
+      [_ | _] = many ->
+        raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
+    end
+  end
+
   # ---------------------------------------------------------------------------
   # Shared helpers (used by Mirage.fill_in as well)
   # ---------------------------------------------------------------------------
@@ -325,4 +355,26 @@ defmodule Mirage.Input do
 
   defp collect_options({:element, "optgroup", _attrs, children}), do: collect_options(children)
   defp collect_options(_other), do: []
+
+  @text_input_types ~w(text email password search tel url number)
+
+  defp validate_text_input!({:element, "textarea", _, _}, _label), do: :ok
+
+  defp validate_text_input!({:element, "input", attrs, _}, label) do
+    type =
+      case DOM.find_attr(attrs, "type") do
+        nil -> "text"
+        v -> DOM.attr_to_string(v)
+      end
+
+    unless type in @text_input_types do
+      raise "Label #{inspect(label)} points to an input[type=#{type}], which does not accept text selection"
+    end
+
+    :ok
+  end
+
+  defp validate_text_input!({:element, "select", _, _}, label) do
+    raise "Label #{inspect(label)} points to a <select>, which does not accept text selection"
+  end
 end
