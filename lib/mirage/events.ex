@@ -107,9 +107,11 @@ defmodule Mirage.Events do
     text = Keyword.get(opts, :text)
     exact? = Keyword.get(opts, :exact, true)
 
+    scoped_selector = scope_selector(session.scope, selector)
+
     matches =
       session.ast
-      |> Query.query_all(selector)
+      |> Query.query_all(scoped_selector)
       |> Enum.filter(fn {:element, _, attrs, _} -> has_attr?(attrs, event_attr) end)
 
     matches =
@@ -141,6 +143,9 @@ defmodule Mirage.Events do
       value -> dispatch_event(session, value, %{})
     end
   end
+
+  defp scope_selector(nil, selector), do: selector
+  defp scope_selector(parent, selector), do: "#{parent} #{selector}"
 
   defp has_attr?(attrs, name) do
     Enum.any?(attrs, fn

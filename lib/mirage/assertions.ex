@@ -31,7 +31,7 @@ defmodule Mirage.Assertions do
 
   def assert_has(%Session{} = session, selector, opts)
       when is_binary(selector) and is_list(opts) do
-    matches = find_matches(session.ast, selector, opts)
+    matches = find_matches(session, selector, opts)
 
     assert match?([_], matches),
            "Expected to find exactly 1 element matching #{describe(selector, opts)}, but found #{length(matches)}"
@@ -51,7 +51,7 @@ defmodule Mirage.Assertions do
 
   def refute_has(%Session{} = session, selector, opts)
       when is_binary(selector) and is_list(opts) do
-    matches = find_matches(session.ast, selector, opts)
+    matches = find_matches(session, selector, opts)
 
     assert match?([], matches),
            "Expected not to find an element matching #{describe(selector, opts)}, found #{length(matches)}"
@@ -63,12 +63,13 @@ defmodule Mirage.Assertions do
     refute_has(session, selector, Keyword.put(opts, :text, text))
   end
 
-  defp find_matches(ast, selector, opts) do
+  defp find_matches(%Session{ast: ast, scope: scope}, selector, opts) do
     text = Keyword.get(opts, :text)
     value = Keyword.get(opts, :value)
     exact? = Keyword.get(opts, :exact, true)
 
-    results = Query.query_all(ast, selector)
+    scoped_selector = scope_selector(scope, selector)
+    results = Query.query_all(ast, scoped_selector)
 
     results
     |> maybe_filter_text(text, exact?)
@@ -96,6 +97,9 @@ defmodule Mirage.Assertions do
       DOM.attr_to_string(DOM.find_attr(attrs, "value")) == value
     end)
   end
+
+  defp scope_selector(nil, selector), do: selector
+  defp scope_selector(parent, selector), do: "#{parent} #{selector}"
 
   defp describe(selector, opts) do
     parts = [inspect(selector)]

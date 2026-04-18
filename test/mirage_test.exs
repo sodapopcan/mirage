@@ -2,9 +2,6 @@ defmodule MirageTest do
   use ExUnit.Case, async: true
 
   alias Mirage.Session
-  alias Hologram.Server
-
-  import ExUnit.CaptureIO
 
   doctest Mirage
 

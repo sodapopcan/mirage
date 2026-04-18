@@ -601,6 +601,43 @@ defmodule Mirage.PutPagePage do
 end
 
 # ---------------------------------------------------------------------------
+# within/3 test pages
+# ---------------------------------------------------------------------------
+
+defmodule Mirage.WithinPage do
+  @moduledoc """
+  Page with duplicate elements inside different containers, used to test
+  `within/3` scoping.  Both the div and span contain an `a.nav` link with
+  different text, so tests can verify that `within` narrows correctly.
+  """
+  use Hologram.Page
+
+  route "/within"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, clicked: nil)
+  end
+
+  def action(:div_link, _params, component), do: put_state(component, clicked: :div)
+  def action(:span_link, _params, component), do: put_state(component, clicked: :span)
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <div class="sidebar">
+      <a class="nav" $click={:div_link}>Sidebar link</a>
+      <label>Sidebar input<input $change={:div_link} /></label>
+    </div>
+    <span class="main">
+      <a class="nav" $click={:span_link}>Main link</a>
+    </span>
+    """
+  end
+end
+
+# ---------------------------------------------------------------------------
 # Shared event test pages (used for click, focus, blur)
 # ---------------------------------------------------------------------------
 

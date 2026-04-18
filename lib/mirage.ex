@@ -14,19 +14,21 @@ defmodule Mirage do
     alias Hologram.Component
     alias Hologram.Server
 
-    defstruct [:page, :server, :ast, :page_module, :params]
+    defstruct [:page, :server, :ast, :page_module, :params, :scope]
 
     @type t :: %__MODULE__{
             page: Component.t(),
             server: Server.t(),
             ast: any(),
             page_module: module(),
-            params: %{atom() => any()}
+            params: %{atom() => any()},
+            scope: String.t() | nil
           }
   end
 
   alias Mirage.DOM
   alias Mirage.Events
+  alias Mirage.Query
   alias Mirage.Session
 
   @doc """
@@ -56,6 +58,30 @@ defmodule Mirage do
 
     %Session{page: page, server: server, ast: ast, page_module: page_module, params: params}
   end
+
+  @doc """
+  Scopes all operations within the given block to descendants of the element
+  matching `selector`.
+
+      session
+      |> within(".sidebar", fn session ->
+        session
+        |> assert_has("a", "Home")
+        |> click("a", "Home")
+      end)
+
+  """
+  @spec within(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
+  def within(%Session{} = session, selector, fun) when is_binary(selector) and is_function(fun, 1) do
+    new_scope = scope_selector(session.scope, selector)
+    validate_scope!(session.ast, new_scope)
+    scoped = %{session | scope: new_scope}
+    result = fun.(scoped)
+    %{result | scope: session.scope}
+  end
+
+  defp scope_selector(nil, selector), do: selector
+  defp scope_selector(parent, selector), do: "#{parent} #{selector}"
 
   @doc """
   Click on a button by its text.
@@ -156,7 +182,8 @@ defmodule Mirage do
     exact? = Keyword.get(opts, :exact, true)
     value = Keyword.fetch!(opts, :with)
 
-    {labels, inputs_by_id} = collect_form_nodes(session.ast, nil)
+    ast = scoped_ast(session)
+    {labels, inputs_by_id} = collect_form_nodes(ast, nil)
 
     matches =
       Enum.filter(labels, fn {node, _wrapped, _form_change} ->
@@ -325,6 +352,17 @@ defmodule Mirage do
 
   defp trigger_form_change(session, form_change, value) do
     Events.dispatch_event(session, form_change, %{value: value})
+  end
+
+  defp scoped_ast(%Session{ast: ast, scope: nil}), do: ast
+  defp scoped_ast(%Session{ast: ast, scope: scope}), do: [validate_scope!(ast, scope)]
+
+  defp validate_scope!(ast, scope) do
+    case Query.query_all(ast, scope) do
+      [node] -> node
+      [] -> raise "Scope selector #{inspect(scope)} matched no elements"
+      nodes -> raise "Scope selector #{inspect(scope)} matched #{length(nodes)} elements, expected 1"
+    end
   end
 
   defp runtime_context do
