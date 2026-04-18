@@ -7,6 +7,10 @@ defmodule Mirage.Events do
   alias Mirage.Query
   alias Mirage.Session
 
+  # ---------------------------------------------------------------------------
+  # Public API
+  # ---------------------------------------------------------------------------
+
   def click(session, selector, text_or_opts \\ [])
 
   def click(session, selector, text) when is_binary(text) do
@@ -14,39 +18,42 @@ defmodule Mirage.Events do
   end
 
   def click(%Session{} = session, selector, opts) when is_binary(selector) and is_list(opts) do
-    text = Keyword.get(opts, :text)
-    exact? = Keyword.get(opts, :exact, true)
-
-    matches =
-      session.ast
-      |> Query.query_all(selector)
-      |> Enum.filter(fn {:element, _, attrs, _} -> has_click_attr?(attrs) end)
-
-    matches =
-      if text do
-        Enum.filter(matches, fn node ->
-          DOM.text_matches?(DOM.inner_text(node), text, exact?)
-        end)
-      else
-        matches
-      end
-
-    case matches do
-      [] ->
-        raise "No clickable element found matching #{describe_click(selector, opts)}"
-
-      [node] ->
-        handle_click(session, node)
-
-      [_ | _] = nodes ->
-        raise "Ambiguous match: found #{length(nodes)} clickable elements matching #{describe_click(selector, opts)}"
-    end
+    node = find_event_target!(session, "$click", selector, opts)
+    handle_click(session, node)
   end
 
-  @doc false
-  @spec click(Session.t(), String.t(), String.t(), keyword()) :: Session.t()
   def click(session, selector, text, opts) when is_binary(text) and is_list(opts) do
     click(session, selector, Keyword.put(opts, :text, text))
+  end
+
+  def focus(session, selector, text_or_opts \\ [])
+
+  def focus(session, selector, text) when is_binary(text) do
+    focus(session, selector, text: text)
+  end
+
+  def focus(%Session{} = session, selector, opts) when is_binary(selector) and is_list(opts) do
+    node = find_event_target!(session, "$focus", selector, opts)
+    dispatch_from_node(session, node, "$focus")
+  end
+
+  def focus(session, selector, text, opts) when is_binary(text) and is_list(opts) do
+    focus(session, selector, Keyword.put(opts, :text, text))
+  end
+
+  def blur(session, selector, text_or_opts \\ [])
+
+  def blur(session, selector, text) when is_binary(text) do
+    blur(session, selector, text: text)
+  end
+
+  def blur(%Session{} = session, selector, opts) when is_binary(selector) and is_list(opts) do
+    node = find_event_target!(session, "$blur", selector, opts)
+    dispatch_from_node(session, node, "$blur")
+  end
+
+  def blur(session, selector, text, opts) when is_binary(text) and is_list(opts) do
+    blur(session, selector, Keyword.put(opts, :text, text))
   end
 
   @doc false
@@ -93,10 +100,56 @@ defmodule Mirage.Events do
   def dispatch_event(session, _other, _extra), do: session
 
   # ---------------------------------------------------------------------------
-  # Private
+  # Private — event targeting
   # ---------------------------------------------------------------------------
 
-  defp describe_click(selector, opts) do
+  defp find_event_target!(session, event_attr, selector, opts) do
+    text = Keyword.get(opts, :text)
+    exact? = Keyword.get(opts, :exact, true)
+
+    matches =
+      session.ast
+      |> Query.query_all(selector)
+      |> Enum.filter(fn {:element, _, attrs, _} -> has_attr?(attrs, event_attr) end)
+
+    matches =
+      if text do
+        Enum.filter(matches, fn node ->
+          DOM.text_matches?(DOM.inner_text(node), text, exact?)
+        end)
+      else
+        matches
+      end
+
+    event_name = String.trim_leading(event_attr, "$")
+
+    case matches do
+      [] ->
+        raise "No #{event_name}able element found matching #{describe(selector, opts)}"
+
+      [node] ->
+        node
+
+      [_ | _] = nodes ->
+        raise "Ambiguous match: found #{length(nodes)} #{event_name}able elements matching #{describe(selector, opts)}"
+    end
+  end
+
+  defp dispatch_from_node(session, {:element, _tag, attrs, _children}, event_attr) do
+    case DOM.find_attr(attrs, event_attr) do
+      nil -> session
+      value -> dispatch_event(session, value, %{})
+    end
+  end
+
+  defp has_attr?(attrs, name) do
+    Enum.any?(attrs, fn
+      {^name, _value} -> true
+      _ -> false
+    end)
+  end
+
+  defp describe(selector, opts) do
     parts = [inspect(selector)]
 
     parts =
@@ -108,16 +161,8 @@ defmodule Mirage.Events do
     Enum.join(parts, ", ")
   end
 
-  defp has_click_attr?(attrs) do
-    Enum.any?(attrs, fn
-      {"$click", _value} -> true
-      _ -> false
-    end)
-  end
-
-  defp handle_click(session, {:element, _tag, attrs, _children}) do
-    # Hologram.UI.Link expands `$click={:__load_prefetched_page__, to: @to}` —
-    # in the resolved AST that shows up as `[expression: {:__load_prefetched_page__, [to: Target]}]`.
+  # Click has special handling for Hologram.UI.Link navigation.
+  defp handle_click(session, {:element, _tag, attrs, _children} = node) do
     case DOM.find_attr(attrs, "$click") do
       [{:expression, {:__load_prefetched_page__, params}}] when is_list(params) ->
         case Keyword.fetch!(params, :to) do
@@ -125,10 +170,14 @@ defmodule Mirage.Events do
           target_module -> Mirage.visit(target_module)
         end
 
-      value ->
-        dispatch_event(session, value, %{})
+      _ ->
+        dispatch_from_node(session, node, "$click")
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # Private — action/command lifecycle
+  # ---------------------------------------------------------------------------
 
   defp run_action(
          %Session{page: component, page_module: page_module, server: server} = session,
@@ -142,8 +191,6 @@ defmodule Mirage.Events do
         %Server{} = server -> {component, server}
       end
 
-    # Capture the side-effect instructions before clearing them from the
-    # component so they don't leak into chained actions.
     next_action = new_component.next_action
     next_command = new_component.next_command
     next_page = new_component.next_page
@@ -153,8 +200,6 @@ defmodule Mirage.Events do
 
     session = %{session | page: clean_component, server: new_server}
 
-    # 1. If the action emitted a command, run it server-side.
-    #    The command may update the server and trigger a follow-up action.
     session =
       if cmd = next_command do
         run_command(session, cmd)
@@ -162,7 +207,6 @@ defmodule Mirage.Events do
         session
       end
 
-    # 2. If the action chained another action, run it.
     session =
       if action = next_action do
         run_action(session, action.name, action.params)
@@ -170,7 +214,6 @@ defmodule Mirage.Events do
         session
       end
 
-    # 3. If the action triggered a page navigation, visit the new page.
     case next_page do
       nil ->
         re_render(session)
@@ -192,7 +235,6 @@ defmodule Mirage.Events do
 
     session = %{session | server: new_server}
 
-    # If the command triggered a follow-up action, run it on the page component.
     if action = new_server.next_action do
       run_action(session, action.name, action.params)
     else

@@ -599,3 +599,102 @@ defmodule Mirage.PutPagePage do
     """
   end
 end
+
+# ---------------------------------------------------------------------------
+# Shared event test pages (used for click, focus, blur)
+# ---------------------------------------------------------------------------
+
+defmodule Mirage.EventPage do
+  @moduledoc """
+  A page with buttons carrying all three event attributes.
+  Used by the shared event tests.
+  """
+  use Hologram.Page
+
+  route "/event"
+  layout Mirage.TestLayout
+
+  def action(:save, _params, component), do: put_state(component, triggered: true)
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button $click={:save}>Save changes now</button>
+    <button $focus={:save}>Save changes now</button>
+    <button $blur={:save}>Save changes now</button>
+    """
+  end
+end
+
+defmodule Mirage.EventDeepPage do
+  @moduledoc "Event target nested several elements deep."
+  use Hologram.Page
+
+  route "/event-deep"
+  layout Mirage.TestLayout
+
+  def action(:go, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <div><section><a $click={:go}>Go</a></section></div>
+    <div><section><a $focus={:go}>Go</a></section></div>
+    <div><section><a $blur={:go}>Go</a></section></div>
+    """
+  end
+end
+
+defmodule Mirage.EventNoAttrPage do
+  @moduledoc "Button without any event attribute."
+  use Hologram.Page
+
+  route "/event-no-attr"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button>Save</button>
+    """
+  end
+end
+
+defmodule Mirage.EventAmbiguousPage do
+  @moduledoc "Two elements with the same event and text."
+  use Hologram.Page
+
+  route "/event-ambiguous"
+  layout Mirage.TestLayout
+
+  def action(:save, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button $click={:save}>Save</button>
+    <a $click={:save}>Save</a>
+    <button $focus={:save}>Save</button>
+    <a $focus={:save}>Save</a>
+    <button $blur={:save}>Save</button>
+    <a $blur={:save}>Save</a>
+    """
+  end
+end
+
+defmodule Mirage.EventCommentPage do
+  @moduledoc "Event targets inside an HTML comment."
+  use Hologram.Page
+
+  route "/event-comment"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <!-- <button $click={:x}>Hidden</button> -->
+    <!-- <button $focus={:x}>Hidden</button> -->
+    <!-- <button $blur={:x}>Hidden</button> -->
+    """
+  end
+end

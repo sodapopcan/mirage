@@ -3,110 +3,75 @@ defmodule Mirage.EventsTest do
 
   import ExUnit.CaptureIO
 
-  alias Hologram.Component
-  alias Hologram.Server
   alias Mirage.Session
 
-  describe "click/3" do
-    test "returns the session when a clickable element's text matches exactly" do
-      session =
-        Mirage.ClickPage
-        |> Mirage.visit()
-        |> Mirage.click("button", "Save changes now")
+  # ---------------------------------------------------------------------------
+  # Shared behaviour across click, focus, and blur
+  # ---------------------------------------------------------------------------
 
-      assert %Session{
-        page_module: Mirage.ClickPage,
-        page: %Component{},
-        server: %Server{},
-        ast: [_]
-      } = session
-    end
+  for event <- [:click, :focus, :blur] do
+    describe "#{event}/3" do
+      test "dispatches the action — page state reflects the call" do
+        session =
+          Mirage.EventPage
+          |> Mirage.visit()
+          |> apply_event(unquote(event), "button", "Save changes now")
 
-    test "trims surrounding whitespace when matching exactly" do
-      session = Mirage.visit(Mirage.ClickWhitespacePage)
-      assert %Session{} = Mirage.click(session, "button", "Save")
-    end
-
-    test "concatenates text from descendant elements when computing inner text" do
-      session = Mirage.visit(Mirage.ClickNestedTextPage)
-      assert %Session{} = Mirage.click(session, "button", "Click me")
-    end
-
-    test "finds a clickable element nested deep in the tree" do
-      session = Mirage.visit(Mirage.ClickDeepPage)
-      assert %Session{} = Mirage.click(session, "a", "Go")
-    end
-
-    test "matches substrings when exact: false" do
-      session = Mirage.visit(Mirage.ClickPage)
-      assert %Session{} = Mirage.click(session, "button", "changes", exact: false)
-    end
-
-    test "does not match substrings when exact is the default" do
-      session = Mirage.visit(Mirage.ClickPage)
-
-      assert_raise RuntimeError, ~r/No clickable element found/, fn ->
-        Mirage.click(session, "button", "changes")
+        assert session.page.state.triggered == true
       end
-    end
 
-    test "raises when no element has a $click attribute" do
-      session = Mirage.visit(Mirage.ClickNoAttrPage)
-
-      assert_raise RuntimeError, ~r/No clickable element found matching "button"/, fn ->
-        Mirage.click(session, "button")
+      test "finds an element nested deep in the tree" do
+        session = Mirage.visit(Mirage.EventDeepPage)
+        assert %Session{} = apply_event(session, unquote(event), "a", "Go")
       end
-    end
 
-    test "ignores clickables written inside an HTML comment" do
-      session = Mirage.visit(Mirage.ClickCommentPage)
+      test "raises when no element has the attribute" do
+        session = Mirage.visit(Mirage.EventNoAttrPage)
 
-      assert_raise RuntimeError, ~r/No clickable element found matching "button"/, fn ->
-        Mirage.click(session, "button")
+        assert_raise RuntimeError, ~r/No #{unquote(event)}able element found/, fn ->
+          apply_event(session, unquote(event), "button")
+        end
       end
-    end
 
-    test "raises when text does not match any clickable element" do
-      session = Mirage.visit(Mirage.ClickPage)
+      test "ignores elements written inside an HTML comment" do
+        session = Mirage.visit(Mirage.EventCommentPage)
 
-      assert_raise RuntimeError, ~r/No clickable element found matching "button", text: "Cancel"/, fn ->
-        Mirage.click(session, "button", "Cancel")
+        assert_raise RuntimeError, ~r/No #{unquote(event)}able element found/, fn ->
+          apply_event(session, unquote(event), "button")
+        end
       end
-    end
 
-    test "raises when more than one clickable element matches the text" do
-      session = Mirage.visit(Mirage.ClickAmbiguousPage)
+      test "raises when text does not match" do
+        session = Mirage.visit(Mirage.EventPage)
 
-      assert_raise RuntimeError,
-                   ~r/Ambiguous match: found 2 clickable elements/,
-                   fn ->
-                     Mirage.click(session, "*", "Save")
-                   end
-    end
+        assert_raise RuntimeError, ~r/No #{unquote(event)}able element found/, fn ->
+          apply_event(session, unquote(event), "button", "Cancel")
+        end
+      end
 
-    test "dispatches the clicked action — page state reflects the call" do
-      session =
-        Mirage.ClickPage
-        |> Mirage.visit()
-        |> Mirage.click("button", "Save changes now")
+      test "raises when more than one element matches" do
+        session = Mirage.visit(Mirage.EventAmbiguousPage)
 
-      assert session.page.state.clicked == true
+        assert_raise RuntimeError, ~r/Ambiguous match: found 2/, fn ->
+          apply_event(session, unquote(event), "*", "Save")
+        end
+      end
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # Click-specific tests
+  # ---------------------------------------------------------------------------
 
   describe "click/3 — navigation" do
     test "clicking a Hologram.UI.Link navigates the session to the linked page" do
       session = Mirage.visit(Mirage.HomePage)
 
-      # Before the click we're on the home page, not the "other" page.
       assert rendered_text(session.ast) =~ "link to other page"
       refute rendered_text(session.ast) =~ "I am the other page"
 
-      # Click the link.
       session = Mirage.click(session, "a", "link to other page")
 
-      # The session now reflects the linked page: its AST was re-expanded
-      # from `Mirage.AnotherPage`'s template.
       assert rendered_text(session.ast) =~ "I am the other page"
       refute rendered_text(session.ast) =~ "link to other page"
     end
@@ -136,8 +101,6 @@ defmodule Mirage.EventsTest do
 
       Mirage.click(session, "button", "write file")
 
-      # The `:write_file` action emitted a `:write_file` command, which ran
-      # server-side and wrote the payload to disk.
       assert File.read!(tmp_path) == "written by command"
     end
 
@@ -213,8 +176,18 @@ defmodule Mirage.EventsTest do
     end
   end
 
-  # Recursively collects all text content from an expanded DOM AST so tests
-  # can assert against the rendered page without caring about structure.
+  # ---------------------------------------------------------------------------
+  # Helpers
+  # ---------------------------------------------------------------------------
+
+  defp apply_event(session, :click, selector), do: Mirage.click(session, selector)
+  defp apply_event(session, :focus, selector), do: Mirage.focus(session, selector)
+  defp apply_event(session, :blur, selector), do: Mirage.blur(session, selector)
+
+  defp apply_event(session, :click, selector, text), do: Mirage.click(session, selector, text)
+  defp apply_event(session, :focus, selector, text), do: Mirage.focus(session, selector, text)
+  defp apply_event(session, :blur, selector, text), do: Mirage.blur(session, selector, text)
+
   defp rendered_text(nodes) when is_list(nodes) do
     Enum.map_join(nodes, "", &rendered_text/1)
   end

@@ -118,6 +118,26 @@ defmodule Mirage do
   defdelegate click(session, selector, text, opts), to: Events
 
   @doc """
+  Trigger a focus event on an element.
+
+  Accepts the same options as `Mirage.click/3`.
+  """
+  @doc group: "Events"
+  defdelegate focus(session, selector, text_or_opts \\ []), to: Events
+  @doc false
+  defdelegate focus(session, selector, text, opts), to: Events
+
+  @doc """
+  Trigger a blur event on an element.
+
+  Accepts the same options as `Mirage.click/3`.
+  """
+  @doc group: "Events"
+  defdelegate blur(session, selector, text_or_opts \\ []), to: Events
+  @doc false
+  defdelegate blur(session, selector, text, opts), to: Events
+
+  @doc """
   Finds an input by its associated label and triggers the input's `$change`
   and (if the input is inside a `<form>` with a `$change` attribute) the
   form's `$change` action. Each action receives `%{value: value}` merged
