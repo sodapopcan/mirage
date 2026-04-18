@@ -5,7 +5,6 @@ defmodule Mirage.Input do
   alias Mirage.Events
   alias Mirage.Scoped
 
-
   def choose(session, label, opts \\ []) do
     exact? = Keyword.get(opts, :exact, true)
 

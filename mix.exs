@@ -60,7 +60,6 @@ defmodule Mirage.MixProject do
     [
       {:hologram, "~> 0.8"},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
-
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
