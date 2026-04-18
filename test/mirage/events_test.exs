@@ -177,6 +177,78 @@ defmodule Mirage.EventsTest do
   end
 
   # ---------------------------------------------------------------------------
+  # target — dispatching to stateful child components
+  # ---------------------------------------------------------------------------
+
+  describe "click/3 — target (action dispatched to child component)" do
+    test "action targets a stateful component by cid" do
+      session =
+        Mirage.TargetPage
+        |> Mirage.visit()
+        |> Mirage.click("button", "Kill")
+
+      {_module, component} = session.components["baba_yaga"]
+      assert component.state.kills == 1
+    end
+
+    test "targeted action with params" do
+      session =
+        Mirage.TargetPage
+        |> Mirage.visit()
+        |> Mirage.click("button", "Multi kill")
+
+      {_module, component} = session.components["baba_yaga"]
+      assert component.state.kills == 5
+    end
+
+    test "component state persists across multiple interactions" do
+      session =
+        Mirage.TargetPage
+        |> Mirage.visit()
+        |> Mirage.click("button", "Kill")
+        |> Mirage.click("button", "Kill")
+        |> Mirage.click("button", "Kill")
+
+      {_module, component} = session.components["baba_yaga"]
+      assert component.state.kills == 3
+    end
+
+    test "page action still works alongside targeted component" do
+      session =
+        Mirage.TargetPage
+        |> Mirage.visit()
+        |> Mirage.click("button", "Kill")
+        |> Mirage.click("button", "Page click")
+
+      {_module, component} = session.components["baba_yaga"]
+      assert component.state.kills == 1
+      assert session.page.state.page_clicks == 1
+    end
+
+    test "component state renders in the DOM after re-render" do
+      session =
+        Mirage.TargetPage
+        |> Mirage.visit()
+        |> Mirage.click("button", "Kill")
+        |> Mirage.click("button", "Kill")
+
+      assert rendered_text(session.ast) =~ "2"
+    end
+  end
+
+  describe "click/3 — target (command dispatched to child component)" do
+    test "command targets a stateful component by cid" do
+      session =
+        Mirage.TargetCommandPage
+        |> Mirage.visit()
+        |> Mirage.click("button", "Work")
+
+      {_module, component} = session.components["worker"]
+      assert component.state.work_count == 42
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # Helpers
   # ---------------------------------------------------------------------------
 
