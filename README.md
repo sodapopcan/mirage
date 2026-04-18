@@ -33,6 +33,12 @@ def deps do
 end
 ```
 
+## Note on adapted code
+
+This project contains code adapted from
+[Meeseeks](https://hex.pm/packages/meeseeks) specifically for parsing CSS
+selectors.  See [lib/mirage/css.ex](lib/mirage/css.ex).
+
 ## Note on AI use
 
 This library is currently super-alpha.  It was made with heavy LLM-assisted as
