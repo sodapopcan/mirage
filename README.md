@@ -32,3 +32,10 @@ def deps do
   ]
 end
 ```
+
+## To do
+
+- [ ] Pointer events
+- [ ] `type/2` function
+  - Simulate the user typing.  Will trigger change events as well as key events
+  when they are available.
