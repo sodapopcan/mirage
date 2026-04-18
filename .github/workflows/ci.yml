@@ -82,6 +82,7 @@ jobs:
             mix-${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-
 
       - run: mix deps.get
+      - run: mkdir -p priv/static
       - run: mix compile --warnings-as-errors
 
   format:
@@ -104,6 +105,7 @@ jobs:
           key: mix-${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ hashFiles('mix.lock') }}
 
       - run: mix deps.get
+      - run: mkdir -p priv/static
       - run: mix format --check-formatted
 
   test:
@@ -126,6 +128,7 @@ jobs:
           key: mix-${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ hashFiles('mix.lock') }}
 
       - run: mix deps.get
+      - run: mkdir -p priv/static
       - run: mix test
 
   dialyzer:
@@ -153,4 +156,5 @@ jobs:
           key: plt-${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ hashFiles('mix.lock') }}
 
       - run: mix deps.get
+      - run: mkdir -p priv/static
       - run: mix dialyzer
