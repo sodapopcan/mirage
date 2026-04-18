@@ -71,7 +71,6 @@ defmodule Mirage do
       end)
 
   """
-  @doc group: "Scoped"
   defdelegate within(session, selector, fun), to: Scoped
 
   @doc """
@@ -83,7 +82,6 @@ defmodule Mirage do
       end)
 
   """
-  @doc group: "Scoped"
   defdelegate within_article(session, header, fun), to: Scoped
 
   @doc """
@@ -95,7 +93,6 @@ defmodule Mirage do
       end)
 
   """
-  @doc group: "Scoped"
   defdelegate within_section(session, header, fun), to: Scoped
 
   @doc """
