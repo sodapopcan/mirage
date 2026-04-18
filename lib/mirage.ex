@@ -149,6 +149,7 @@ defmodule Mirage do
       end)
 
   """
+  @spec within(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
   defdelegate within(session, selector, fun), to: Scoped
 
   @doc """
@@ -160,6 +161,7 @@ defmodule Mirage do
       end)
 
   """
+  @spec within_article(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
   defdelegate within_article(session, header, fun), to: Scoped
 
   @doc """
@@ -171,6 +173,7 @@ defmodule Mirage do
       end)
 
   """
+  @spec within_section(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
   defdelegate within_section(session, header, fun), to: Scoped
 
   @doc """
@@ -182,6 +185,7 @@ defmodule Mirage do
       end)
 
   """
+  @spec within_fieldset(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
   defdelegate within_fieldset(session, legend, fun), to: Scoped
 
   @doc """
