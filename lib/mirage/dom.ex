@@ -198,6 +198,24 @@ defmodule Mirage.DOM do
 
   def first_header_text(_other), do: nil
 
+  @doc """
+  Returns the trimmed inner text of the first `<legend>` element found in a
+  depth-first walk of the given node(s), or `nil` if none is found.
+  """
+  def first_legend_text(nodes) when is_list(nodes) do
+    Enum.find_value(nodes, &first_legend_text/1)
+  end
+
+  def first_legend_text({:element, "legend", _attrs, children}) do
+    String.trim(inner_text(children))
+  end
+
+  def first_legend_text({:element, _tag, _attrs, children}) do
+    first_legend_text(children)
+  end
+
+  def first_legend_text(_other), do: nil
+
   @doc false
   def text_matches?(actual, expected, exact?) do
     if exact? do

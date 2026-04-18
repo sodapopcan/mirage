@@ -1178,3 +1178,35 @@ defmodule Mirage.SelectTextPage do
     """
   end
 end
+
+defmodule Mirage.WithinFieldsetPage do
+  @moduledoc false
+  use Hologram.Page
+
+  route "/within-fieldset"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, clicked: nil)
+  end
+
+  def action(:first, _params, component), do: put_state(component, clicked: :first)
+  def action(:second, _params, component), do: put_state(component, clicked: :second)
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <fieldset>
+      <legend>Account</legend>
+      <label>Username<input $change={:first} /></label>
+      <button $click={:first}>Save</button>
+    </fieldset>
+    <fieldset>
+      <legend>Billing</legend>
+      <p>Billing info</p>
+      <button $click={:second}>Pay</button>
+    </fieldset>
+    """
+  end
+end

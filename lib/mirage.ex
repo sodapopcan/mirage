@@ -110,6 +110,17 @@ defmodule Mirage do
   defdelegate within_section(session, header, fun), to: Scoped
 
   @doc """
+  Scopes to the `<fieldset>` whose `<legend>` matches `legend`.
+
+      session
+      |> within_fieldset("Account", fn session ->
+        session |> assert_has("input#username")
+      end)
+
+  """
+  defdelegate within_fieldset(session, legend, fun), to: Scoped
+
+  @doc """
   Click on a link by its text.
 
   This is simply a short-hand for `Mirage.click/3` with `"a"` as its selector.

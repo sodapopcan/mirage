@@ -23,6 +23,27 @@ defmodule Mirage.Scoped do
     within_tag(session, "section", header, fun)
   end
 
+  def within_fieldset(%Session{} = session, legend, fun)
+      when is_binary(legend) and is_function(fun, 1) do
+    matches =
+      query_ast(session)
+      |> Query.query_all("fieldset")
+      |> Enum.filter(fn node -> DOM.first_legend_text(node) == legend end)
+
+    case matches do
+      [{:element, _, _, _} = node] ->
+        prev_scope = session.scope
+        result = fun.(%{session | scope: node})
+        %{result | scope: prev_scope}
+
+      [] ->
+        raise "No <fieldset> found with legend #{inspect(legend)}"
+
+      many ->
+        raise "Ambiguous match: found #{length(many)} <fieldset> elements with legend #{inspect(legend)}"
+    end
+  end
+
   @doc false
   # Returns the AST to query against: the scoped node (as a single-element
   # list) when inside a within block, otherwise the full page AST.

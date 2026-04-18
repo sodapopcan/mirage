@@ -230,4 +230,55 @@ defmodule Mirage.ScopingTest do
       end
     end
   end
+
+  describe "within_fieldset/3" do
+    test "scopes to the fieldset matching the legend" do
+      Mirage.WithinFieldsetPage
+      |> Mirage.visit()
+      |> Mirage.within_fieldset("Account", fn session ->
+        session
+        |> Mirage.assert_has("label", "Username")
+        |> Mirage.refute_has("p", "Billing info")
+      end)
+    end
+
+    test "scopes click to the matching fieldset" do
+      session =
+        Mirage.WithinFieldsetPage
+        |> Mirage.visit()
+        |> Mirage.within_fieldset("Billing", fn session ->
+          Mirage.click(session, "button", "Pay")
+        end)
+
+      assert session.page.state.clicked == :second
+    end
+
+    test "scopes fill_in to the matching fieldset" do
+      session =
+        Mirage.WithinFieldsetPage
+        |> Mirage.visit()
+        |> Mirage.within_fieldset("Account", fn session ->
+          Mirage.fill_in(session, "Username", with: "alice")
+        end)
+
+      assert session.page.state.clicked == :first
+    end
+
+    test "raises when no fieldset has the given legend" do
+      session = Mirage.visit(Mirage.WithinFieldsetPage)
+
+      assert_raise RuntimeError, ~r/No <fieldset> found with legend "Nope"/, fn ->
+        Mirage.within_fieldset(session, "Nope", fn s -> s end)
+      end
+    end
+
+    test "restores scope after the block" do
+      result =
+        Mirage.WithinFieldsetPage
+        |> Mirage.visit()
+        |> Mirage.within_fieldset("Account", fn s -> s end)
+
+      assert result.scope == nil
+    end
+  end
 end
