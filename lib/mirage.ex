@@ -22,7 +22,8 @@ defmodule Mirage do
       :params,
       :scope,
       checked_radios: %{},
-      checked_checkboxes: MapSet.new()
+      checked_checkboxes: MapSet.new(),
+      selected_options: %{}
     ]
 
     @type t :: %__MODULE__{
@@ -33,7 +34,8 @@ defmodule Mirage do
             params: %{atom() => any()},
             scope: {:element, String.t(), list(), list()} | nil,
             checked_radios: %{optional(String.t() | nil) => String.t()},
-            checked_checkboxes: MapSet.t({String.t() | nil, String.t()})
+            checked_checkboxes: MapSet.t({String.t() | nil, String.t()}),
+            selected_options: %{optional(String.t() | nil) => MapSet.t(String.t())}
           }
   end
 
@@ -334,6 +336,83 @@ defmodule Mirage do
   end
 
   @doc """
+  Selects an option in a `<select>` box identified by its associated label
+  text, and dispatches the select's `$change` event with the option's `value`
+  attribute (defaulting to the option's inner text when no `value` attribute
+  is present).
+
+  Labels may wrap the select element or reference it via a `for`/`id` pair.
+
+  For multiselect boxes (those with a `multiple` attribute), each call
+  accumulates another selection rather than replacing the previous one.
+
+  Matches exactly by default; pass `exact: false` to match substrings.
+  Raises if no matching label or option is found, or if more than one matches.
+
+  ## Example
+
+  ```elixir
+  visit(SignUpPage)
+  |> select("Color", "Red")
+  |> assert_has("p", "Selected: red")
+  ```
+  """
+  @spec select(Session.t(), String.t(), String.t(), keyword()) :: Session.t()
+  def select(session, label, option_text, opts \\ []) do
+    exact? = Keyword.get(opts, :exact, true)
+
+    {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
+
+    label_matches =
+      Enum.filter(labels, fn {node, _wrapped, _form_change} ->
+        DOM.text_matches?(label_text_without_inputs(node), label, exact?)
+      end)
+
+    case label_matches do
+      [] ->
+        raise "No select found with label: #{inspect(label)}"
+
+      [entry] ->
+        {select_node, form_change} = resolve_input(entry, inputs_by_id, label)
+        {:element, _, attrs, children} = select_node
+
+        option_matches =
+          Enum.filter(collect_options(children), fn {text, _value} ->
+            DOM.text_matches?(text, option_text, exact?)
+          end)
+
+        case option_matches do
+          [] ->
+            raise "No option found with text: #{inspect(option_text)}"
+
+          [{_text, value}] ->
+            name =
+              case DOM.find_attr(attrs, "name") do
+                nil -> nil
+                v -> DOM.attr_to_string(v)
+              end
+
+            multiple? = DOM.find_attr(attrs, "multiple") != nil
+
+            session
+            |> trigger_input_action(select_node, value)
+            |> trigger_form_change(form_change, value)
+            |> Map.update!(:selected_options, fn current ->
+              existing = Map.get(current, name, MapSet.new())
+              new_set = if multiple?, do: MapSet.put(existing, value), else: MapSet.new([value])
+              Map.put(current, name, new_set)
+            end)
+
+          [_ | _] = many ->
+            raise "Ambiguous match: found #{length(many)} options matching: #{inspect(option_text)}"
+        end
+
+      [_ | _] = many ->
+        raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
+    end
+  end
+
+  @doc """
   Asserts that the session's DOM contains exactly one element matching the
   given CSS selector (and optional filters).
 
@@ -467,6 +546,47 @@ defmodule Mirage do
         end
     end
   end
+
+  # Computes the visible text of a label node, excluding any nested form
+  # control elements (input, select, textarea). This is necessary for select
+  # labels because inner_text would otherwise include all the option texts.
+  defp label_text_without_inputs(node) do
+    case node do
+      {:element, tag, _, _} when tag in ["input", "select", "textarea"] ->
+        ""
+
+      {:element, _, _, children} ->
+        label_text_without_inputs(children)
+
+      {:text, text} ->
+        text
+
+      nodes when is_list(nodes) ->
+        Enum.map_join(nodes, "", &label_text_without_inputs/1)
+
+      _ ->
+        ""
+    end
+  end
+
+  defp collect_options(nodes) when is_list(nodes) do
+    Enum.flat_map(nodes, &collect_options/1)
+  end
+
+  defp collect_options({:element, "option", attrs, _children} = node) do
+    text = String.trim(DOM.inner_text(node))
+
+    value =
+      case DOM.find_attr(attrs, "value") do
+        nil -> text
+        v -> DOM.attr_to_string(v)
+      end
+
+    [{text, value}]
+  end
+
+  defp collect_options({:element, "optgroup", _attrs, children}), do: collect_options(children)
+  defp collect_options(_other), do: []
 
   defp trigger_input_action(session, {:element, _tag, attrs, _children}, value) do
     case DOM.find_attr(attrs, "$change") do

@@ -8,7 +8,9 @@ defmodule Mirage.Browser do
     config = %{
       static_dir: Path.join(File.cwd!(), "priv/static"),
       checked_radios: session.checked_radios,
-      checked_checkboxes: session.checked_checkboxes
+      checked_checkboxes: session.checked_checkboxes,
+      selected_options: session.selected_options,
+      current_select_values: MapSet.new()
     }
 
     html = ast_to_html(session.ast, config)
@@ -43,6 +45,39 @@ defmodule Mirage.Browser do
   defp ast_to_html({:element, "input", attrs, children}, config) do
     attr_str = attrs |> maybe_check_radio(config) |> attrs_to_string()
     "<input#{attr_str}>#{ast_to_html(children, config)}</input>"
+  end
+
+  defp ast_to_html({:element, "select", attrs, children}, config) do
+    name =
+      case DOM.find_attr(attrs, "name") do
+        nil -> nil
+        v -> DOM.attr_to_string(v)
+      end
+
+    selected_values = Map.get(config.selected_options, name, MapSet.new())
+    inner_config = Map.put(config, :current_select_values, selected_values)
+    "<select#{attrs_to_string(attrs)}>#{ast_to_html(children, inner_config)}</select>"
+  end
+
+  defp ast_to_html({:element, "option", attrs, children}, config) do
+    text = String.trim(ast_to_html(children, config))
+
+    value =
+      case DOM.find_attr(attrs, "value") do
+        nil -> text
+        v -> DOM.attr_to_string(v)
+      end
+
+    already_selected = Enum.any?(attrs, fn {name, _} -> name == "selected" end)
+
+    attrs =
+      if not already_selected and MapSet.member?(config.current_select_values, value) do
+        attrs ++ [{"selected", true}]
+      else
+        attrs
+      end
+
+    "<option#{attrs_to_string(attrs)}>#{ast_to_html(children, config)}</option>"
   end
 
   defp ast_to_html({:element, tag, attrs, children}, config) do

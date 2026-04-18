@@ -285,6 +285,118 @@ defmodule MirageTest do
     end
   end
 
+  describe "select/3" do
+    test "dispatches $change with the option's value attribute" do
+      session =
+        Mirage.SelectPage
+        |> Mirage.visit()
+        |> Mirage.select("Color", "Red")
+
+      assert session.page.state.color == "red"
+    end
+
+    test "selects among multiple options" do
+      session =
+        Mirage.SelectPage
+        |> Mirage.visit()
+        |> Mirage.select("Color", "Blue")
+
+      assert session.page.state.color == "blue"
+    end
+
+    test "matches substrings when exact: false" do
+      session =
+        Mirage.SelectPage
+        |> Mirage.visit()
+        |> Mirage.select("Color", "Gr", exact: false)
+
+      assert session.page.state.color == "green"
+    end
+
+    test "raises when no label matches" do
+      session = Mirage.visit(Mirage.SelectPage)
+
+      assert_raise RuntimeError, ~r/No select found with label: "Size"/, fn ->
+        Mirage.select(session, "Size", "Large")
+      end
+    end
+
+    test "raises when no option matches" do
+      session = Mirage.visit(Mirage.SelectPage)
+
+      assert_raise RuntimeError, ~r/No option found with text: "Purple"/, fn ->
+        Mirage.select(session, "Color", "Purple")
+      end
+    end
+
+    test "raises when more than one label matches" do
+      session = Mirage.visit(Mirage.SelectAmbiguousPage)
+
+      assert_raise RuntimeError, ~r/Ambiguous match: found 2 labels matching: "Color"/, fn ->
+        Mirage.select(session, "Color", "Red")
+      end
+    end
+  end
+
+  describe "select/3 — form dispatch" do
+    test "also triggers the enclosing form's $change action" do
+      session =
+        Mirage.SelectFormPage
+        |> Mirage.visit()
+        |> Mirage.select("Color", "Red")
+
+      assert session.page.state.color == "red"
+      assert session.page.state.change_log == ["red"]
+    end
+  end
+
+  describe "select/3 — multiselect" do
+    test "accumulates selections across multiple calls" do
+      session =
+        Mirage.SelectMultiplePage
+        |> Mirage.visit()
+        |> Mirage.select("Fruits", "Apple")
+        |> Mirage.select("Fruits", "Cherry")
+
+      assert session.page.state.selections == ["apple", "cherry"]
+    end
+
+    test "open_browser marks all selected options" do
+      Mirage.SelectMultiplePage
+      |> Mirage.visit()
+      |> Mirage.select("Fruits", "Apple")
+      |> Mirage.select("Fruits", "Cherry")
+      |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
+
+      assert_receive {:opened, path}
+      html = File.read!(path)
+
+      assert html =~ ~r/value="apple"[^>]* selected/
+      refute html =~ ~r/value="banana"[^>]* selected/
+      assert html =~ ~r/value="cherry"[^>]* selected/
+
+      File.rm(path)
+    end
+  end
+
+  describe "select/3 — open_browser" do
+    test "marks the selected option" do
+      Mirage.SelectPage
+      |> Mirage.visit()
+      |> Mirage.select("Color", "Green")
+      |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
+
+      assert_receive {:opened, path}
+      html = File.read!(path)
+
+      assert html =~ ~r/value="green"[^>]* selected/
+      refute html =~ ~r/value="red"[^>]* selected/
+      refute html =~ ~r/value="blue"[^>]* selected/
+
+      File.rm(path)
+    end
+  end
+
   describe "fill_in/3 — action dispatch" do
     test "triggers the input's $change, passing the filled value as :value" do
       session = Mirage.visit(Mirage.FillInPage)

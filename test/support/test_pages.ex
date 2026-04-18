@@ -982,3 +982,118 @@ defmodule Mirage.CheckAmbiguousPage do
     """
   end
 end
+
+# ---------------------------------------------------------------------------
+# select/2 test pages
+# ---------------------------------------------------------------------------
+
+defmodule Mirage.SelectPage do
+  @moduledoc "Page with a labelled select box and distinct options."
+  use Hologram.Page
+
+  route "/select"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, color: nil)
+  end
+
+  def action(:pick_color, %{value: value}, component) do
+    put_state(component, color: value)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Color<select name="color" $change={:pick_color}>
+      <option value="red">Red</option>
+      <option value="green">Green</option>
+      <option value="blue">Blue</option>
+    </select></label>
+    """
+  end
+end
+
+defmodule Mirage.SelectMultiplePage do
+  @moduledoc "Page with a labelled multiselect box."
+  use Hologram.Page
+
+  route "/select-multiple"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, selections: [])
+  end
+
+  def action(:pick, %{value: value}, component) do
+    put_state(component, selections: component.state.selections ++ [value])
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Fruits<select name="fruits" multiple $change={:pick}>
+      <option value="apple">Apple</option>
+      <option value="banana">Banana</option>
+      <option value="cherry">Cherry</option>
+    </select></label>
+    """
+  end
+end
+
+defmodule Mirage.SelectAmbiguousPage do
+  @moduledoc "Two select boxes sharing the same label text."
+  use Hologram.Page
+
+  route "/select-ambiguous"
+  layout Mirage.TestLayout
+
+  def action(:pick, _params, component), do: component
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <label>Color<select name="a" $change={:pick}>
+      <option value="1">Red</option>
+    </select></label>
+    <label>Color<select name="b" $change={:pick}>
+      <option value="2">Blue</option>
+    </select></label>
+    """
+  end
+end
+
+defmodule Mirage.SelectFormPage do
+  @moduledoc "Select box inside a form with a $change handler."
+  use Hologram.Page
+
+  route "/select-form"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, color: nil, change_log: [])
+  end
+
+  def action(:pick_color, %{value: value}, component) do
+    put_state(component, color: value)
+  end
+
+  def action(:form_changed, %{value: value}, component) do
+    put_state(component, change_log: component.state.change_log ++ [value])
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <form $change={:form_changed}>
+      <label>Color<select name="color" $change={:pick_color}>
+        <option value="red">Red</option>
+        <option value="green">Green</option>
+      </select></label>
+    </form>
+    """
+  end
+end
