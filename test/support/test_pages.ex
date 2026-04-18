@@ -39,7 +39,12 @@ defmodule Mirage.HomePage do
   def template do
     ~HOLO"""
     <Hologram.UI.Link to={Mirage.AnotherPage}>link to other page</Hologram.UI.Link>
+    <a href="#" $click={:link}>I link to the same page</a>
     """
+  end
+
+  def action(:link, _params, component) do
+    put_page(component, Mirage.AnotherPage)
   end
 end
 

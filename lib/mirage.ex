@@ -58,6 +58,17 @@ defmodule Mirage do
   end
 
   @doc """
+  Like `Mirage.click/3` but specifically clicks on a link.
+
+  This is simply a short-hand for `click(session, "a", "Shop now!")`.  If you
+  need to be more specific, use `Mirage.click/3`.
+
+  """
+  def click_link(session, text, opts \\ []) do
+    click(session, "a", text, opts)
+  end
+
+  @doc """
   Trigger a `$click` event on the element matching the given CSS selector.
 
   Any actions or commands will be run.  If the click triggers a page navigation,
@@ -89,6 +100,7 @@ defmodule Mirage do
     Default is `true` meaning you must provide an exact match.
 
   """
+  @doc group: "Events"
   @spec click(Session.t(), String.t(), String.t() | keyword()) :: Session.t()
   defdelegate click(session, selector, text_or_opts \\ []), to: Events
   @doc false

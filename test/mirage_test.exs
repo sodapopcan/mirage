@@ -8,6 +8,22 @@ defmodule MirageTest do
 
   doctest Mirage
 
+  describe "click_link/2" do
+    test "clicks on a link" do
+      Mirage.HomePage
+      |> Mirage.visit()
+      |> Mirage.click_link("I link to the same page")
+      |> Mirage.assert_page(Mirage.AnotherPage)
+    end
+
+    test "accepts opts" do
+      Mirage.HomePage
+      |> Mirage.visit()
+      |> Mirage.click_link("I link to", exact: false)
+      |> Mirage.assert_page(Mirage.AnotherPage)
+    end
+  end
+
   describe "fill_in/3" do
     test "fills an input wrapped by a label matching exactly" do
       session = Mirage.visit(Mirage.FillInPage)
