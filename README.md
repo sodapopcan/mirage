@@ -28,7 +28,7 @@ tool: `Mirage.open_browser/1`.
 ```elixir
 def deps do
   [
-    {:mirage, "~> 0.1.0", only: :test, runtime: false}
+    {:mirage, "~> 0.0.1", only: :test, runtime: false}
   ]
 end
 ```
