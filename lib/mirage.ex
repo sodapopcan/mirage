@@ -28,6 +28,7 @@ defmodule Mirage do
   alias Hologram.Component
   alias Hologram.Server
   alias Mirage.DOM
+  alias Mirage.Query
   alias Mirage.Session
 
   @doc """
@@ -39,7 +40,7 @@ defmodule Mirage do
   """
   @spec visit(module(), %{atom() => any()}) :: Session.t()
   def visit(page_module, params \\ %{}) do
-    {page, server} = DOM.init_component(page_module, params, %Server{})
+    {page, server} = DOM.init_component(page_module, params, %Hologram.Server{})
 
     vars = Map.merge(params, page.state)
     page_dom = page_module.template().(vars)
@@ -59,22 +60,20 @@ defmodule Mirage do
   end
 
   @doc """
-  Trigger an element's `$click` event.
+  Trigger a `$click` event on the element matching the given CSS selector.
 
   Any actions or commands will be run.  If the click triggers a page navigation,
   the new page will be loaded into the session.
 
-  An element is matched by either its inner text or a test id.
-
-  If the target element is a submit button, it will trigger the `$submit` event
-  of its form.
+  Raises if no matching element with a `$click` handler is found, or if more
+  than one matches.
 
   ## Examples
 
   ```
   HomePage
   |> visit()
-  |> click("Sign up")
+  |> click("button")
   ```
 
   ```
@@ -82,57 +81,67 @@ defmodule Mirage do
   |> visit()
   |> fill_in("Name", with: "Bender")
   |> fill_in("Password", with: "killallhumans")
-  |> click("Submit")
+  |> click("button", "Submit")
   |> assert_page(WelcomePage)
   ```
 
   ## Options
-  - `:exact` Set to `false` to match on a substring of an element.
+  - `:text` Match on the element's inner text.
+  - `:exact` Set to `false` to match on a substring of an element's text.
     Default is `true` meaning you must provide an exact match.
 
   """
-  @spec click(Session.t(), String.t(), keyword()) :: Session.t()
-  def click(session, text, opts \\ []) do
+  @spec click(Session.t(), String.t(), String.t() | keyword()) :: Session.t()
+  def click(session, selector, text_or_opts \\ [])
+
+  def click(session, selector, text) when is_binary(text),
+    do: click(session, selector, text: text)
+
+  def click(%Session{} = session, selector, opts) when is_binary(selector) and is_list(opts) do
+    text = Keyword.get(opts, :text)
     exact? = Keyword.get(opts, :exact, true)
 
-    case find_clickables(session.ast, text, exact?) do
+    matches =
+      session.ast
+      |> Query.query_all(selector)
+      |> Enum.filter(fn {:element, _, attrs, _} -> has_click_attr?(attrs) end)
+
+    matches =
+      if text do
+        Enum.filter(matches, fn node ->
+          text_matches?(DOM.inner_text(node), text, exact?)
+        end)
+      else
+        matches
+      end
+
+    case matches do
       [] ->
-        raise "No clickable element found with text: #{inspect(text)}"
+        raise "No clickable element found matching #{describe_click(selector, opts)}"
 
       [node] ->
         handle_click(session, node)
 
       [_ | _] = nodes ->
-        raise "Ambiguous match: found #{length(nodes)} clickable elements with text: #{inspect(text)}"
+        raise "Ambiguous match: found #{length(nodes)} clickable elements matching #{describe_click(selector, opts)}"
     end
   end
 
-  defp find_clickables(nodes, text, exact?) when is_list(nodes) do
-    nodes |> find_clickables(text, exact?, []) |> :lists.reverse()
-  end
+  @doc false
+  @spec click(Session.t(), String.t(), String.t(), keyword()) :: Session.t()
+  def click(session, selector, text, opts) when is_binary(text) and is_list(opts),
+    do: click(session, selector, Keyword.put(opts, :text, text))
 
-  defp find_clickables([], _text, _exact?, acc), do: acc
+  defp describe_click(selector, opts) do
+    parts = [inspect(selector)]
 
-  defp find_clickables([{:element, _tag, attrs, children} = node | rest], text, exact?, acc) do
-    acc = find_clickables(children, text, exact?, acc)
-
-    matches? =
-      node
-      |> DOM.inner_text()
-      |> text_matches?(text, exact?)
-
-    acc =
-      if has_click_attr?(attrs) and matches? do
-        [node | acc]
-      else
-        acc
+    parts =
+      case Keyword.get(opts, :text) do
+        nil -> parts
+        text -> parts ++ ["text: #{inspect(text)}"]
       end
 
-    find_clickables(rest, text, exact?, acc)
-  end
-
-  defp find_clickables([_ | rest], text, exact?, acc) do
-    find_clickables(rest, text, exact?, acc)
+    Enum.join(parts, ", ")
   end
 
   defp has_click_attr?(attrs) do

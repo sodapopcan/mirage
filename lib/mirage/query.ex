@@ -3,6 +3,7 @@ defmodule Mirage.Query do
 
   alias Mirage.DOM
   alias Meeseeks.Selector.Element
+
   alias Meeseeks.Selector.Element.{Namespace, Tag}
 
   alias Meeseeks.Selector.Element.Attribute.{

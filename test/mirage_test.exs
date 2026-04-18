@@ -14,7 +14,7 @@ defmodule MirageTest do
       session =
         Mirage.ClickPage
         |> Mirage.visit()
-        |> Mirage.click("Save changes now")
+        |> Mirage.click("button", "Save changes now")
 
       assert %Session{
         page_module: Mirage.ClickPage,
@@ -26,53 +26,53 @@ defmodule MirageTest do
 
     test "trims surrounding whitespace when matching exactly" do
       session = Mirage.visit(Mirage.ClickWhitespacePage)
-      assert %Session{} = Mirage.click(session, "Save")
+      assert %Session{} = Mirage.click(session, "button", "Save")
     end
 
     test "concatenates text from descendant elements when computing inner text" do
       session = Mirage.visit(Mirage.ClickNestedTextPage)
-      assert %Session{} = Mirage.click(session, "Click me")
+      assert %Session{} = Mirage.click(session, "button", "Click me")
     end
 
     test "finds a clickable element nested deep in the tree" do
       session = Mirage.visit(Mirage.ClickDeepPage)
-      assert %Session{} = Mirage.click(session, "Go")
+      assert %Session{} = Mirage.click(session, "a", "Go")
     end
 
     test "matches substrings when exact: false" do
       session = Mirage.visit(Mirage.ClickPage)
-      assert %Session{} = Mirage.click(session, "changes", exact: false)
+      assert %Session{} = Mirage.click(session, "button", "changes", exact: false)
     end
 
     test "does not match substrings when exact is the default" do
       session = Mirage.visit(Mirage.ClickPage)
 
       assert_raise RuntimeError, ~r/No clickable element found/, fn ->
-        Mirage.click(session, "changes")
+        Mirage.click(session, "button", "changes")
       end
     end
 
     test "raises when no element has a $click attribute" do
       session = Mirage.visit(Mirage.ClickNoAttrPage)
 
-      assert_raise RuntimeError, ~r/No clickable element found with text: "Save"/, fn ->
-        Mirage.click(session, "Save")
+      assert_raise RuntimeError, ~r/No clickable element found matching "button"/, fn ->
+        Mirage.click(session, "button")
       end
     end
 
     test "ignores clickables written inside an HTML comment" do
       session = Mirage.visit(Mirage.ClickCommentPage)
 
-      assert_raise RuntimeError, ~r/No clickable element found with text: "Hidden"/, fn ->
-        Mirage.click(session, "Hidden")
+      assert_raise RuntimeError, ~r/No clickable element found matching "button"/, fn ->
+        Mirage.click(session, "button")
       end
     end
 
     test "raises when text does not match any clickable element" do
       session = Mirage.visit(Mirage.ClickPage)
 
-      assert_raise RuntimeError, ~r/No clickable element found with text: "Cancel"/, fn ->
-        Mirage.click(session, "Cancel")
+      assert_raise RuntimeError, ~r/No clickable element found matching "button", text: "Cancel"/, fn ->
+        Mirage.click(session, "button", "Cancel")
       end
     end
 
@@ -80,9 +80,9 @@ defmodule MirageTest do
       session = Mirage.visit(Mirage.ClickAmbiguousPage)
 
       assert_raise RuntimeError,
-                   ~r/Ambiguous match: found 2 clickable elements with text: "Save"/,
+                   ~r/Ambiguous match: found 2 clickable elements/,
                    fn ->
-                     Mirage.click(session, "Save")
+                     Mirage.click(session, "*", "Save")
                    end
     end
 
@@ -90,7 +90,7 @@ defmodule MirageTest do
       session =
         Mirage.ClickPage
         |> Mirage.visit()
-        |> Mirage.click("Save changes now")
+        |> Mirage.click("button", "Save changes now")
 
       assert session.page.state.clicked == true
     end
@@ -105,7 +105,7 @@ defmodule MirageTest do
       refute rendered_text(session.ast) =~ "I am the other page"
 
       # Click the link.
-      session = Mirage.click(session, "link to other page")
+      session = Mirage.click(session, "a", "link to other page")
 
       # The session now reflects the linked page: its AST was re-expanded
       # from `Mirage.AnotherPage`'s template.
@@ -119,7 +119,7 @@ defmodule MirageTest do
       assert rendered_text(session.ast) =~ "wrapped link to other page"
       refute rendered_text(session.ast) =~ "I am the other page"
 
-      session = Mirage.click(session, "wrapped link to other page")
+      session = Mirage.click(session, "a", "wrapped link to other page")
 
       assert rendered_text(session.ast) =~ "I am the other page"
       refute rendered_text(session.ast) =~ "wrapped link to other page"
@@ -136,7 +136,7 @@ defmodule MirageTest do
       session = Mirage.visit(Mirage.CommandPage, %{tmp_path: tmp_path})
       refute File.exists?(tmp_path)
 
-      Mirage.click(session, "write file")
+      Mirage.click(session, "button", "write file")
 
       # The `:write_file` action emitted a `:write_file` command, which ran
       # server-side and wrote the payload to disk.
@@ -147,7 +147,7 @@ defmodule MirageTest do
       assert capture_io(fn ->
         Mirage.ClickCommandPage
         |> Mirage.visit()
-        |> Mirage.click("No params")
+        |> Mirage.click("button", "No params")
       end) == "No params!\n"
     end
   end
@@ -283,7 +283,7 @@ defmodule MirageTest do
       session =
         Mirage.LonghandActionPage
         |> Mirage.visit()
-        |> Mirage.click("longhand increment")
+        |> Mirage.click("button", "longhand increment")
 
       assert session.page.state.count == 1
     end
@@ -292,7 +292,7 @@ defmodule MirageTest do
       session =
         Mirage.LonghandActionPage
         |> Mirage.visit()
-        |> Mirage.click("longhand add 10")
+        |> Mirage.click("button", "longhand add 10")
 
       assert session.page.state.count == 10
     end
@@ -303,7 +303,7 @@ defmodule MirageTest do
       session =
         Mirage.DirectCommandPage
         |> Mirage.visit()
-        |> Mirage.click("run command")
+        |> Mirage.click("button", "run command")
 
       assert session.page.state.status == "done"
     end
@@ -312,7 +312,7 @@ defmodule MirageTest do
       session =
         Mirage.DirectCommandPage
         |> Mirage.visit()
-        |> Mirage.click("run param command")
+        |> Mirage.click("button", "run param command")
 
       assert session.page.state.status == "finished"
     end
@@ -323,7 +323,7 @@ defmodule MirageTest do
       session =
         Mirage.ActionChainPage
         |> Mirage.visit()
-        |> Mirage.click("chain")
+        |> Mirage.click("button", "chain")
 
       assert session.page.state.log == ["first", "second"]
     end
@@ -334,7 +334,7 @@ defmodule MirageTest do
       session =
         Mirage.PutPagePage
         |> Mirage.visit()
-        |> Mirage.click("go to other page")
+        |> Mirage.click("button", "go to other page")
 
       assert session.page_module == Mirage.AnotherPage
       assert rendered_text(session.ast) =~ "I am the other page"

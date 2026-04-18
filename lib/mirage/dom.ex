@@ -170,7 +170,8 @@ defmodule Mirage.DOM do
   def attr_to_string(parts) when is_list(parts) do
     Enum.map_join(parts, "", fn
       {:text, t} -> t
-      {:expression, {v}} -> to_string(v)
+      {:expression, {v}} when is_binary(v) or is_number(v) or is_atom(v) -> to_string(v)
+      {:expression, {v}} -> inspect(v)
       _ -> ""
     end)
   end

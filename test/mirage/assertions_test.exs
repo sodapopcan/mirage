@@ -138,7 +138,7 @@ defmodule Mirage.AssertionsTest do
     test "asserts that we are on a specific page" do
       Mirage.HomePage
       |> Mirage.visit()
-      |> Mirage.click("link to other page")
+      |> Mirage.click("a", "link to other page")
       |> Mirage.assert_page(Mirage.AnotherPage)
     end
 
