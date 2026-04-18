@@ -61,6 +61,27 @@ jobs:
 
           echo "All commits are human-authored."
 
+      - name: Reject conventional commit messages
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          else
+            range="HEAD~1..HEAD"
+          fi
+
+          prefixes="feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert"
+
+          while IFS= read -r sha; do
+            subject=$(git log -1 --format='%s' "$sha")
+
+            if echo "$subject" | grep -Eq "^($prefixes)(\(.+\))?!?:"; then
+              echo "::error::Commit $sha uses conventional commit style: $subject"
+              exit 1
+            fi
+          done < <(git rev-list "$range")
+
+          echo "No conventional commit messages found."
+
   compile:
     name: Compile
     runs-on: ubuntu-latest
