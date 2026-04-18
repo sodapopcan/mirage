@@ -11,9 +11,6 @@ defmodule Mirage do
     State container for a test.
     """
 
-    alias Hologram.Component
-    alias Hologram.Server
-
     defstruct [
       :page,
       :server,
@@ -27,15 +24,15 @@ defmodule Mirage do
     ]
 
     @type t :: %__MODULE__{
-            page: Component.t(),
-            server: Server.t(),
+            page: any(),
+            server: any(),
             ast: any(),
             page_module: module(),
-            params: %{atom() => any()},
-            scope: {:element, String.t(), list(), list()} | nil,
-            checked_radios: %{optional(String.t() | nil) => String.t()},
-            checked_checkboxes: MapSet.t({String.t() | nil, String.t()}),
-            selected_options: %{optional(String.t() | nil) => MapSet.t(String.t())}
+            params: map(),
+            scope: tuple() | nil,
+            checked_radios: map(),
+            checked_checkboxes: any(),
+            selected_options: map()
           }
   end
 
@@ -52,7 +49,7 @@ defmodule Mirage do
   the rest of `Mirage` can use.
 
   """
-  @spec visit(module(), %{atom() => any()}) :: Session.t()
+  @spec visit(module(), map()) :: Session.t()
   def visit(page_module, params \\ %{}) do
     {page, server} = DOM.init_component(page_module, params, %Hologram.Server{})
 
