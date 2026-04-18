@@ -58,10 +58,9 @@ defmodule Mirage do
   end
 
   @doc """
-  Like `Mirage.click/3` but specifically clicks on a link.
+  Click on a button by its text.
 
-  This is simply a short-hand for `click(session, "a", "Shop now!")`.  If you
-  need to be more specific, use `Mirage.click/3`.
+  This is simply a short-hand for `Mirage.click/3` with `"a"` as its selector.
 
   """
   def click_link(session, text, opts \\ []) do
@@ -69,10 +68,9 @@ defmodule Mirage do
   end
 
   @doc """
-  Like `Mirage.click/3` but specifically clicks on a button.
+  Click on a link by its text.
 
-  This is simply a short-hand for `click(session, "button", "Shop now!")`.  If you
-  need to be more specific, use `Mirage.click/3`.
+  This is simply a short-hand for `Mirage.click/3` with `"button"` as its selector.
 
   """
   def click_button(session, text, opts \\ []) do
