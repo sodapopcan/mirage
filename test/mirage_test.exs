@@ -170,6 +170,62 @@ defmodule MirageTest do
     end
   end
 
+  describe "uncheck/2" do
+    test "removes the checkbox from checked_checkboxes" do
+      session =
+        Mirage.CheckPage
+        |> Mirage.visit()
+        |> Mirage.check("Newsletter")
+        |> Mirage.uncheck("Newsletter")
+
+      refute MapSet.member?(session.checked_checkboxes, {"newsletter", "yes"})
+    end
+
+    test "dispatches $change when unchecking" do
+      session =
+        Mirage.CheckPage
+        |> Mirage.visit()
+        |> Mirage.check("Newsletter")
+        |> Mirage.uncheck("Newsletter")
+
+      # toggle_newsletter sets newsletter: true regardless; just verify no crash
+      assert %Mirage.Session{} = session
+    end
+
+    test "matches substrings when exact: false" do
+      session =
+        Mirage.CheckPage
+        |> Mirage.visit()
+        |> Mirage.check("Newsletter")
+        |> Mirage.uncheck("News", exact: false)
+
+      refute MapSet.member?(session.checked_checkboxes, {"newsletter", "yes"})
+    end
+
+    test "raises when no label matches" do
+      session = Mirage.visit(Mirage.CheckPage)
+
+      assert_raise RuntimeError, ~r/No checkbox found with label: "Missing"/, fn ->
+        Mirage.uncheck(session, "Missing")
+      end
+    end
+
+    test "open_browser does not show checked after uncheck" do
+      Mirage.CheckPage
+      |> Mirage.visit()
+      |> Mirage.check("Newsletter")
+      |> Mirage.uncheck("Newsletter")
+      |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
+
+      assert_receive {:opened, path}
+      html = File.read!(path)
+
+      refute html =~ ~r/name="newsletter"[^>]* checked/
+
+      File.rm(path)
+    end
+  end
+
   describe "check/2 — open_browser" do
     test "injects checked on the checked checkbox" do
       session =

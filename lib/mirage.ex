@@ -336,6 +336,53 @@ defmodule Mirage do
   end
 
   @doc """
+  Unchecks a checkbox by its associated label text and dispatches the input's
+  `$change` event with the checkbox's `value` attribute (defaulting to `"on"`).
+
+  Accepts the same options as `choose/3`.
+  """
+  @spec uncheck(Session.t(), String.t(), keyword()) :: Session.t()
+  def uncheck(session, label, opts \\ []) do
+    exact? = Keyword.get(opts, :exact, true)
+
+    {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
+
+    matches =
+      Enum.filter(labels, fn {node, _wrapped, _form_change} ->
+        DOM.text_matches?(DOM.inner_text(node), label, exact?)
+      end)
+
+    case matches do
+      [] ->
+        raise "No checkbox found with label: #{inspect(label)}"
+
+      [entry] ->
+        {input, form_change} = resolve_input(entry, inputs_by_id, label)
+        {:element, _, attrs, _} = input
+
+        name =
+          case DOM.find_attr(attrs, "name") do
+            nil -> nil
+            v -> DOM.attr_to_string(v)
+          end
+
+        value =
+          case DOM.find_attr(attrs, "value") do
+            nil -> "on"
+            v -> DOM.attr_to_string(v)
+          end
+
+        session
+        |> trigger_input_action(input, value)
+        |> trigger_form_change(form_change, value)
+        |> Map.update!(:checked_checkboxes, &MapSet.delete(&1, {name, value}))
+
+      [_ | _] = many ->
+        raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
+    end
+  end
+
+  @doc """
   Selects an option in a `<select>` box identified by its associated label
   text, and dispatches the select's `$change` event with the option's `value`
   attribute (defaulting to the option's inner text when no `value` attribute
