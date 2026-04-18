@@ -108,11 +108,10 @@ defmodule Mirage.Events do
     text = Keyword.get(opts, :text)
     exact? = Keyword.get(opts, :exact, true)
 
-    scoped_selector = Scoped.scope_selector(session.scope, selector)
-
     matches =
-      session.ast
-      |> Query.query_all(scoped_selector)
+      session
+      |> Scoped.query_ast()
+      |> Query.query_all(selector)
       |> Enum.filter(fn {:element, _, attrs, _} -> has_attr?(attrs, event_attr) end)
 
     matches =

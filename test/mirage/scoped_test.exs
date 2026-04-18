@@ -54,22 +54,22 @@ defmodule Mirage.ScopingTest do
       assert session.page.state.clicked == :div
     end
 
-    test "restores scope after the block returns" do
-      session =
+    test "restores scope to nil after the block returns" do
+      result =
         Mirage.WithinPage
         |> Mirage.visit()
         |> Mirage.within("div.sidebar", fn session ->
           Mirage.assert_has(session, "a.nav", "Sidebar link")
         end)
 
-      assert session.scope == nil
+      assert result.scope == nil
     end
 
-    test "nests — inner within appends to the outer selector" do
+    test "nests — inner within searches within the outer scope" do
       Mirage.WithinPage
       |> Mirage.visit()
       |> Mirage.within("div.sidebar", fn session ->
-        # span.main is not inside div.sidebar, so the nested scope is invalid
+        # span.main is not inside div.sidebar, so it won't be found
         assert_raise RuntimeError, ~r/Scope selector.*matched no elements/, fn ->
           Mirage.within(session, "span.main", fn session ->
             Mirage.click(session, "a.nav")
@@ -81,18 +81,27 @@ defmodule Mirage.ScopingTest do
     end
 
     test "nested within restores to outer scope, not nil" do
-      session =
-        Mirage.WithinPage
-        |> Mirage.visit()
-        |> Mirage.within("div.sidebar", fn session ->
-          inner =
-            Mirage.within(session, "a.nav", fn s -> s end)
+      Mirage.WithinPage
+      |> Mirage.visit()
+      |> Mirage.within("div.sidebar", fn outer_session ->
+        outer_scope = outer_session.scope
 
-          assert inner.scope == "div.sidebar"
-          inner
-        end)
+        inner_session =
+          Mirage.within(outer_session, "a.nav", fn s -> s end)
 
-      assert session.scope == nil
+        assert inner_session.scope == outer_scope
+        inner_session
+      end)
+    end
+
+    test "ast is unchanged inside a within block" do
+      session = Mirage.visit(Mirage.WithinPage)
+      original_ast = session.ast
+
+      Mirage.within(session, "div.sidebar", fn scoped ->
+        assert scoped.ast == original_ast
+        scoped
+      end)
     end
 
     test "raises when scope matches no elements" do
@@ -171,14 +180,12 @@ defmodule Mirage.ScopingTest do
       end
     end
 
-    test "restores ast and scope after the block" do
-      session = Mirage.visit(Mirage.WithinArticlePage)
-      original_ast = session.ast
-
+    test "restores scope to nil after the block" do
       result =
-        Mirage.within_article(session, "Blog Post", fn s -> s end)
+        Mirage.WithinArticlePage
+        |> Mirage.visit()
+        |> Mirage.within_article("Blog Post", fn s -> s end)
 
-      assert result.ast == original_ast
       assert result.scope == nil
     end
   end

@@ -22,7 +22,7 @@ defmodule Mirage do
             ast: any(),
             page_module: module(),
             params: %{atom() => any()},
-            scope: String.t() | nil
+            scope: {:element, String.t(), list(), list()} | nil
           }
   end
 
@@ -197,8 +197,7 @@ defmodule Mirage do
     exact? = Keyword.get(opts, :exact, true)
     value = Keyword.fetch!(opts, :with)
 
-    ast = Scoped.scoped_ast(session)
-    {labels, inputs_by_id} = collect_form_nodes(ast, nil)
+    {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
 
     matches =
       Enum.filter(labels, fn {node, _wrapped, _form_change} ->

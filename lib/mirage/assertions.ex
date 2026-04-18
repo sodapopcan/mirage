@@ -64,13 +64,12 @@ defmodule Mirage.Assertions do
     refute_has(session, selector, Keyword.put(opts, :text, text))
   end
 
-  defp find_matches(%Session{ast: ast, scope: scope}, selector, opts) do
+  defp find_matches(%Session{} = session, selector, opts) do
     text = Keyword.get(opts, :text)
     value = Keyword.get(opts, :value)
     exact? = Keyword.get(opts, :exact, true)
 
-    scoped_selector = Scoped.scope_selector(scope, selector)
-    results = Query.query_all(ast, scoped_selector)
+    results = Query.query_all(Scoped.query_ast(session), selector)
 
     results
     |> maybe_filter_text(text, exact?)
