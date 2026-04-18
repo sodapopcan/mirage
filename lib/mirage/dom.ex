@@ -178,6 +178,26 @@ defmodule Mirage.DOM do
 
   def attr_to_string(_other), do: ""
 
+  @header_tags ~w(h1 h2 h3 h4 h5 h6)
+
+  @doc """
+  Returns the trimmed inner text of the first h1–h6 element found in a
+  depth-first walk of the given node(s), or `nil` if none is found.
+  """
+  def first_header_text(nodes) when is_list(nodes) do
+    Enum.find_value(nodes, &first_header_text/1)
+  end
+
+  def first_header_text({:element, tag, _attrs, children}) when tag in @header_tags do
+    String.trim(inner_text(children))
+  end
+
+  def first_header_text({:element, _tag, _attrs, children}) do
+    first_header_text(children)
+  end
+
+  def first_header_text(_other), do: nil
+
   @doc false
   def text_matches?(actual, expected, exact?) do
     if exact? do

@@ -115,4 +115,112 @@ defmodule Mirage.WithinTest do
       end
     end
   end
+
+  describe "within_article/3" do
+    test "scopes to the article matching the header" do
+      Mirage.WithinArticlePage
+      |> Mirage.visit()
+      |> Mirage.within_article("Blog Post", fn session ->
+        session
+        |> Mirage.assert_has("p", "Blog content")
+        |> Mirage.refute_has("p", "News content")
+      end)
+    end
+
+    test "scopes click to the matching article" do
+      session =
+        Mirage.WithinArticlePage
+        |> Mirage.visit()
+        |> Mirage.within_article("News", fn session ->
+          Mirage.click(session, "button", "Like")
+        end)
+
+      assert session.page.state.clicked == :second
+    end
+
+    test "click does not find elements in another article" do
+      session = Mirage.visit(Mirage.WithinArticlePage)
+
+      Mirage.within_article(session, "Blog Post", fn session ->
+        session
+        |> Mirage.refute_has("p", "News content")
+        |> Mirage.assert_has("p", "Blog content")
+      end)
+
+      session =
+        Mirage.within_article(session, "Blog Post", fn session ->
+          Mirage.click(session, "button", "Like")
+        end)
+
+      assert session.page.state.clicked == :first
+    end
+
+    test "finds a heading nested inside another element" do
+      Mirage.WithinNestedHeaderPage
+      |> Mirage.visit()
+      |> Mirage.within_article("Deep Title", fn session ->
+        Mirage.assert_has(session, "p", "Some content")
+      end)
+    end
+
+    test "raises when no article has the given header" do
+      session = Mirage.visit(Mirage.WithinArticlePage)
+
+      assert_raise RuntimeError, ~r/No <article> found with header "Nope"/, fn ->
+        Mirage.within_article(session, "Nope", fn s -> s end)
+      end
+    end
+
+    test "restores ast and scope after the block" do
+      session = Mirage.visit(Mirage.WithinArticlePage)
+      original_ast = session.ast
+
+      result =
+        Mirage.within_article(session, "Blog Post", fn s -> s end)
+
+      assert result.ast == original_ast
+      assert result.scope == nil
+    end
+  end
+
+  describe "within_section/3" do
+    test "scopes to the section matching the header" do
+      Mirage.WithinArticlePage
+      |> Mirage.visit()
+      |> Mirage.within_section("Settings", fn session ->
+        session
+        |> Mirage.assert_has("label", "Email")
+        |> Mirage.refute_has("p", "Profile info")
+      end)
+    end
+
+    test "scopes to a different section" do
+      Mirage.WithinArticlePage
+      |> Mirage.visit()
+      |> Mirage.within_section("Profile", fn session ->
+        session
+        |> Mirage.assert_has("p", "Profile info")
+        |> Mirage.refute_has("label", "Email")
+      end)
+    end
+
+    test "scopes fill_in to the matching section" do
+      session =
+        Mirage.WithinArticlePage
+        |> Mirage.visit()
+        |> Mirage.within_section("Settings", fn session ->
+          Mirage.fill_in(session, "Email", with: "test@example.com")
+        end)
+
+      assert session.page.state.clicked == :first
+    end
+
+    test "raises when no section has the given header" do
+      session = Mirage.visit(Mirage.WithinArticlePage)
+
+      assert_raise RuntimeError, ~r/No <section> found with header "Nope"/, fn ->
+        Mirage.within_section(session, "Nope", fn s -> s end)
+      end
+    end
+  end
 end

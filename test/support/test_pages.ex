@@ -637,6 +637,70 @@ defmodule Mirage.WithinPage do
   end
 end
 
+defmodule Mirage.WithinArticlePage do
+  @moduledoc """
+  Page with two articles and two sections, each identified by a heading.
+  Used by within_article/3 and within_section/3 tests.
+  """
+  use Hologram.Page
+
+  route "/within-article"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, clicked: nil)
+  end
+
+  def action(:first, _params, component), do: put_state(component, clicked: :first)
+  def action(:second, _params, component), do: put_state(component, clicked: :second)
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <article>
+      <h2>Blog Post</h2>
+      <p>Blog content</p>
+      <button $click={:first}>Like</button>
+    </article>
+    <article>
+      <h2>News</h2>
+      <p>News content</p>
+      <button $click={:second}>Like</button>
+    </article>
+    <section>
+      <h3>Settings</h3>
+      <label>Email<input $change={:first} /></label>
+    </section>
+    <section>
+      <h3>Profile</h3>
+      <p>Profile info</p>
+    </section>
+    """
+  end
+end
+
+defmodule Mirage.WithinNestedHeaderPage do
+  @moduledoc """
+  Page where the heading is nested inside another element within the
+  article, to test depth-first header discovery.
+  """
+  use Hologram.Page
+
+  route "/within-nested-header"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <article>
+      <header><h1>Deep Title</h1></header>
+      <p>Some content</p>
+    </article>
+    """
+  end
+end
+
 # ---------------------------------------------------------------------------
 # Shared event test pages (used for click, focus, blur)
 # ---------------------------------------------------------------------------

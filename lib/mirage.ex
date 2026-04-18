@@ -80,6 +80,61 @@ defmodule Mirage do
     %{result | scope: session.scope}
   end
 
+  @doc """
+  Scopes to the `<article>` whose first heading (h1–h6) matches `header`.
+
+      session
+      |> within_article("Blog Post", fn session ->
+        session |> assert_has("p", "Post content")
+      end)
+
+  """
+  @spec within_article(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
+  def within_article(%Session{} = session, header, fun)
+      when is_binary(header) and is_function(fun, 1) do
+    within_tag(session, "article", header, fun)
+  end
+
+  @doc """
+  Scopes to the `<section>` whose first heading (h1–h6) matches `header`.
+
+      session
+      |> within_section("Settings", fn session ->
+        session |> assert_has("input#email")
+      end)
+
+  """
+  @spec within_section(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
+  def within_section(%Session{} = session, header, fun)
+      when is_binary(header) and is_function(fun, 1) do
+    within_tag(session, "section", header, fun)
+  end
+
+  defp within_tag(session, tag, header, fun) do
+    ast = scoped_ast(session)
+    matches = Query.query_all(ast, tag)
+
+    match =
+      Enum.filter(matches, fn node ->
+        DOM.first_header_text(node) == header
+      end)
+
+    case match do
+      [{:element, _, _, _} = node] ->
+        prev_ast = session.ast
+        prev_scope = session.scope
+        scoped = %{session | ast: [node], scope: nil}
+        result = fun.(scoped)
+        %{result | ast: prev_ast, scope: prev_scope}
+
+      [] ->
+        raise "No <#{tag}> found with header #{inspect(header)}"
+
+      many ->
+        raise "Ambiguous match: found #{length(many)} <#{tag}> elements with header #{inspect(header)}"
+    end
+  end
+
   defp scope_selector(nil, selector), do: selector
   defp scope_selector(parent, selector), do: "#{parent} #{selector}"
 
