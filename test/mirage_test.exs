@@ -35,6 +35,24 @@ defmodule MirageTest do
       |> Mirage.click_button("I button to", exact: false)
       |> Mirage.assert_page(Mirage.AnotherPage)
     end
+
+    test "dispatches form $submit when button has no $click" do
+      session =
+        Mirage.FormSubmitPage
+        |> Mirage.visit()
+        |> Mirage.click_button("Submit")
+
+      assert session.page.state.submitted == true
+    end
+
+    test "dispatches form $submit for input[type=submit] with no $click" do
+      session =
+        Mirage.FormSubmitInputPage
+        |> Mirage.visit()
+        |> Mirage.click_button("Go")
+
+      assert session.page.state.submitted == true
+    end
   end
 
   describe "choose/2" do

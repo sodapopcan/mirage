@@ -987,6 +987,58 @@ end
 # select/2 test pages
 # ---------------------------------------------------------------------------
 
+defmodule Mirage.FormSubmitPage do
+  @moduledoc "Form with $submit on the form element and a plain button with no $click."
+  use Hologram.Page
+
+  route "/form-submit"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, submitted: false)
+  end
+
+  def action(:submit, _params, component) do
+    put_state(component, submitted: true)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <form $submit={:submit}>
+      <button>Submit</button>
+    </form>
+    """
+  end
+end
+
+defmodule Mirage.FormSubmitInputPage do
+  @moduledoc "Form with $submit and an input[type=submit] with no $click."
+  use Hologram.Page
+
+  route "/form-submit-input"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, submitted: false)
+  end
+
+  def action(:submit, _params, component) do
+    put_state(component, submitted: true)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <form $submit={:submit}>
+      <input type="submit" value="Go" />
+    </form>
+    """
+  end
+end
+
 defmodule Mirage.SelectPage do
   @moduledoc "Page with a labelled select box and distinct options."
   use Hologram.Page

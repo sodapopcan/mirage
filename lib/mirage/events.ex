@@ -19,8 +19,45 @@ defmodule Mirage.Events do
   end
 
   def click(%Session{} = session, selector, opts) when is_binary(selector) and is_list(opts) do
-    node = find_event_target!(session, "$click", selector, opts)
-    handle_click(session, node)
+    text = Keyword.get(opts, :text)
+    exact? = Keyword.get(opts, :exact, true)
+    ast = Scoped.query_ast(session)
+
+    # Primary: elements that have a $click handler.
+    with_click =
+      ast
+      |> Query.query_all(selector)
+      |> Enum.filter(fn {:element, _, attrs, _} -> has_attr?(attrs, "$click") end)
+      |> filter_by_text(text, exact?)
+
+    # Fallback: buttons / input[type=submit] inside a form with $submit.
+    targets =
+      case with_click do
+        [] ->
+          ast
+          |> find_submit_targets()
+          |> Enum.filter(fn {node, _submit_attr} ->
+            text == nil or DOM.text_matches?(element_text(node), text, exact?)
+          end)
+          |> Enum.map(fn {_node, submit_attr} -> {:form_submit, submit_attr} end)
+
+        nodes ->
+          Enum.map(nodes, &{:click, &1})
+      end
+
+    case targets do
+      [] ->
+        raise "No clickable element found matching #{describe(selector, opts)}"
+
+      [{:click, node}] ->
+        handle_click(session, node)
+
+      [{:form_submit, submit_attr}] ->
+        dispatch_event(session, submit_attr, %{})
+
+      many ->
+        raise "Ambiguous match: found #{length(many)} clickable elements matching #{describe(selector, opts)}"
+    end
   end
 
   def click(session, selector, text, opts) when is_binary(text) and is_list(opts) do
@@ -143,6 +180,68 @@ defmodule Mirage.Events do
       value -> dispatch_event(session, value, %{})
     end
   end
+
+  # For most elements inner_text gives the display text; for input[type=submit]
+  # the display text is the value attribute.
+  defp element_text({:element, "input", attrs, _}) do
+    case DOM.find_attr(attrs, "value") do
+      nil -> ""
+      v -> DOM.attr_to_string(v)
+    end
+  end
+
+  defp element_text(node), do: DOM.inner_text(node)
+
+  defp filter_by_text(nodes, nil, _exact?), do: nodes
+
+  defp filter_by_text(nodes, text, exact?) do
+    Enum.filter(nodes, fn node ->
+      DOM.text_matches?(DOM.inner_text(node), text, exact?)
+    end)
+  end
+
+  # Returns [{button_or_submit_input, form_submit_attr}] for every submit
+  # button / input[type=submit] that lives inside a form with a $submit attr.
+  defp find_submit_targets(nodes) when is_list(nodes) do
+    Enum.flat_map(nodes, &find_submit_targets/1)
+  end
+
+  defp find_submit_targets({:element, "form", attrs, children}) do
+    case DOM.find_attr(attrs, "$submit") do
+      nil ->
+        find_submit_targets(children)
+
+      submit_attr ->
+        children
+        |> find_submit_buttons()
+        |> Enum.map(fn btn -> {btn, submit_attr} end)
+    end
+  end
+
+  defp find_submit_targets({:element, _tag, _attrs, children}) do
+    find_submit_targets(children)
+  end
+
+  defp find_submit_targets(_), do: []
+
+  defp find_submit_buttons(nodes) when is_list(nodes) do
+    Enum.flat_map(nodes, &find_submit_buttons/1)
+  end
+
+  defp find_submit_buttons({:element, "button", _, _} = node), do: [node]
+
+  defp find_submit_buttons({:element, "input", attrs, _} = node) do
+    case DOM.find_attr(attrs, "type") do
+      nil -> []
+      type -> if DOM.attr_to_string(type) == "submit", do: [node], else: []
+    end
+  end
+
+  defp find_submit_buttons({:element, _tag, _attrs, children}) do
+    find_submit_buttons(children)
+  end
+
+  defp find_submit_buttons(_), do: []
 
   defp has_attr?(attrs, name) do
     Enum.any?(attrs, fn

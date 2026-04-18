@@ -109,7 +109,7 @@ defmodule Mirage do
   defdelegate within_section(session, header, fun), to: Scoped
 
   @doc """
-  Click on a button by its text.
+  Click on a link by its text.
 
   This is simply a short-hand for `Mirage.click/3` with `"a"` as its selector.
 
@@ -120,9 +120,10 @@ defmodule Mirage do
   end
 
   @doc """
-  Click on a link by its text.
+  Click on a button by its text.
 
   This is simply a short-hand for `Mirage.click/3` with `"button"` as its selector.
+  Also handles `<input type="submit">` inside a form with a `$submit` handler.
 
   """
   @spec click_button(Session.t(), String.t(), keyword(any())) :: Session.t()
