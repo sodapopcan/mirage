@@ -172,9 +172,20 @@ defmodule Mirage do
         assert_has(session, "Send me update", "No")
       end)
 
+  This can also be used more generally when given a CSS selector as the second
+  argument.
+
+      session
+      |> within_section("div[role=article]", "My header", fn session ->
+        assert_has(session, "p", "content")
+      end)
+
   """
   @spec within_section(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
   defdelegate within_section(session, header, fun), to: Scoped
+  @spec within_section(Session.t(), String.t(), String.t(), (Session.t() -> Session.t())) ::
+          Session.t()
+  defdelegate within_section(session, selector, header, fun), to: Scoped
 
   @doc """
   Scopes to the `<fieldset>` whose `<legend>` matches `legend`.
