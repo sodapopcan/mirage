@@ -1210,3 +1210,34 @@ defmodule Mirage.WithinFieldsetPage do
     """
   end
 end
+
+defmodule Mirage.IfBlockPage do
+  @moduledoc false
+  use Hologram.Page
+
+  route "/if-block"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, show: false, clicked: nil)
+  end
+
+  def action(:show, _params, component), do: put_state(component, show: true)
+  def action(:hidden, _params, component), do: put_state(component, clicked: :hidden)
+  def action(:visible, _params, component), do: put_state(component, clicked: :visible)
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <button $click={:show}>Show</button>
+    {%if @show}
+      <p>Visible content</p>
+      <button $click={:hidden}>Hidden button</button>
+      <label>Hidden input<input $change={:hidden} /></label>
+    {/if}
+    <p>Always here</p>
+    <button $click={:visible}>Always clickable</button>
+    """
+  end
+end
