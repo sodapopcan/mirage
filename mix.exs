@@ -12,9 +12,14 @@ defmodule Mirage.MixProject do
       aliases: aliases(),
       dialyzer: [plt_add_apps: [:ex_unit]],
 
+      # Hex
+      description: "Test framework for the Hologram web framework",
+      package: package(),
+
       # Docs
       name: "Mirage",
       source_url: "https://github.com/sodapopcan/mirage",
+      homepage_url: "https://github.com/sodapopcan/mirage",
       docs: [
         main: "readme",
         extras: ["README.md"]
@@ -52,6 +57,14 @@ defmodule Mirage.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp package do
+    [
+      licenses: ["MIT", "Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/sodapopcan/mirage"},
+      files: ~w(lib src .formatter.exs mix.exs README.md LICENSE)
     ]
   end
 
