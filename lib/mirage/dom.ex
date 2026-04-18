@@ -177,4 +177,13 @@ defmodule Mirage.DOM do
   end
 
   def attr_to_string(_other), do: ""
+
+  @doc false
+  def text_matches?(actual, expected, exact?) do
+    if exact? do
+      String.trim(actual) == expected
+    else
+      String.contains?(actual, expected)
+    end
+  end
 end
