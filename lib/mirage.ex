@@ -245,7 +245,6 @@ defmodule Mirage do
   |> assert_has("p", "Selected: female")
   ```
   """
-  @doc group: "Events"
   @spec choose(Session.t(), String.t(), keyword()) :: Session.t()
   def choose(session, label, opts \\ []) do
     exact? = Keyword.get(opts, :exact, true)
@@ -293,7 +292,6 @@ defmodule Mirage do
 
   Accepts the same options as `choose/3`.
   """
-  @doc group: "Events"
   @spec check(Session.t(), String.t(), keyword()) :: Session.t()
   def check(session, label, opts \\ []) do
     exact? = Keyword.get(opts, :exact, true)
