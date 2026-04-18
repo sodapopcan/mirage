@@ -2,11 +2,11 @@ defmodule Mirage.Query do
   @moduledoc false
 
   alias Mirage.DOM
-  alias Meeseeks.Selector.Element
+  alias Mirage.CSS.Element
 
-  alias Meeseeks.Selector.Element.{Namespace, Tag}
+  alias Mirage.CSS.Element.{Namespace, Tag}
 
-  alias Meeseeks.Selector.Element.Attribute.{
+  alias Mirage.CSS.Element.Attribute.{
     Attribute,
     AttributePrefix,
     Value,
@@ -17,7 +17,7 @@ defmodule Mirage.Query do
     ValueSuffix
   }
 
-  alias Meeseeks.Selector.Element.PseudoClass.{
+  alias Mirage.CSS.Element.PseudoClass.{
     FirstChild,
     FirstOfType,
     LastChild,
@@ -29,7 +29,7 @@ defmodule Mirage.Query do
     NthOfType
   }
 
-  alias Meeseeks.Selector.Combinator.{
+  alias Mirage.CSS.Combinator.{
     ChildElements,
     DescendantElements,
     NextSiblingElement,
@@ -40,7 +40,7 @@ defmodule Mirage.Query do
   Returns all AST nodes matching the given CSS selector string.
   """
   def query_all(ast, selector) when is_binary(selector) do
-    parsed = Meeseeks.Selector.CSS.compile_selectors(selector)
+    parsed = Mirage.CSS.compile_selectors(selector)
     nodes = List.wrap(ast)
 
     parsed
@@ -311,7 +311,7 @@ defmodule Mirage.Query do
     Enum.count(siblings, fn {:element, t, _, _} -> t == tag end)
   end
 
-  # Meeseeks stores nth args as ["even"], ["odd"], [n], or [a, b] (for An+B).
+  # Nth args are stored as ["even"], ["odd"], [n], or [a, b] (for An+B).
   # The `index` parameter is 1-based.
   defp nth_match?(index, ["even"]), do: nth?(index, 2, 0)
   defp nth_match?(index, ["odd"]), do: nth?(index, 2, 1)
