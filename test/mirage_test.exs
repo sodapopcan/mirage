@@ -180,4 +180,37 @@ defmodule MirageTest do
       assert session.page.state.change_log == []
     end
   end
+
+  describe "{%if} blocks" do
+    test "elements inside a false if block are not visible" do
+      Mirage.IfBlockPage
+      |> Mirage.visit()
+      |> Mirage.refute_has("p", "Visible content")
+      |> Mirage.assert_has("p", "Always here")
+    end
+
+    test "click cannot reach a button inside a false if block" do
+      session = Mirage.visit(Mirage.IfBlockPage)
+
+      assert_raise RuntimeError, ~r/No clickable element found/, fn ->
+        Mirage.click(session, "button", "Hidden button")
+      end
+    end
+
+    test "fill_in cannot reach an input inside a false if block" do
+      session = Mirage.visit(Mirage.IfBlockPage)
+
+      assert_raise RuntimeError, ~r/No input found with label/, fn ->
+        Mirage.fill_in(session, "Hidden input", with: "x")
+      end
+    end
+
+    test "elements appear after the condition becomes true" do
+      Mirage.IfBlockPage
+      |> Mirage.visit()
+      |> Mirage.click("button", "Show")
+      |> Mirage.assert_has("p", "Visible content")
+      |> Mirage.assert_has("button", "Hidden button")
+    end
+  end
 end
