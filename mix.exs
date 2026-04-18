@@ -37,7 +37,13 @@ defmodule Mirage.MixProject do
   # that path before `mix test` runs if one isn't already there.
   defp aliases do
     [
-      test: [&ensure_page_digest_plt/1, "test"]
+      test: [&ensure_page_digest_plt/1, "test"],
+      lint: [
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "dialyzer",
+        "test"
+      ]
     ]
   end
 
@@ -49,6 +55,10 @@ defmodule Mirage.MixProject do
       File.mkdir_p!(Path.dirname(path))
       File.write!(path, :erlang.term_to_binary(%{}))
     end
+  end
+
+  def cli do
+    [preferred_envs: [lint: :test]]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
