@@ -63,6 +63,7 @@ defmodule Mirage do
   This is simply a short-hand for `Mirage.click/3` with `"a"` as its selector.
 
   """
+  @spec click_link(Session.t(), String.t(), keyword(any())) :: Session.t()
   def click_link(session, text, opts \\ []) do
     click(session, "a", text, opts)
   end
@@ -73,6 +74,7 @@ defmodule Mirage do
   This is simply a short-hand for `Mirage.click/3` with `"button"` as its selector.
 
   """
+  @spec click_button(Session.t(), String.t(), keyword(any())) :: Session.t()
   def click_button(session, text, opts \\ []) do
     click(session, "button", text, opts)
   end
