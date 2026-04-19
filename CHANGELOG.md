@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.0.3 (Apr 18, 2026)
+
+### Added
+
+- `:at` option for `assert_has` and `refute_has` — match by 1-based position
+  among all elements matching the selector.
+- Option validation — all functions that accept options now raise
+  `ArgumentError` for unknown keys (via `Keyword.validate!/2`).
+- `open_browser/1` wraps mounted components in a bare HTML layout with your
+  app's stylesheets.
+
 ## v0.0.2 (Apr 18, 2026)
 
 ### Added
