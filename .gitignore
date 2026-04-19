@@ -22,3 +22,5 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 holo_test-*.tar
 
+# Ignore generated tokenizer
+src/mirage_css_tokenizer.erl
