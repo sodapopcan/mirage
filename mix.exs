@@ -23,7 +23,7 @@ defmodule Mirage.MixProject do
       homepage_url: "https://github.com/sodapopcan/mirage",
       docs: [
         main: "readme",
-        extras: ["README.md"]
+        extras: ["README.md", "CHANGELOG.md"]
       ]
     ]
   end
