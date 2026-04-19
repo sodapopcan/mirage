@@ -53,4 +53,23 @@ defmodule Mirage.BrowserTest do
       File.rm(path)
     end
   end
+
+  describe "open_browser/2 — mounted component" do
+    test "wraps in a barebones HTML layout" do
+      Mirage.MountableCounter
+      |> Mirage.mount()
+      |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
+
+      assert_receive {:opened, path}
+      html = File.read!(path)
+
+      assert html =~ "<!DOCTYPE html>"
+      assert html =~ "<html>"
+      assert html =~ "<head>"
+      assert html =~ "<body>"
+      assert html =~ "0"
+
+      File.rm(path)
+    end
+  end
 end
