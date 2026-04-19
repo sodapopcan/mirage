@@ -1,5 +1,5 @@
 # Adapted from the Meeseeks library (https://hex.pm/packages/meeseeks).
-# see lib/mirage/css/LISENCE.txt
+# see lib/mirage/css/LICENSE
 
 defmodule Mirage.CSS do
   @moduledoc false
