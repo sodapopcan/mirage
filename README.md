@@ -1,5 +1,8 @@
 # Mirage
 
+[![Hex.pm](https://img.shields.io/hexpm/v/mirage.svg)](https://hex.pm/packages/mirage)
+[![Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/mirage)
+
 Web testing library for [Hologram](http://hologram.page)
 
 ## About
