@@ -109,9 +109,9 @@ defmodule Mirage do
   ## Example
 
       MyApp.Counter
-      |> Mirage.mount(props: %{cid: "counter"})
-      |> Mirage.click("button", "Increment")
-      |> Mirage.assert_has("span", "1")
+      |> mount(props: %{cid: "counter"})
+      |> click("button", "Increment")
+      |> assert_has("span", "1")
 
   """
   @spec mount(module(), [props: map(), context: map()]) :: Session.t()
@@ -169,7 +169,7 @@ defmodule Mirage do
   defdelegate within(session, selector, fun), to: Scoped
 
   @doc """
-  Scopes to the `<article>` whose first heading (h1–h6) matches `header`.
+  Scopes to the `<article>` whose first heading (`h1` - `h6`) matches `header`.
 
       session
       |> within_article("Blog Post", fn session ->
@@ -181,7 +181,7 @@ defmodule Mirage do
   defdelegate within_article(session, header, fun), to: Scoped
 
   @doc """
-  Scopes to the `<section>` whose first heading (h1–h6) matches `header`.
+  Scopes to the `<section>` whose first heading (`h1` - `h6`) matches `header`.
 
       session
       |> within_section("Settings", fn session ->
@@ -262,9 +262,10 @@ defmodule Mirage do
       |> click("button", "Log out")
 
   ## Options
-  - `:text` Match on the element's inner text.
-  - `:exact` Set to `false` to match on a substring of an element's text.
-    Default is `true` meaning you must provide an exact match.
+
+    * `:text` - Match on the element's inner text.
+    * `:exact` - Set to `false` to match on a substring of an element's text.
+      Default is `true` meaning you must provide an exact match.
 
   """
   @spec click(Session.t(), String.t(), String.t() | keyword()) :: Session.t()
@@ -292,11 +293,10 @@ defmodule Mirage do
   defdelegate blur(session, selector, text, opts), to: Events
 
   @doc """
+  Fill in an `input` or `textarea` by its label.
+
   Finds an input by its associated label and triggers the input's `$change`
-  and (if the input is inside a `<form>` with a `$change` attribute) the
-  form's `$change` action. Each action receives `%{value: value}` merged
-  into any params declared on the attribute itself; keys declared in `with:`
-  win on conflict.
+  and as well as its form's `$change` event (if it has one).
 
   Labels may be associated with their input either by wrapping the input
   (`<label>Name <input/></label>`) or via a `for` attribute matching the
@@ -304,6 +304,7 @@ defmodule Mirage do
 
   Matches exactly by default; pass `exact: false` to match substrings.
   Raises if no matching label is found, or if more than one matches.
+
   """
   @spec fill_in(Session.t(), String.t(), keyword()) :: Session.t()
   def fill_in(session, label, opts) do
@@ -335,8 +336,10 @@ defmodule Mirage do
   end
 
   @doc """
-  Selects a radio button by its associated label text and dispatches the
-  input's `$change` event with the radio's `value` attribute.
+  Selects a radio button by its associated label.
+
+  Triggers the input's `$change` event as well as its form's `$change` event (if
+  there is one).
 
   Labels may wrap the input or reference it via a `for`/`id` pair.
 
@@ -355,33 +358,41 @@ defmodule Mirage do
   defdelegate choose(session, label, opts \\ []), to: Input
 
   @doc """
-  Checks a checkbox by its associated label text and dispatches the input's
-  `$change` event with the checkbox's `value` attribute (defaulting to `"on"`).
+  Checks a checkbox by its associated label text.
 
-  Accepts the same options as `choose/3`.
+  Triggers the input's `$change` as well as its form's `$change` event (if it
+  has one).
+
+  Matches exactly by default; pass `exact: false` to match substrings.
+  Raises if no matching radio button is found, or if more than one matches.
+
   """
   @spec check(Session.t(), String.t(), keyword()) :: Session.t()
   defdelegate check(session, label, opts \\ []), to: Input
 
   @doc """
-  Unchecks a checkbox by its associated label text and dispatches the input's
-  `$change` event with the checkbox's `value` attribute (defaulting to `"on"`).
+  Unchecks a checkbox by its associated label.
 
-  Accepts the same options as `choose/3`.
+  Trigger's the input's `$change` event as well as its form's `$change` event
+  (if it has one).
+
+  Matches exactly by default; pass `exact: false` to match substrings.
+  Raises if no matching radio button is found, or if more than one matches.
+
   """
   @spec uncheck(Session.t(), String.t(), keyword()) :: Session.t()
   defdelegate uncheck(session, label, opts \\ []), to: Input
 
   @doc """
-  Selects an option in a `<select>` box identified by its associated label
-  text, and dispatches the select's `$change` event with the option's `value`
+  Selects an option in a `<select>` box by its label.
+
+  Triggers the select's `$change` event with the option's `value`
   attribute (defaulting to the option's inner text when no `value` attribute
   is present).
 
   Labels may wrap the select element or reference it via a `for`/`id` pair.
 
-  For multiselect boxes (those with a `multiple` attribute), each call
-  accumulates another selection rather than replacing the previous one.
+  Works with multi-selects.
 
   Matches exactly by default; pass `exact: false` to match substrings.
   Raises if no matching label or option is found, or if more than one matches.
@@ -398,12 +409,10 @@ defmodule Mirage do
   defdelegate select(session, label, option_text, opts \\ []), to: Input
 
   @doc """
-  Triggers a `$select` event on a text input or textarea identified by its
-  associated label text.
+  Triggers a `$select` event on a text input or textarea by its label selecting
+  the text given to `option_text`.
 
-  The event receives `%{text: text}` where `text` is the selected text.
-  When `text` is omitted, all text in the input is selected (read from the
-  input's `value` attribute or the textarea's inner text).
+  When `text` is omitted, all text in the input is selected.
 
   Raises if the label does not point to an input that accepts text (i.e. raises
   for checkboxes, radios, selects, and non-text input types).
