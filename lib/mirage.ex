@@ -448,6 +448,8 @@ defmodule Mirage do
 
     * `:text` — also require the element's inner text (trimmed) to equal this value
     * `:value` — also require the element's `value` attribute to equal this value
+    * `:at` — match only the element at this 1-based position among all nodes
+      matching the selector
 
   """
   @doc group: "Assertions"
@@ -463,6 +465,7 @@ defmodule Mirage do
       |> refute_has(".error")
       |> refute_has("p", text: "Deleted")
 
+  Accepts the same options as `assert_has/3`.
   """
   @doc group: "Assertions"
   defdelegate refute_has(session, selector, text_or_opts \\ []), to: Mirage.Assertions

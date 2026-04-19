@@ -79,6 +79,31 @@ defmodule Mirage.AssertionsTest do
     end
   end
 
+  describe "assert_has — :at" do
+    test "matches element at 1-based position" do
+      session = Mirage.visit(Mirage.AssertHasTextPage)
+      Mirage.assert_has(session, "li", "Item 1", at: 1)
+      Mirage.assert_has(session, "li", "Item 2", at: 2)
+      Mirage.assert_has(session, "li", "Item 3", at: 3)
+    end
+
+    test "fails when text does not match at the given position" do
+      session = Mirage.visit(Mirage.AssertHasTextPage)
+
+      assert_raise AssertionError, ~r/found 0/, fn ->
+        Mirage.assert_has(session, "li", "Item 1", at: 2)
+      end
+    end
+
+    test "fails when position is out of bounds" do
+      session = Mirage.visit(Mirage.AssertHasTextPage)
+
+      assert_raise AssertionError, ~r/found 0/, fn ->
+        Mirage.assert_has(session, "li", "Item 1", at: 99)
+      end
+    end
+  end
+
   describe "refute_has — selector only" do
     test "passes when no element matches" do
       session = Mirage.visit(Mirage.ClickPage)
@@ -123,6 +148,26 @@ defmodule Mirage.AssertionsTest do
       assert_raise AssertionError, ~r/Expected not to find/, fn ->
         Mirage.refute_has(session, "input", value: "alice")
       end
+    end
+  end
+
+  describe "refute_has — :at" do
+    test "passes when text does not match at the given position" do
+      session = Mirage.visit(Mirage.AssertHasTextPage)
+      Mirage.refute_has(session, "li", "Item 1", at: 2)
+    end
+
+    test "raises when text matches at the given position" do
+      session = Mirage.visit(Mirage.AssertHasTextPage)
+
+      assert_raise AssertionError, ~r/Expected not to find/, fn ->
+        Mirage.refute_has(session, "li", "Item 1", at: 1)
+      end
+    end
+
+    test "passes when position is out of bounds" do
+      session = Mirage.visit(Mirage.AssertHasTextPage)
+      Mirage.refute_has(session, "li", "Item 1", at: 99)
     end
   end
 
