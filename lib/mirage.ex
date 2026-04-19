@@ -116,6 +116,7 @@ defmodule Mirage do
   """
   @spec mount(module(), props: map(), context: map()) :: Session.t()
   def mount(component_module, opts \\ []) do
+    Keyword.validate!(opts, [:props, :context])
     props = Keyword.get(opts, :props, %{})
     context = Keyword.get(opts, :context, %{})
 
@@ -308,6 +309,7 @@ defmodule Mirage do
   """
   @spec fill_in(Session.t(), String.t(), keyword()) :: Session.t()
   def fill_in(session, label, opts) do
+    Keyword.validate!(opts, [:with, :exact])
     exact? = Keyword.get(opts, :exact, true)
     value = Keyword.fetch!(opts, :with)
 

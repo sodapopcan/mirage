@@ -32,6 +32,8 @@ defmodule Mirage.Assertions do
 
   def assert_has(%Session{} = session, selector, opts)
       when is_binary(selector) and is_list(opts) do
+    validate_opts!(opts)
+
     matches = find_matches(session, selector, opts)
 
     assert match?([_], matches),
@@ -52,6 +54,8 @@ defmodule Mirage.Assertions do
 
   def refute_has(%Session{} = session, selector, opts)
       when is_binary(selector) and is_list(opts) do
+    validate_opts!(opts)
+
     matches = find_matches(session, selector, opts)
 
     assert match?([], matches),
@@ -131,5 +135,9 @@ defmodule Mirage.Assertions do
       end
 
     Enum.join(parts, ", ")
+  end
+
+  defp validate_opts!(opts) do
+    Keyword.validate!(opts, [:text, :value, :at, :exact])
   end
 end

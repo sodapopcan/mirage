@@ -19,6 +19,8 @@ defmodule Mirage.Events do
   end
 
   def click(%Session{} = session, selector, opts) when is_binary(selector) and is_list(opts) do
+    validate_opts!(opts)
+
     text = Keyword.get(opts, :text)
     exact? = Keyword.get(opts, :exact, true)
     ast = Scoped.query_ast(session)
@@ -71,6 +73,8 @@ defmodule Mirage.Events do
   end
 
   def focus(%Session{} = session, selector, opts) when is_binary(selector) and is_list(opts) do
+    validate_opts!(opts)
+
     node = find_event_target!(session, "$focus", selector, opts)
     dispatch_from_node(session, node, "$focus")
   end
@@ -86,6 +90,8 @@ defmodule Mirage.Events do
   end
 
   def blur(%Session{} = session, selector, opts) when is_binary(selector) and is_list(opts) do
+    validate_opts!(opts)
+
     node = find_event_target!(session, "$blur", selector, opts)
     dispatch_from_node(session, node, "$blur")
   end
@@ -468,5 +474,9 @@ defmodule Mirage.Events do
       {Hologram.Runtime, :page_digest} => "test",
       {Hologram.Runtime, :csrf_token} => "test"
     }
+  end
+
+  def validate_opts!(opts) do
+    Keyword.validate!(opts, [:text, :exact])
   end
 end
