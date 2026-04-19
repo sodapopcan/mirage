@@ -27,11 +27,11 @@ defmodule Mirage do
     ]
 
     @typep bookkeeping :: %{
-      checked_radios: map(),
-      checked_checkboxes: map(),
-      selected_options: map(),
-      components: map()
-    }
+             checked_radios: map(),
+             checked_checkboxes: map(),
+             selected_options: map(),
+             components: map()
+           }
 
     @type t :: %__MODULE__{
             page: any(),
@@ -114,7 +114,7 @@ defmodule Mirage do
       |> assert_has("span", "1")
 
   """
-  @spec mount(module(), [props: map(), context: map()]) :: Session.t()
+  @spec mount(module(), props: map(), context: map()) :: Session.t()
   def mount(component_module, opts \\ []) do
     props = Keyword.get(opts, :props, %{})
     context = Keyword.get(opts, :context, %{})
