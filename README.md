@@ -64,7 +64,7 @@ end
 
 Or use a custom case:
 
-```
+```elixir
 defmodule MyApp.FeatureCase do
   use ExUnit.CaseTemplate
 
