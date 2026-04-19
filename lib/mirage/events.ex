@@ -285,7 +285,12 @@ defmodule Mirage.Events do
 
   defp run_action(session, name, params, target \\ nil)
 
-  defp run_action(%Session{bookkeeping: %{components: components}} = session, name, params, target)
+  defp run_action(
+         %Session{bookkeeping: %{components: components}} = session,
+         name,
+         params,
+         target
+       )
        when is_binary(target) do
     case Map.fetch(components, target) do
       {:ok, {module, component}} ->
