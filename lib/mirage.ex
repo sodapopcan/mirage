@@ -219,7 +219,7 @@ defmodule Mirage do
   @doc """
   Click on a link by its text.
 
-  This is simply a short-hand for `Mirage.click/3` with `"a"` as its selector.
+  This is simply a shorthand for `Mirage.click/3` with `"a"` as its selector.
 
   """
   @spec click_link(Session.t(), String.t(), keyword(any())) :: Session.t()
@@ -232,7 +232,7 @@ defmodule Mirage do
 
   If it's a button inside a form, it will trigger the form's `$submit` event.
 
-  This is otherwise short-hand for `Mirage.click/3` with `"button"` as its selector.
+  This is otherwise shorthand for `Mirage.click/3` with `"button"` as its selector.
 
   """
   @spec click_button(Session.t(), String.t(), keyword(any())) :: Session.t()
