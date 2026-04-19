@@ -506,6 +506,9 @@ defmodule Mirage do
       |> open_browser()
       |> assert_has("Philip")
 
+  When using with a component (via `Mirage.mount/2`), the output will be wrapped
+  in a thin layout bringing in your app's styles.
+
   """
   @spec open_browser(Session.t()) :: Session.t()
   defdelegate open_browser(session), to: Mirage.Browser
