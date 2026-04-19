@@ -350,11 +350,11 @@ defmodule Mirage do
 
   ## Example
 
-  ```elixir
-  visit(SignUpPage)
-  |> choose("Female")
-  |> assert_has("p", "Selected: female")
-  ```
+      Profile
+      |> visit()
+      |> choose("robot")
+      |> assert_has("p", "Your gender is 'robot'")
+
   """
   @spec choose(Session.t(), String.t(), keyword()) :: Session.t()
   defdelegate choose(session, label, opts \\ []), to: Input
@@ -401,11 +401,11 @@ defmodule Mirage do
 
   ## Example
 
-  ```elixir
-  visit(SignUpPage)
-  |> select("Color", "Red")
-  |> assert_has("p", "Selected: red")
-  ```
+      EditProfilePage
+      |> visit()
+      |> select("Company", "Planet Express")
+      |> assert_has("p", "You work for 'Planet Express'")
+
   """
   @spec select(Session.t(), String.t(), String.t(), keyword()) :: Session.t()
   defdelegate select(session, label, option_text, opts \\ []), to: Input
@@ -422,11 +422,11 @@ defmodule Mirage do
   ## Examples
 
       session
-      |> fill_in("Bio", with: "Hello world")
-      |> select_text("Bio", "world")
+      |> fill_in("Bio", with: "I'm a bending unit. I bend girders.")
+      |> select_text("Bio", "girder")
 
       session
-      |> fill_in("Bio", with: "Hello world")
+      |> fill_in("Bio", with: "My hobbies include smoking cigars, drinking, and killing all humans")
       |> select_text("Bio")
 
   """
@@ -444,7 +444,7 @@ defmodule Mirage do
       session
       |> assert_has("button")
       |> assert_has("h1", "Welcome")
-      |> assert_has("input#email", value: "alice@example.com")
+      |> assert_has("input#email", value: "bender@planetexpress.com")
 
   ## Options
 
@@ -488,9 +488,9 @@ defmodule Mirage do
   just like a real browser reload.
 
       session
-      |> fill_in("Name", with: "Alice")
+      |> fill_in("Name", with: "Leela")
       |> reload()
-      |> refute_has("input", value: "Alice")
+      |> refute_has("input", value: "Leela")
 
   """
   @spec reload(Session.t()) :: Session.t()
@@ -502,9 +502,9 @@ defmodule Mirage do
   Opens the current page HTML in the default browser.
 
       session
-      |> fill_in("Name", with: "Alice")
+      |> fill_in("Name", with: "Philip")
       |> open_browser()
-      |> assert_has("Alice")
+      |> assert_has("Philip")
 
   """
   @spec open_browser(Session.t()) :: Session.t()
