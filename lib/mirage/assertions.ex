@@ -67,13 +67,24 @@ defmodule Mirage.Assertions do
   defp find_matches(%Session{} = session, selector, opts) do
     text = Keyword.get(opts, :text)
     value = Keyword.get(opts, :value)
+    at = Keyword.get(opts, :at)
     exact? = Keyword.get(opts, :exact, true)
 
     results = Query.query_all(Scoped.query_ast(session), selector)
 
     results
+    |> maybe_filter_at(at)
     |> maybe_filter_text(text, exact?)
     |> maybe_filter_value(value)
+  end
+
+  defp maybe_filter_at(nodes, nil), do: nodes
+
+  defp maybe_filter_at(nodes, index) when is_integer(index) do
+    case Enum.at(nodes, index - 1) do
+      nil -> []
+      node -> [node]
+    end
   end
 
   defp maybe_filter_text(nodes, nil, _exact?), do: nodes
@@ -100,6 +111,12 @@ defmodule Mirage.Assertions do
 
   defp describe(selector, opts) do
     parts = [inspect(selector)]
+
+    parts =
+      case Keyword.get(opts, :at) do
+        nil -> parts
+        at -> parts ++ ["at: #{at}"]
+      end
 
     parts =
       case Keyword.get(opts, :text) do
