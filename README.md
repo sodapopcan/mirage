@@ -85,7 +85,7 @@ end
 ## I'm Mr. Meeseeks, look at me!
 
 This project contains code adapted from
-[Meeseeks](https://hex.pm/packages/meeseeks) specifically for parsing CSS
+[meeseeks](https://hex.pm/packages/meeseeks) specifically for parsing CSS
 selectors.  See [lib/mirage/css.ex](lib/mirage/css.ex).
 
 ## Note on AI use
