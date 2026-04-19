@@ -5,6 +5,28 @@ defmodule MirageTest do
 
   doctest Mirage
 
+  describe "reload/1" do
+    test "resets page state" do
+      session =
+        Mirage.ClickPage
+        |> Mirage.visit()
+        |> Mirage.click("button", "Save changes now")
+
+      assert session.page.state.clicked == true
+
+      session = Mirage.reload(session)
+      refute Map.has_key?(session.page.state, :clicked)
+    end
+
+    test "preserves params across reload" do
+      session = Mirage.visit(Mirage.CommandPage, %{tmp_path: "/tmp/test"})
+      session = Mirage.reload(session)
+
+      assert session.params == %{tmp_path: "/tmp/test"}
+      assert session.page_module == Mirage.CommandPage
+    end
+  end
+
   describe "click_link/2" do
     test "clicks on a link" do
       Mirage.HomePage

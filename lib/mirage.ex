@@ -452,6 +452,23 @@ defmodule Mirage do
   defdelegate assert_page(session, page), to: Mirage.Assertions
 
   @doc """
+  "Reloads" the current page by revisiting it with the current params.
+
+  All client-side state (component state, checked radios, etc.) is reset,
+  just like a real browser reload.
+
+      session
+      |> fill_in("Name", with: "Alice")
+      |> reload()
+      |> refute_has("input", value: "Alice")
+
+  """
+  @spec reload(Session.t()) :: Session.t()
+  def reload(%Session{page_module: page_module, params: params}) do
+    visit(page_module, params)
+  end
+
+  @doc """
   Opens the current page HTML in the default browser.
 
       session
