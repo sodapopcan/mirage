@@ -11,7 +11,14 @@ defmodule Mirage.Browser do
         current_select_values: MapSet.new()
       })
 
-    html = ast_to_html(session.ast, config)
+    body = ast_to_html(session.ast, config)
+
+    html =
+      if function_exported?(session.page_module, :__layout_module__, 0) do
+        body
+      else
+        wrap_in_layout(body, config.static_dir)
+      end
 
     path =
       Path.join(
@@ -148,6 +155,24 @@ defmodule Mirage.Browser do
   defp boolean_value(true), do: {:ok, true}
   defp boolean_value(false), do: {:ok, false}
   defp boolean_value(_), do: :not_boolean
+
+  defp wrap_in_layout(body, static_dir) do
+    css =
+      static_dir
+      |> Path.join("**/*.css")
+      |> Path.wildcard()
+      |> Enum.map_join("\n", fn path ->
+        ~s(<link rel="stylesheet" href="#{path}">)
+      end)
+
+    """
+    <!DOCTYPE html>
+    <html>
+    <head>#{css}</head>
+    <body>#{body}</body>
+    </html>
+    """
+  end
 
   defp open_with_system_cmd(path) do
     {cmd, args} =
