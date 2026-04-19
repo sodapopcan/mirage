@@ -236,7 +236,7 @@ defmodule Mirage.EventsTest do
         |> Mirage.visit()
         |> Mirage.click("button", "Target kill")
 
-      {_module, component} = session.components["baba_yaga"]
+      {_module, component} = session.bookkeeping.components["baba_yaga"]
       assert component.state.kills == 1
     end
 
@@ -246,7 +246,7 @@ defmodule Mirage.EventsTest do
         |> Mirage.visit()
         |> Mirage.click("button", "Multi kill")
 
-      {_module, component} = session.components["baba_yaga"]
+      {_module, component} = session.bookkeeping.components["baba_yaga"]
       assert component.state.kills == 5
     end
 
@@ -258,7 +258,7 @@ defmodule Mirage.EventsTest do
         |> Mirage.click("button", "Target kill")
         |> Mirage.click("button", "Target kill")
 
-      {_module, component} = session.components["baba_yaga"]
+      {_module, component} = session.bookkeeping.components["baba_yaga"]
       assert component.state.kills == 3
     end
 
@@ -269,7 +269,7 @@ defmodule Mirage.EventsTest do
         |> Mirage.click("button", "Target kill")
         |> Mirage.click("button", "Page click")
 
-      {_module, component} = session.components["baba_yaga"]
+      {_module, component} = session.bookkeeping.components["baba_yaga"]
       assert component.state.kills == 1
       assert session.page.state.page_clicks == 1
     end
@@ -292,7 +292,7 @@ defmodule Mirage.EventsTest do
         |> Mirage.visit()
         |> Mirage.click("button", "Work")
 
-      {_module, component} = session.components["worker"]
+      {_module, component} = session.bookkeeping.components["worker"]
       assert component.state.work_count == 42
     end
   end

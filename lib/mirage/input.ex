@@ -39,7 +39,7 @@ defmodule Mirage.Input do
         session
         |> trigger_input_action(input, value)
         |> trigger_form_change(form_change, value)
-        |> Map.update!(:checked_radios, &Map.put(&1, name, value))
+        |> update_bookkeeping(:checked_radios, &Map.put(&1, name, value))
 
       [_ | _] = many ->
         raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
@@ -80,7 +80,7 @@ defmodule Mirage.Input do
         session
         |> trigger_input_action(input, value)
         |> trigger_form_change(form_change, value)
-        |> Map.update!(:checked_checkboxes, &MapSet.put(&1, {name, value}))
+        |> update_bookkeeping(:checked_checkboxes, &MapSet.put(&1, {name, value}))
 
       [_ | _] = many ->
         raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
@@ -121,7 +121,7 @@ defmodule Mirage.Input do
         session
         |> trigger_input_action(input, value)
         |> trigger_form_change(form_change, value)
-        |> Map.update!(:checked_checkboxes, &MapSet.delete(&1, {name, value}))
+        |> update_bookkeeping(:checked_checkboxes, &MapSet.delete(&1, {name, value}))
 
       [_ | _] = many ->
         raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
@@ -168,7 +168,7 @@ defmodule Mirage.Input do
             session
             |> trigger_input_action(select_node, value)
             |> trigger_form_change(form_change, value)
-            |> Map.update!(:selected_options, fn current ->
+            |> update_bookkeeping(:selected_options, fn current ->
               existing = Map.get(current, name, MapSet.new())
               new_set = if multiple?, do: MapSet.put(existing, value), else: MapSet.new([value])
               Map.put(current, name, new_set)
@@ -410,5 +410,9 @@ defmodule Mirage.Input do
 
   defp validate_text_input!({:element, "select", _, _}, label) do
     raise "Label #{inspect(label)} points to a <select>, which does not accept text selection"
+  end
+
+  defp update_bookkeeping(session, key, fun) do
+    update_in(session.bookkeeping[key], fun)
   end
 end

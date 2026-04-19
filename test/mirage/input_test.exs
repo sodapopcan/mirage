@@ -177,7 +177,7 @@ defmodule Mirage.InputTest do
         |> Mirage.check("Newsletter")
         |> Mirage.uncheck("Newsletter")
 
-      refute MapSet.member?(session.checked_checkboxes, {"newsletter", "yes"})
+      refute MapSet.member?(session.bookkeeping.checked_checkboxes, {"newsletter", "yes"})
     end
 
     test "dispatches $change when unchecking" do
@@ -197,7 +197,7 @@ defmodule Mirage.InputTest do
         |> Mirage.check("Newsletter")
         |> Mirage.uncheck("News", exact: false)
 
-      refute MapSet.member?(session.checked_checkboxes, {"newsletter", "yes"})
+      refute MapSet.member?(session.bookkeeping.checked_checkboxes, {"newsletter", "yes"})
     end
 
     test "raises when no label matches" do

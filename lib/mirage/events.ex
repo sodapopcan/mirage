@@ -285,7 +285,7 @@ defmodule Mirage.Events do
 
   defp run_action(session, name, params, target \\ nil)
 
-  defp run_action(%Session{components: components} = session, name, params, target)
+  defp run_action(%Session{bookkeeping: %{components: components}} = session, name, params, target)
        when is_binary(target) do
     case Map.fetch(components, target) do
       {:ok, {module, component}} ->
@@ -302,11 +302,10 @@ defmodule Mirage.Events do
         clean_component =
           %{new_component | next_action: nil, next_command: nil, next_page: nil}
 
-        session = %{
+        session =
           session
-          | server: new_server,
-            components: Map.put(components, target, {module, clean_component})
-        }
+          |> put_in([Access.key(:server)], new_server)
+          |> put_in([Access.key(:bookkeeping), :components, target], {module, clean_component})
 
         session =
           if cmd = next_command do
@@ -380,7 +379,7 @@ defmodule Mirage.Events do
   defp run_command(session, cmd, target \\ nil)
 
   defp run_command(
-         %Session{components: components} = session,
+         %Session{bookkeeping: %{components: components}} = session,
          cmd,
          target
        )
@@ -428,7 +427,7 @@ defmodule Mirage.Events do
            server: server,
            page_module: page_module,
            params: params,
-           components: components
+           bookkeeping: bookkeeping
          } = session
        ) do
     vars = Map.merge(params, page.state)
@@ -450,11 +449,11 @@ defmodule Mirage.Events do
     context = Map.merge(runtime_context(), page.emitted_context)
     env = %{context: context, slots: []}
 
-    Process.put(:mirage_components, components)
+    Process.put(:mirage_components, bookkeeping.components)
     ast = DOM.expand(root, env, server)
     updated_components = Process.delete(:mirage_components) || %{}
 
-    %{session | ast: ast, components: updated_components}
+    %{session | ast: ast, bookkeeping: %{bookkeeping | components: updated_components}}
   end
 
   defp runtime_context do
