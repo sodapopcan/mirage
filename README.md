@@ -82,7 +82,7 @@ defmodule MyApp.MyTest do
 end
 ```
 
-## Note on adapted code
+## I'm Mr. Meeseeks, look at me!
 
 This project contains code adapted from
 [Meeseeks](https://hex.pm/packages/meeseeks) specifically for parsing CSS
