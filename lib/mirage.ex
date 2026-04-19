@@ -18,11 +18,20 @@ defmodule Mirage do
       :page_module,
       :params,
       :scope,
-      checked_radios: %{},
-      checked_checkboxes: MapSet.new(),
-      selected_options: %{},
-      components: %{}
+      bookkeeping: %{
+        checked_radios: %{},
+        checked_checkboxes: MapSet.new(),
+        selected_options: %{},
+        components: %{}
+      }
     ]
+
+    @typep bookkeeping :: %{
+      checked_radios: map(),
+      checked_checkboxes: map(),
+      selected_options: map(),
+      components: map()
+    }
 
     @type t :: %__MODULE__{
             page: any(),
@@ -31,10 +40,7 @@ defmodule Mirage do
             page_module: module(),
             params: map(),
             scope: tuple() | nil,
-            checked_radios: map(),
-            checked_checkboxes: any(),
-            selected_options: map(),
-            components: map()
+            bookkeeping: bookkeeping()
           }
   end
 
@@ -78,7 +84,12 @@ defmodule Mirage do
       ast: ast,
       page_module: page_module,
       params: params,
-      components: components
+      bookkeeping: %{
+        checked_radios: %{},
+        checked_checkboxes: MapSet.new(),
+        selected_options: %{},
+        components: components
+      }
     }
   end
 
@@ -133,7 +144,12 @@ defmodule Mirage do
       ast: ast,
       page_module: component_module,
       params: props,
-      components: components
+      bookkeeping: %{
+        checked_radios: %{},
+        checked_checkboxes: MapSet.new(),
+        selected_options: %{},
+        components: components
+      }
     }
   end
 

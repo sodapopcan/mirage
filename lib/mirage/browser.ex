@@ -5,13 +5,11 @@ defmodule Mirage.Browser do
   alias Mirage.DOM
 
   def open_browser(%Session{} = session, open_fun \\ &open_with_system_cmd/1) do
-    config = %{
-      static_dir: Path.join(File.cwd!(), "priv/static"),
-      checked_radios: session.checked_radios,
-      checked_checkboxes: session.checked_checkboxes,
-      selected_options: session.selected_options,
-      current_select_values: MapSet.new()
-    }
+    config =
+      Map.merge(session.bookkeeping, %{
+        static_dir: Path.join(File.cwd!(), "priv/static"),
+        current_select_values: MapSet.new()
+      })
 
     html = ast_to_html(session.ast, config)
 
