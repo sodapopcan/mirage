@@ -197,11 +197,11 @@ defmodule Mirage do
       end)
 
   """
-  @spec within_section(Session.t(), String.t(), (Session.t() -> Session.t())) :: Session.t()
-  defdelegate within_section(session, header, fun), to: Scoped
   @spec within_section(Session.t(), String.t(), String.t(), (Session.t() -> Session.t())) ::
           Session.t()
-  defdelegate within_section(session, selector, header, fun), to: Scoped
+  def within_section(session, selector \\ "section", header, fun) do
+    Scoped.within_section(session, selector, header, fun)
+  end
 
   @doc """
   Scopes to the `<fieldset>` whose `<legend>` matches `legend`.
