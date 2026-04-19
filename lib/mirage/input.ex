@@ -6,6 +6,8 @@ defmodule Mirage.Input do
   alias Mirage.Scoped
 
   def choose(session, label, opts \\ []) do
+    validate_opts!(opts)
+
     exact? = Keyword.get(opts, :exact, true)
 
     {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
@@ -47,6 +49,8 @@ defmodule Mirage.Input do
   end
 
   def check(session, label, opts \\ []) do
+    validate_opts!(opts)
+
     exact? = Keyword.get(opts, :exact, true)
 
     {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
@@ -88,6 +92,8 @@ defmodule Mirage.Input do
   end
 
   def uncheck(session, label, opts \\ []) do
+    validate_opts!(opts)
+
     exact? = Keyword.get(opts, :exact, true)
 
     {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
@@ -129,6 +135,8 @@ defmodule Mirage.Input do
   end
 
   def select(session, label, option_text, opts \\ []) do
+    validate_opts!(opts)
+
     exact? = Keyword.get(opts, :exact, true)
 
     {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
@@ -194,6 +202,8 @@ defmodule Mirage.Input do
   end
 
   def select_text(session, label, text, opts) when is_list(opts) do
+    validate_opts!(opts)
+
     exact? = Keyword.get(opts, :exact, true)
 
     {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
@@ -414,5 +424,9 @@ defmodule Mirage.Input do
 
   defp update_bookkeeping(session, key, fun) do
     update_in(session.bookkeeping[key], fun)
+  end
+
+  defp validate_opts!(opts) do
+    Keyword.validate!(opts, [:exact])
   end
 end

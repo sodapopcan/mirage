@@ -298,6 +298,102 @@ defmodule MirageTest do
     end
   end
 
+  describe "validate_opts!" do
+    test "fill_in rejects unknown options" do
+      session = Mirage.visit(Mirage.FillInPage)
+
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.fill_in(session, "Name", with: "Alice", bogus: true)
+      end
+    end
+
+    test "click rejects unknown options" do
+      session = Mirage.visit(Mirage.ClickPage)
+
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.click(session, "button", bogus: true)
+      end
+    end
+
+    test "assert_has rejects unknown options" do
+      session = Mirage.visit(Mirage.ClickPage)
+
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.assert_has(session, "button", bogus: true)
+      end
+    end
+
+    test "refute_has rejects unknown options" do
+      session = Mirage.visit(Mirage.ClickPage)
+
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.refute_has(session, "nav", bogus: true)
+      end
+    end
+
+    test "focus rejects unknown options" do
+      session = Mirage.visit(Mirage.ClickPage)
+
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.focus(session, "button", bogus: true)
+      end
+    end
+
+    test "blur rejects unknown options" do
+      session = Mirage.visit(Mirage.ClickPage)
+
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.blur(session, "button", bogus: true)
+      end
+    end
+
+    test "mount rejects unknown options" do
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.mount(Mirage.MountableCounter, bogus: true)
+      end
+    end
+
+    test "choose rejects unknown options" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.choose(session, "whatever", bogus: true)
+      end
+    end
+
+    test "check rejects unknown options" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.check(session, "whatever", bogus: true)
+      end
+    end
+
+    test "uncheck rejects unknown options" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.uncheck(session, "whatever", bogus: true)
+      end
+    end
+
+    test "select rejects unknown options" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.select(session, "whatever", "opt", bogus: true)
+      end
+    end
+
+    test "select_text rejects unknown options" do
+      session = Mirage.visit(Mirage.NonInteractivePage)
+
+      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
+        Mirage.select_text(session, "whatever", bogus: true)
+      end
+    end
+  end
+
   describe "{%if} blocks" do
     test "elements inside a false if block are not visible" do
       Mirage.IfBlockPage
