@@ -55,7 +55,7 @@ defmodule Mirage.BrowserTest do
   end
 
   describe "open_browser/2 — mounted component" do
-    test "wraps in a barebones HTML layout" do
+    test "wraps in a barebones HTML layout with centering CSS by default" do
       import Hologram.Template
 
       ~HOLO"""
@@ -69,9 +69,26 @@ defmodule Mirage.BrowserTest do
 
       assert html =~ "<!DOCTYPE html>"
       assert html =~ "<html>"
-      assert html =~ "<head>"
-      assert html =~ "<body>"
+      assert html =~ "place-items: center"
       assert html =~ "0"
+
+      File.rm(path)
+    end
+
+    test "wrap: false omits centering CSS" do
+      import Hologram.Template
+
+      ~HOLO"""
+      <Mirage.MountableCounter />
+      """
+      |> Mirage.mount()
+      |> Mirage.open_browser([wrap: false], fn path -> send(self(), {:opened, path}) end)
+
+      assert_receive {:opened, path}
+      html = File.read!(path)
+
+      assert html =~ "<!DOCTYPE html>"
+      refute html =~ "place-items: center"
 
       File.rm(path)
     end

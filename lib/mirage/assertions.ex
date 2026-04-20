@@ -141,7 +141,9 @@ defmodule Mirage.Assertions do
       end)
       |> Enum.flat_map(fn {_label_node, wrapped, _fc} = entry ->
         case wrapped do
-          {:element, _, _, _} -> [wrapped]
+          {:element, _, _, _} ->
+            [wrapped]
+
           nil ->
             case Input.resolve_input(entry, inputs_by_id, label) do
               {input, _form_change} -> [input]

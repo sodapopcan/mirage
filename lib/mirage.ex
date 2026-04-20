@@ -497,11 +497,11 @@ defmodule Mirage do
   in a thin layout bringing in your app's styles.
 
   """
-  @spec open_browser(Session.t()) :: Session.t()
-  defdelegate open_browser(session), to: Mirage.Browser
+  @spec open_browser(Session.t(), keyword() | function()) :: Session.t()
+  defdelegate open_browser(session, opts_or_open_fun \\ []), to: Mirage.Browser
 
   @doc false
-  defdelegate open_browser(session, open_fun), to: Mirage.Browser
+  defdelegate open_browser(session, opts, open_fun), to: Mirage.Browser
 
   defp runtime_context do
     %{

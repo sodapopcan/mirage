@@ -5,7 +5,20 @@ defmodule Mirage.Browser do
   alias Mirage.DOM
 
   # sobelow_skip ["Traversal.FileModule"]
-  def open_browser(%Session{} = session, open_fun \\ &open_with_system_cmd/1) do
+  def open_browser(session, opts_or_open_fun \\ [])
+
+  def open_browser(%Session{} = session, fun) when is_function(fun) do
+    open_browser(session, [], fun)
+  end
+
+  def open_browser(%Session{} = session, opts) when is_list(opts) do
+    open_browser(session, opts, &open_with_system_cmd/1)
+  end
+
+  # sobelow_skip ["Traversal.FileModule"]
+  def open_browser(%Session{} = session, opts, open_fun) when is_list(opts) do
+    wrap? = Keyword.get(opts, :wrap, default_wrap())
+
     config =
       Map.merge(session.bookkeeping, %{
         static_dir: Path.join(File.cwd!(), "priv/static"),
@@ -18,7 +31,7 @@ defmodule Mirage.Browser do
       if function_exported?(session.page_module, :__layout_module__, 0) do
         body
       else
-        wrap_in_layout(body, config.static_dir)
+        wrap_in_layout(body, config.static_dir, wrap?)
       end
 
     path =
@@ -30,6 +43,12 @@ defmodule Mirage.Browser do
     File.write!(path, html)
     open_fun.(path)
     session
+  end
+
+  defp default_wrap do
+    :mirage
+    |> Application.get_env(:open_browser, [])
+    |> Keyword.get(:wrap, true)
   end
 
   defp ast_to_html(nodes, config) when is_list(nodes) do
@@ -157,8 +176,8 @@ defmodule Mirage.Browser do
   defp boolean_value(false), do: {:ok, false}
   defp boolean_value(_), do: :not_boolean
 
-  defp wrap_in_layout(body, static_dir) do
-    css =
+  defp wrap_in_layout(body, static_dir, wrap?) do
+    stylesheets =
       static_dir
       |> Path.join("**/*.css")
       |> Path.wildcard()
@@ -166,10 +185,25 @@ defmodule Mirage.Browser do
         ~s(<link rel="stylesheet" href="#{path}">)
       end)
 
+    center_css =
+      if wrap? do
+        """
+        <style>
+          body {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+          }
+        </style>
+        """
+      else
+        ""
+      end
+
     """
     <!DOCTYPE html>
     <html>
-    <head>#{css}</head>
+    <head>#{stylesheets}#{center_css}</head>
     <body>#{body}</body>
     </html>
     """

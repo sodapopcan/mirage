@@ -324,10 +324,12 @@ defmodule Mirage.Events do
 
       form_id_val ->
         form_id = DOM.attr_to_string(form_id_val)
-        is_submit = case DOM.find_attr(attrs, "type") do
-          nil -> false
-          type -> DOM.attr_to_string(type) == "submit"
-        end
+
+        is_submit =
+          case DOM.find_attr(attrs, "type") do
+            nil -> false
+            type -> DOM.attr_to_string(type) == "submit"
+          end
 
         case {is_submit, Map.fetch(forms_by_id, form_id)} do
           {true, {:ok, submit_attr}} -> [{node, submit_attr}]
