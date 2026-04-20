@@ -1102,6 +1102,60 @@ defmodule Mirage.FormSubmitInputPage do
   end
 end
 
+defmodule Mirage.FormSubmitExternalButtonPage do
+  @moduledoc "Form with $submit and a button outside the form linked via form attribute."
+  use Hologram.Page
+
+  route "/form-submit-external-button"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, submitted: false)
+  end
+
+  def action(:submit, _params, component) do
+    put_state(component, submitted: true)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <form id="my-form" $submit={:submit}>
+      <input type="text" name="name" value="alice" />
+    </form>
+    <button form="my-form">Submit</button>
+    """
+  end
+end
+
+defmodule Mirage.FormSubmitExternalInputPage do
+  @moduledoc "Form with $submit and an input[type=submit] outside the form linked via form attribute."
+  use Hologram.Page
+
+  route "/form-submit-external-input"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, submitted: false)
+  end
+
+  def action(:submit, _params, component) do
+    put_state(component, submitted: true)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <form id="ext-form" $submit={:submit}>
+      <input type="text" name="name" value="bob" />
+    </form>
+    <input type="submit" form="ext-form" value="Go" />
+    """
+  end
+end
+
 defmodule Mirage.SelectPage do
   @moduledoc "Page with a labelled select box and distinct options."
   use Hologram.Page

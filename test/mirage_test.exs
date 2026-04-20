@@ -106,6 +106,24 @@ defmodule MirageTest do
 
       assert session.page.state.submitted == true
     end
+
+    test "dispatches form $submit for external button with form attribute" do
+      session =
+        Mirage.FormSubmitExternalButtonPage
+        |> Mirage.visit()
+        |> Mirage.click_button("Submit")
+
+      assert session.page.state.submitted == true
+    end
+
+    test "dispatches form $submit for external input[type=submit] with form attribute" do
+      session =
+        Mirage.FormSubmitExternalInputPage
+        |> Mirage.visit()
+        |> Mirage.click_button("Go")
+
+      assert session.page.state.submitted == true
+    end
   end
 
   describe "fill_in/3" do
