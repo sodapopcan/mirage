@@ -15,7 +15,7 @@ Here is a quick example:
 ```elixir
 test "it works" do
   MyApp.HomePage
-  |> visit(%{my_param: "Some param"})
+  |> visit(my_param: "Some param")
   |> click_link("Sign-up")
   |> fill_in("Name", with: "Bender Bending Rodríguez")
   |> fill_in("Password", with: "wanna-kill-all-humans?")

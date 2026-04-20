@@ -276,7 +276,7 @@ defmodule Mirage.Events do
     case DOM.find_attr(attrs, "$click") do
       [{:expression, {:__load_prefetched_page__, params}}] when is_list(params) ->
         case Keyword.fetch!(params, :to) do
-          {target_module, target_params} -> Mirage.visit(target_module, Map.new(target_params))
+          {target_module, target_params} -> Mirage.visit(target_module, target_params)
           target_module -> Mirage.visit(target_module)
         end
 
@@ -380,7 +380,7 @@ defmodule Mirage.Events do
         re_render(session)
 
       {target_module, target_params} ->
-        Mirage.visit(target_module, Map.new(target_params))
+        Mirage.visit(target_module, target_params)
 
       target_module ->
         Mirage.visit(target_module)

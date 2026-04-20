@@ -5,6 +5,37 @@ defmodule MirageTest do
 
   doctest Mirage
 
+  describe "visit/2" do
+    test "returns a session" do
+      assert %Session{} = Mirage.visit(Mirage.ClickPage)
+    end
+
+    test "sets page_module" do
+      session = Mirage.visit(Mirage.ClickPage)
+      assert session.page_module == Mirage.ClickPage
+    end
+
+    test "accepts params as keyword list" do
+      session = Mirage.visit(Mirage.CommandPage, tmp_path: "/tmp/hello")
+      assert session.params == %{tmp_path: "/tmp/hello"}
+    end
+
+    test "defaults params to empty map" do
+      session = Mirage.visit(Mirage.ClickPage)
+      assert session.params == %{}
+    end
+
+    test "renders the page template" do
+      session = Mirage.visit(Mirage.ClickPage)
+      Mirage.assert_has(session, "button")
+    end
+
+    test "runs page init" do
+      session = Mirage.visit(Mirage.ClickPage)
+      refute Map.has_key?(session.page.state, :clicked)
+    end
+  end
+
   describe "reload/1" do
     test "resets page state" do
       session =
@@ -19,7 +50,7 @@ defmodule MirageTest do
     end
 
     test "preserves params across reload" do
-      session = Mirage.visit(Mirage.CommandPage, %{tmp_path: "/tmp/test"})
+      session = Mirage.visit(Mirage.CommandPage, tmp_path: "/tmp/test")
       session = Mirage.reload(session)
 
       assert session.params == %{tmp_path: "/tmp/test"}
