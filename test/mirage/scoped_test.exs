@@ -54,6 +54,14 @@ defmodule Mirage.ScopingTest do
       assert session.page.state.clicked == :div
     end
 
+    test "count is scoped to within" do
+      Mirage.WithinPage
+      |> Mirage.visit()
+      |> Mirage.within("div.sidebar", fn session ->
+        Mirage.assert_has(session, "a.nav", count: 1)
+      end)
+    end
+
     test "restores scope to nil after the block returns" do
       result =
         Mirage.WithinPage

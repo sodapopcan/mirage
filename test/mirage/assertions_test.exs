@@ -171,6 +171,70 @@ defmodule Mirage.AssertionsTest do
     end
   end
 
+  describe "assert_has — :label" do
+    test "passes when input has matching label" do
+      session = Mirage.visit(Mirage.FillInPage)
+      Mirage.assert_has(session, "input", label: "Name")
+    end
+
+    test "matches label linked via for/id" do
+      session = Mirage.visit(Mirage.FillInPage)
+      Mirage.assert_has(session, "input", label: "Email")
+    end
+
+    test "raises when no input has matching label" do
+      session = Mirage.visit(Mirage.FillInPage)
+
+      assert_raise AssertionError, ~r/found 0/, fn ->
+        Mirage.assert_has(session, "input", label: "Missing")
+      end
+    end
+
+    test "combines label with other filters" do
+      session = Mirage.visit(Mirage.FillInPage)
+      # "Name" label exists but doesn't wrap a textarea
+      Mirage.refute_has(session, "textarea", label: "Name")
+      # "Comment" label wraps a textarea
+      Mirage.assert_has(session, "textarea", label: "Comment")
+    end
+  end
+
+  describe "refute_has — :label" do
+    test "passes when no input has matching label" do
+      session = Mirage.visit(Mirage.FillInPage)
+      Mirage.refute_has(session, "input", label: "Missing")
+    end
+
+    test "raises when input has matching label" do
+      session = Mirage.visit(Mirage.FillInPage)
+
+      assert_raise AssertionError, ~r/Expected not to find/, fn ->
+        Mirage.refute_has(session, "input", label: "Name")
+      end
+    end
+  end
+
+  describe "assert_has — :count" do
+    test "passes when count matches" do
+      session = Mirage.visit(Mirage.AssertHasValuePage)
+      Mirage.assert_has(session, "input", count: 3)
+    end
+
+    test "raises when count does not match" do
+      session = Mirage.visit(Mirage.AssertHasValuePage)
+
+      assert_raise AssertionError, ~r/Expected to find exactly 2 elements.*found 3/, fn ->
+        Mirage.assert_has(session, "input", count: 2)
+      end
+    end
+
+    test "count: 1 is the default" do
+      session = Mirage.visit(Mirage.ClickPage)
+      Mirage.assert_has(session, "button")
+      Mirage.assert_has(session, "button", count: 1)
+    end
+  end
+
   describe "pipelining" do
     test "assert_has and refute_has return session for chaining" do
       Mirage.visit(Mirage.AssertHasTextPage)
