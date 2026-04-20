@@ -75,14 +75,14 @@ defmodule Mirage.BrowserTest do
       File.rm(path)
     end
 
-    test "wrap: false omits centering CSS" do
+    test "center: false omits centering CSS" do
       import Hologram.Template
 
       ~HOLO"""
       <Mirage.MountableCounter />
       """
       |> Mirage.mount()
-      |> Mirage.open_browser([wrap: false], fn path -> send(self(), {:opened, path}) end)
+      |> Mirage.open_browser([center: false], fn path -> send(self(), {:opened, path}) end)
 
       assert_receive {:opened, path}
       html = File.read!(path)
