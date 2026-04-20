@@ -57,8 +57,9 @@ defmodule Mirage do
   the rest of `Mirage` can use.
 
   """
-  @spec visit(module(), map()) :: Session.t()
-  def visit(page_module, params \\ %{}) do
+  @spec visit(module(), keyword()) :: Session.t()
+  def visit(page_module, params \\ []) do
+    params = Map.new(params)
     {page, server} = DOM.init_component(page_module, params, %Hologram.Server{})
 
     vars = Map.merge(params, page.state)
@@ -467,7 +468,7 @@ defmodule Mirage do
   """
   @spec reload(Session.t()) :: Session.t()
   def reload(%Session{page_module: page_module, params: params}) do
-    visit(page_module, params)
+    visit(page_module, Keyword.new(params))
   end
 
   @doc """

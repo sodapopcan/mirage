@@ -96,7 +96,7 @@ defmodule Mirage.EventsTest do
 
       on_exit(fn -> File.rm(tmp_path) end)
 
-      session = Mirage.visit(Mirage.CommandPage, %{tmp_path: tmp_path})
+      session = Mirage.visit(Mirage.CommandPage, tmp_path: tmp_path)
       refute File.exists?(tmp_path)
 
       Mirage.click(session, "button", "write file")
