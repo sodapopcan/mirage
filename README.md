@@ -3,13 +3,14 @@
 [![Hex.pm](https://img.shields.io/hexpm/v/mirage.svg)](https://hex.pm/packages/mirage)
 [![Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/mirage)
 
-Headless page and component testing library for
+Browserless page and component testing library for
 the [Hologram](http://hologram.page) framework.
 
 ## About
 
-Mirage allows for headless testing of hologram pages and components.  Its
-API is very similar to that of [`PhoenixTest`](https://hex.pm/packages/phoenix_test).
+Mirage allows for browserless testing of hologram pages and components.  Its API
+is very similar to that of
+[`PhoenixTest`](https://hex.pm/packages/phoenix_test).
 
 Here is a quick example:
 
@@ -41,16 +42,25 @@ test "it counts" do
 end
 ```
 
-Mirage tracks the page under test, triggers actions, commands, and follows any
-navigation or redirects.  It also includes everyone's favourite debugging tool:
-`open_browser/1`!
+Mirage works by initializing page and component modules directly and "faking"
+events to call `action` and `command` calls behind the scenes.  It's similar to
+doing:
+
+```elixir
+page = Counter.init(%{count: 0}, %Hologram.Compoent{}, %Hologram.Server{})
+page = Counter.action(:count, %{}, page)
+assert page.state.count == 1
+```
+
+only Mirage allows you to interact with the Hologram's virtual DOM.
 
 ## JavaScript testing
 
-Note that Mirage does not handle JavaScript.  Of course, with Hologram being
-a isomoprhic framework, we write most of our JavaScript in Elixir anyway, so
-Mirage can you really far.  However, if you need to test any JS-interop features
-you will need to write those tests in [Wallaby](https://hex.pm/packages/wallaby) or
+Note that Mirage does not handle JavaScript.  Of course, with Hologram being an
+isomorphic framework, we write most of our JavaScript in Elixir anyway, so
+Mirage can take you really far.  However, if you need to test any JS-interop
+features you will need to write those tests in
+[Wallaby](https://hex.pm/packages/wallaby) or
 [PlaywrightEx](https://hex.pm/packages/playwright_ex).
 
 ## Installation
