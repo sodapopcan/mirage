@@ -1337,10 +1337,11 @@ defmodule Mirage.ContextCounter do
   use Hologram.Component
 
   prop :initial_count, :integer, from_context: {Mirage.ContextCounter, :initial_count}
+  prop :label, :string, from_context: {Mirage.ContextCounter, :label}
 
   @impl Hologram.Component
   def init(props, component, server) do
-    {put_state(component, count: props[:initial_count] || 0), server}
+    {put_state(component, count: props[:initial_count] || 0, label: props[:label] || "Count"), server}
   end
 
   def action(:increment, _params, component) do
@@ -1351,8 +1352,51 @@ defmodule Mirage.ContextCounter do
   def template do
     ~HOLO"""
     <div>
+      <span class="label">{@label}</span>
       <span class="count">{@count}</span>
       <button $click={:increment}>Add</button>
+    </div>
+    """
+  end
+end
+
+defmodule Mirage.SlottedWrapper do
+  @moduledoc false
+  use Hologram.Component
+
+  @impl Hologram.Component
+  def init(_props, component, server) do
+    {component, server}
+  end
+
+  @impl Hologram.Component
+  def template do
+    ~HOLO"""
+    <div class="wrapper">
+      <h2>Wrapper</h2>
+      <slot />
+    </div>
+    """
+  end
+end
+
+defmodule Mirage.SlottedCard do
+  @moduledoc false
+  use Hologram.Component
+
+  prop :title, :string, from_context: {Mirage.SlottedCard, :title}
+
+  @impl Hologram.Component
+  def init(props, component, server) do
+    {put_state(component, title: props[:title] || "Untitled"), server}
+  end
+
+  @impl Hologram.Component
+  def template do
+    ~HOLO"""
+    <div class="card">
+      <h3>{@title}</h3>
+      <slot />
     </div>
     """
   end

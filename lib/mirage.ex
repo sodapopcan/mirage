@@ -94,65 +94,37 @@ defmodule Mirage do
   end
 
   @doc """
-  Mount a component in isolation for testing.
+  Mount a component in isolation.
 
-  Takes a `Hologram.Component` module and an optional keyword list.  Returns a
-  session that can be used with the rest of the `Mirage` API just like one
-  created by `visit/2`, but without a page or layout wrapper.
+  Pass a `~HOLO` template containing a single component.  Props, cid, and slot
+  content are all declared in the markup itself:
 
-  ## Options
+      ~HOLO\"\"\"
+      <MyApp.Components.PoplarTracker cid="counter" eaten={0} />
+      \"\"\"
+      |> mount()
+      |> click("button", "Eat a poplar")
+      |> assert_has("p", "Number of poplars eaten: 1")
 
-    * `:props` — a map of props to pass to the component
-    * `:context` — a map of context values; props declared with `from_context`
-      will be populated from this map
+  Context can be provided as a `{Namespace, key: value}` tuple.  Props declared
+  with `from_context` will be populated from matching context values.
 
-  ## Example
+      ~HOLO\"\"\"
+      <MyApp.Components.PoplarTracker cid="counter">
+        <p>{@user.name} eats too many poplars</p>
+      </MyApp.Components.PoplarTracker>
+      \"\"\"
+      |> mount({MyApp, user: current_user, theme: "dark"})
 
-      MyApp.Counter
-      |> mount(props: %{cid: "counter"})
-      |> click("button", "Increment")
-      |> assert_has("span", "1")
+  For multiple namespaces, use a list of tuples:
+
+      ~HOLO\"\"\"
+      <MyApp.Dashboard cid="dash" />
+      \"\"\"
+      |> mount([{MyApp, user: current_user}, {Themes, mode: "dark"}])
 
   """
-  @spec mount(module(), props: map(), context: map()) :: Session.t()
-  def mount(component_module, opts \\ []) do
-    Keyword.validate!(opts, [:props, :context])
-    props = Keyword.get(opts, :props, %{})
-    context = Keyword.get(opts, :context, %{})
-
-    props =
-      props
-      |> DOM.inject_props_from_context(component_module, context)
-      |> DOM.inject_default_prop_values(component_module)
-
-    server = %Hologram.Server{}
-    {component, server} = DOM.init_component(component_module, props, server)
-
-    vars = Map.merge(props, component.state)
-    template_dom = component_module.template().(vars)
-
-    merged_context = Map.merge(runtime_context(), component.emitted_context)
-    merged_context = Map.merge(merged_context, context)
-    env = %{context: merged_context, slots: []}
-
-    Process.delete(:mirage_components)
-    ast = DOM.expand(template_dom, env, server)
-    components = Process.delete(:mirage_components) || %{}
-
-    %Session{
-      page: component,
-      server: server,
-      ast: ast,
-      page_module: component_module,
-      params: props,
-      bookkeeping: %{
-        checked_radios: %{},
-        checked_checkboxes: MapSet.new(),
-        selected_options: %{},
-        components: components
-      }
-    }
-  end
+  defdelegate mount(template_fn, context \\ []), to: Mirage.Mount
 
   @doc """
   Scopes all operations within the given block to descendants of the element

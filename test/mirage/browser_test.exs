@@ -56,7 +56,11 @@ defmodule Mirage.BrowserTest do
 
   describe "open_browser/2 — mounted component" do
     test "wraps in a barebones HTML layout" do
-      Mirage.MountableCounter
+      import Hologram.Template
+
+      ~HOLO"""
+      <Mirage.MountableCounter />
+      """
       |> Mirage.mount()
       |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
 

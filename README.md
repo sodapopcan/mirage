@@ -29,10 +29,14 @@ You can also test components in isolation:
 
 ```elixir
 test "it counts" do
-  MyApp.Counter
-  |> mount(props: %{count: 0})
-  |> click_button("+")
-  |> assert_has("span", "1")
+  ~HOLO"""
+  <MyApp.Components.PoplarTracker cid="counter" eaten={0}>
+    <p>{@user.name} eats too many poplars.</p>
+  </MyApp.Components.PoplarTracker>
+  """
+  |> mount({MyApp, user: current_user})
+  |> click_button("Eat a poplar")
+  |> assert_has("p", "Number of poplars eaten: 1")
 end
 ```
 
@@ -93,6 +97,6 @@ selectors.  See [lib/mirage/css.ex](lib/mirage/css.ex).
 
 ## Note on AI use
 
-This library is currently super-alpha.  It was made with heavy LLM-assisted as
+This library is currently super-alpha.  It was made with heavy LLM assistance as
 it's something that has been blocking progress on another project of mine.
 I have not finished the full vetting process yet.

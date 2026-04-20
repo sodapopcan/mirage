@@ -15,7 +15,7 @@
 
 ### Added
 
-- `mount/2` — mount a component in isolation for testing, without a page or
+- `mount/4` — mount a component in isolation for testing, without a page or
   layout. Accepts `:props` and `:context` options; context values populate
   `from_context` props.
 - `reload/1` — revisit the current page with the current params, resetting all

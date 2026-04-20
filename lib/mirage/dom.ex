@@ -97,7 +97,8 @@ defmodule Mirage.DOM do
     end
   end
 
-  defp cast_props(props, module) do
+  @doc false
+  def cast_props(props, module) do
     allowed =
       [
         "cid"
