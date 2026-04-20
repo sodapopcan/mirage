@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.0.4 (Apr 20, 2026)
+
+### Added
+
+- `assert_page/3` — optional keyword list of expected params to assert against
+  after navigation.
+
+### Changed
+
+- `mount/2` redesigned around `~HOLO` templates. Props, cid, and slot content are
+  declared in markup; context is the only argument to `mount`.  Accepts a single
+  `{Namespace, key: value}` tuple or a list of tuples for multiple namespaces.
+- `visit/2` now takes a keyword list instead of a map.
+
 ## v0.0.3 (Apr 18, 2026)
 
 ### Added
