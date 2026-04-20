@@ -1341,7 +1341,8 @@ defmodule Mirage.ContextCounter do
 
   @impl Hologram.Component
   def init(props, component, server) do
-    {put_state(component, count: props[:initial_count] || 0, label: props[:label] || "Count"), server}
+    {put_state(component, count: props[:initial_count] || 0, label: props[:label] || "Count"),
+     server}
   end
 
   def action(:increment, _params, component) do
