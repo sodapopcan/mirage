@@ -196,5 +196,52 @@ defmodule Mirage.AssertionsTest do
                      |> Mirage.assert_page(Mirage.NotThisPage)
                    end
     end
+
+    test "passes when params match" do
+      Mirage.CommandPage
+      |> Mirage.visit(tmp_path: "/tmp/x")
+      |> Mirage.assert_page(Mirage.CommandPage, tmp_path: "/tmp/x")
+    end
+
+    test "passes with empty params when none expected" do
+      Mirage.HomePage
+      |> Mirage.visit()
+      |> Mirage.assert_page(Mirage.HomePage)
+    end
+
+    test "raises when param value does not match" do
+      assert_raise AssertionError,
+                   ~r/Expected param :tmp_path to be "\/tmp\/wrong"/,
+                   fn ->
+                     Mirage.CommandPage
+                     |> Mirage.visit(tmp_path: "/tmp/right")
+                     |> Mirage.assert_page(Mirage.CommandPage, tmp_path: "/tmp/wrong")
+                   end
+    end
+
+    test "raises when expected param is missing" do
+      assert_raise AssertionError,
+                   ~r/Expected param :missing to be "x" but was nil/,
+                   fn ->
+                     Mirage.CommandPage
+                     |> Mirage.visit(tmp_path: "/tmp/x")
+                     |> Mirage.assert_page(Mirage.CommandPage, missing: "x")
+                   end
+    end
+
+    test "checks multiple params" do
+      Mirage.CommandPage
+      |> Mirage.visit(tmp_path: "/tmp/x")
+      |> Mirage.assert_page(Mirage.CommandPage, tmp_path: "/tmp/x")
+    end
+
+    test "returns session for chaining" do
+      session =
+        Mirage.CommandPage
+        |> Mirage.visit(tmp_path: "/tmp/x")
+        |> Mirage.assert_page(Mirage.CommandPage, tmp_path: "/tmp/x")
+
+      assert %Session{} = session
+    end
   end
 end

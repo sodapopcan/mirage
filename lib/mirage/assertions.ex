@@ -8,7 +8,9 @@ defmodule Mirage.Assertions do
   alias Mirage.Scoped
   alias Mirage.Session
 
-  def assert_page(session, page_module) do
+  def assert_page(session, page_module, expected_params \\ [])
+
+  def assert_page(session, page_module, expected_params) do
     remove_prefix = fn mod ->
       mod
       |> to_string()
@@ -20,6 +22,13 @@ defmodule Mirage.Assertions do
 
     assert session.page_module == page_module,
            "Expected current page to be #{expected_module} but was #{current_module}"
+
+    for {key, value} <- expected_params do
+      actual = Map.get(session.params, key)
+
+      assert actual == value,
+             "Expected param #{inspect(key)} to be #{inspect(value)} but was #{inspect(actual)}"
+    end
 
     session
   end
