@@ -1,9 +1,11 @@
 defmodule Mirage do
   @moduledoc """
-  Test framework for the Hologram web framework.
+  Browserless test framework for the Hologram web framework.
 
-  The entry point is `visit/2`, which initializes a page and expands its
-  template into a fully-resolved DOM that tests can make assertions against.
+  Mirage initializes a page or component and expands its template into
+  a fully-resolved DOM that tests can make assertions and trigger events
+  against.
+
   """
 
   defmodule Session do
@@ -125,6 +127,7 @@ defmodule Mirage do
       |> mount([{MyApp, user: current_user}, {Themes, mode: "dark"}])
 
   """
+  @spec mount(function(), {module(), keyword()} | [{module(), keyword()}]) :: Session.t()
   defdelegate mount(template_fn, context \\ []), to: Mirage.Mount
 
   @doc """
@@ -203,7 +206,8 @@ defmodule Mirage do
   @doc """
   Click on a button by its text.
 
-  If it's a button inside a form, it will trigger the form's `$submit` event.
+  If it's a submit button belonging to a form, it will trigger that form's
+  `$submit` event.
 
   This is otherwise shorthand for `Mirage.click/3` with `"button"` as its selector.
 
@@ -217,7 +221,8 @@ defmodule Mirage do
   Trigger a `$click` event on the element matching the given CSS selector.
 
   Any actions or commands will be run.  If the click triggers a page navigation,
-  the new page will be loaded into the session.
+  the new page will be loaded into the session.  When clicking a submit button
+  that belongs to a form, that form's `$submit` event will be triggered.
 
   Raises if no matching element with a `$click` handler is found, or if more
   than one matches.
@@ -253,6 +258,7 @@ defmodule Mirage do
   Accepts the same options as `Mirage.click/3`.
 
   """
+  @spec focus(Session.t(), String.t(), String.t() | keyword()) :: Session.t()
   defdelegate focus(session, selector, text_or_opts \\ []), to: Events
   @doc false
   defdelegate focus(session, selector, text, opts), to: Events
@@ -262,6 +268,7 @@ defmodule Mirage do
 
   Accepts the same options as `Mirage.click/3`.
   """
+  @spec blur(Session.t(), String.t(), String.t() | keyword()) :: Session.t()
   defdelegate blur(session, selector, text_or_opts \\ []), to: Events
   @doc false
   defdelegate blur(session, selector, text, opts), to: Events
