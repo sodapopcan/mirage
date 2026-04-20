@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.0.5 (Apr 20, 2026)
+
+### Added
+
+- `:count` option for `assert_has`: assert exact number of matching elements
+  (e.g. `assert_has(session, "li", count: 3)`).
+- `:label` option for `assert_has` and `refute_has`: filter elements by their
+  associated `<label>` text
+  (e.g. `assert_has(session, "input", label: "Email", value: "foo@bar.com")`).
+- `click`/`click_button` now finds submit buttons outside a `<form>` that
+  reference it via the HTML `form` attribute.
+- `open_browser` now centres mounted components by default.  Disable per-call
+  with `open_browser(session, wrap: false)` or globally with `config :mirage,
+  open_browser: [wrap: false]`.
+
+### Fixes
+- `~HOLO` sigil was not being exported from `Mirage`.
+
 ## v0.0.4 (Apr 20, 2026)
 
 ### Added
