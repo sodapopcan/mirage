@@ -501,7 +501,12 @@ defmodule Mirage do
       |> assert_has("Philip")
 
   When using with a component (via `Mirage.mount/2`), the output will be wrapped
-  in a thin layout bringing in your app's styles.
+  in a thin layout bringing in your app's styles.  It also injects a bit a CSS
+  that will center your component in the viewport.  You can disable this
+  per-call by passing `wrap: false`.  You can change the global default like so:
+
+      # config/test.exs
+      config :mirage, :open_browser, [wrap: false]
 
   """
   @spec open_browser(Session.t(), keyword() | function()) :: Session.t()
