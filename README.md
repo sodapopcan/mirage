@@ -3,7 +3,8 @@
 [![Hex.pm](https://img.shields.io/hexpm/v/mirage.svg)](https://hex.pm/packages/mirage)
 [![Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/mirage)
 
-Web testing library for [Hologram](http://hologram.page)
+Headless page and component testing library for
+the [Hologram](http://hologram.page) framework.
 
 ## About
 
@@ -15,7 +16,7 @@ Here is a quick example:
 ```elixir
 test "it works" do
   MyApp.HomePage
-  |> visit(my_param: "Some param")
+  |> visit(my_param: "some-param")
   |> click_link("Sign-up")
   |> fill_in("Name", with: "Bender Bending Rodríguez")
   |> fill_in("Password", with: "wanna-kill-all-humans?")
@@ -43,6 +44,14 @@ end
 Mirage tracks the page under test, triggers actions, commands, and follows any
 navigation or redirects.  It also includes everyone's favourite debugging tool:
 `open_browser/1`!
+
+## JavaScript testing
+
+Note that Mirage does not handle JavaScript.  Of course, with Hologram being
+a isomoprhic framework, we write most of our JavaScript in Elixir anyway, so
+Mirage can you really far.  However, if you need to test any JS-interop features
+you will need to write those tests in [Wallaby](https://hex.pm/packages/wallaby) or
+[PlaywrightEx](https://hex.pm/packages/playwright_ex).
 
 ## Installation
 
@@ -95,7 +104,7 @@ This project contains code adapted from
 [meeseeks](https://hex.pm/packages/meeseeks) specifically for parsing CSS
 selectors.  See [lib/mirage/css.ex](lib/mirage/css.ex).
 
-## Note on AI use
+## Note on AI-use
 
 This library is currently super-alpha.  It was made with heavy LLM assistance as
 it's something that has been blocking progress on another project of mine.
