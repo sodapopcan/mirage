@@ -449,10 +449,17 @@ defmodule Mirage do
 
   @doc """
   Asserts that we are on a specific page.  Useful after redirect.
+
+  Optionally takes a keyword list of expected params:
+
+      session
+      |> click_link("Profile")
+      |> assert_page(ProfilePage, user_id: 42)
+
   """
   @doc group: "Assertions"
-  @spec assert_page(Session.t(), module()) :: Session.t() | no_return()
-  defdelegate assert_page(session, page), to: Mirage.Assertions
+  @spec assert_page(Session.t(), module(), keyword()) :: Session.t() | no_return()
+  defdelegate assert_page(session, page, expected_params \\ []), to: Mirage.Assertions
 
   @doc """
   "Reloads" the current page by revisiting it with the current params.
