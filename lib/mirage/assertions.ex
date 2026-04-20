@@ -4,6 +4,7 @@ defmodule Mirage.Assertions do
   import ExUnit.Assertions
 
   alias Mirage.DOM
+  alias Mirage.Input
   alias Mirage.Query
   alias Mirage.Scoped
   alias Mirage.Session
@@ -44,9 +45,12 @@ defmodule Mirage.Assertions do
     validate_opts!(opts)
 
     matches = find_matches(session, selector, opts)
+    count = Keyword.get(opts, :count, 1)
 
-    assert match?([_], matches),
-           "Expected to find exactly 1 element matching #{describe(selector, opts)}, but found #{length(matches)}"
+    noun = if count == 1, do: "element", else: "elements"
+
+    assert length(matches) == count,
+           "Expected to find exactly #{count} #{noun} matching #{describe(selector, opts)}, but found #{length(matches)}"
 
     session
   end
@@ -80,6 +84,7 @@ defmodule Mirage.Assertions do
   defp find_matches(%Session{} = session, selector, opts) do
     text = Keyword.get(opts, :text)
     value = Keyword.get(opts, :value)
+    label = Keyword.get(opts, :label)
     at = Keyword.get(opts, :at)
     exact? = Keyword.get(opts, :exact, true)
 
@@ -89,6 +94,7 @@ defmodule Mirage.Assertions do
     |> maybe_filter_at(at)
     |> maybe_filter_text(text, exact?)
     |> maybe_filter_value(value)
+    |> maybe_filter_label(label, exact?, session)
   end
 
   defp maybe_filter_at(nodes, nil), do: nodes
@@ -122,6 +128,31 @@ defmodule Mirage.Assertions do
     end)
   end
 
+  defp maybe_filter_label(nodes, nil, _exact?, _session), do: nodes
+
+  defp maybe_filter_label(nodes, label, exact?, session) do
+    ast = Scoped.query_ast(session)
+    {labels, inputs_by_id} = Input.collect_form_nodes(ast, nil)
+
+    labelled_inputs =
+      labels
+      |> Enum.filter(fn {node, _wrapped, _form_change} ->
+        DOM.text_matches?(DOM.inner_text(node), label, exact?)
+      end)
+      |> Enum.flat_map(fn {_label_node, wrapped, _fc} = entry ->
+        case wrapped do
+          {:element, _, _, _} -> [wrapped]
+          nil ->
+            case Input.resolve_input(entry, inputs_by_id, label) do
+              {input, _form_change} -> [input]
+              _ -> []
+            end
+        end
+      end)
+
+    Enum.filter(nodes, fn node -> node in labelled_inputs end)
+  end
+
   defp describe(selector, opts) do
     parts = [inspect(selector)]
 
@@ -143,10 +174,22 @@ defmodule Mirage.Assertions do
         value -> parts ++ ["value: #{inspect(value)}"]
       end
 
+    parts =
+      case Keyword.get(opts, :label) do
+        nil -> parts
+        label -> parts ++ ["label: #{inspect(label)}"]
+      end
+
+    parts =
+      case Keyword.get(opts, :count) do
+        nil -> parts
+        count -> parts ++ ["count: #{count}"]
+      end
+
     Enum.join(parts, ", ")
   end
 
   defp validate_opts!(opts) do
-    Keyword.validate!(opts, [:text, :value, :at, :exact])
+    Keyword.validate!(opts, [:text, :value, :at, :exact, :label, :count])
   end
 end
