@@ -32,15 +32,28 @@ defmodule Mirage.Events do
       |> Enum.filter(fn {:element, _, attrs, _} -> has_attr?(attrs, "$click") end)
       |> filter_by_text(text, exact?)
 
-    # Fallback: buttons / input[type=submit] inside a form with $submit.
+    # Fallback: buttons / input[type=submit] associated with a form that has $submit.
+    # This includes buttons inside the form AND external buttons with a `form` attribute.
     targets =
       case with_click do
         [] ->
-          ast
-          |> find_submit_targets()
-          |> Enum.filter(fn {node, _submit_attr} ->
-            text == nil or DOM.text_matches?(element_text(node), text, exact?)
-          end)
+          forms_by_id = collect_forms_with_submit(ast)
+
+          internal =
+            ast
+            |> find_submit_targets()
+            |> Enum.filter(fn {node, _submit_attr} ->
+              text == nil or DOM.text_matches?(element_text(node), text, exact?)
+            end)
+
+          external =
+            ast
+            |> find_external_submit_buttons(forms_by_id)
+            |> Enum.filter(fn {node, _submit_attr} ->
+              text == nil or DOM.text_matches?(element_text(node), text, exact?)
+            end)
+
+          (internal ++ external)
           |> Enum.map(fn {_node, submit_attr} -> {:form_submit, submit_attr} end)
 
         nodes ->
@@ -237,7 +250,9 @@ defmodule Mirage.Events do
     Enum.flat_map(nodes, &find_submit_buttons/1)
   end
 
-  defp find_submit_buttons({:element, "button", _, _} = node), do: [node]
+  defp find_submit_buttons({:element, "button", attrs, _} = node) do
+    if submit_button?(attrs), do: [node], else: []
+  end
 
   defp find_submit_buttons({:element, "input", attrs, _} = node) do
     case DOM.find_attr(attrs, "type") do
@@ -251,6 +266,89 @@ defmodule Mirage.Events do
   end
 
   defp find_submit_buttons(_), do: []
+
+  # Collect all <form> elements with a $submit attr, keyed by their id.
+  defp collect_forms_with_submit(nodes) when is_list(nodes) do
+    Enum.reduce(nodes, %{}, fn node, acc -> Map.merge(acc, collect_forms_with_submit(node)) end)
+  end
+
+  defp collect_forms_with_submit({:element, "form", attrs, children}) do
+    acc =
+      case {DOM.find_attr(attrs, "id"), DOM.find_attr(attrs, "$submit")} do
+        {nil, _} -> %{}
+        {_, nil} -> %{}
+        {id, submit_attr} -> %{DOM.attr_to_string(id) => submit_attr}
+      end
+
+    Enum.reduce(children, acc, fn node, a -> Map.merge(a, collect_forms_with_submit(node)) end)
+  end
+
+  defp collect_forms_with_submit({:element, _tag, _attrs, children}) do
+    collect_forms_with_submit(children)
+  end
+
+  defp collect_forms_with_submit(_), do: %{}
+
+  # Find buttons/input[type=submit] anywhere in the DOM that have a `form` attribute
+  # matching a collected form id.
+  defp find_external_submit_buttons(nodes, forms_by_id) when is_list(nodes) do
+    Enum.flat_map(nodes, &find_external_submit_buttons(&1, forms_by_id))
+  end
+
+  defp find_external_submit_buttons({:element, "button", attrs, children} = node, forms_by_id) do
+    own =
+      case DOM.find_attr(attrs, "form") do
+        nil ->
+          []
+
+        form_id_val ->
+          form_id = DOM.attr_to_string(form_id_val)
+
+          if submit_button?(attrs) do
+            case Map.fetch(forms_by_id, form_id) do
+              {:ok, submit_attr} -> [{node, submit_attr}]
+              :error -> []
+            end
+          else
+            []
+          end
+      end
+
+    own ++ find_external_submit_buttons(children, forms_by_id)
+  end
+
+  defp find_external_submit_buttons({:element, "input", attrs, _children} = node, forms_by_id) do
+    case DOM.find_attr(attrs, "form") do
+      nil ->
+        []
+
+      form_id_val ->
+        form_id = DOM.attr_to_string(form_id_val)
+        is_submit = case DOM.find_attr(attrs, "type") do
+          nil -> false
+          type -> DOM.attr_to_string(type) == "submit"
+        end
+
+        case {is_submit, Map.fetch(forms_by_id, form_id)} do
+          {true, {:ok, submit_attr}} -> [{node, submit_attr}]
+          _ -> []
+        end
+    end
+  end
+
+  defp find_external_submit_buttons({:element, _tag, _attrs, children}, forms_by_id) do
+    find_external_submit_buttons(children, forms_by_id)
+  end
+
+  defp find_external_submit_buttons(_, _forms_by_id), do: []
+
+  # A <button> is a submit button if it has no type or type="submit".
+  defp submit_button?(attrs) do
+    case DOM.find_attr(attrs, "type") do
+      nil -> true
+      type -> DOM.attr_to_string(type) == "submit"
+    end
+  end
 
   defp has_attr?(attrs, name) do
     Enum.any?(attrs, fn
