@@ -47,7 +47,7 @@ events to call `action` and `command` calls behind the scenes.  It's similar to
 doing:
 
 ```elixir
-page = Counter.init(%{count: 0}, %Hologram.Compoent{}, %Hologram.Server{})
+page = Counter.init(%{count: 0}, %Hologram.Component{}, %Hologram.Server{})
 page = Counter.action(:count, %{}, page)
 assert page.state.count == 1
 ```
