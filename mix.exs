@@ -41,6 +41,7 @@ defmodule Mirage.MixProject do
       lint: [
         "format --check-formatted",
         "compile --warnings-as-errors",
+        "sobelow",
         "dialyzer",
         "test"
       ]
@@ -84,7 +85,7 @@ defmodule Mirage.MixProject do
     [
       {:hologram, "~> 0.8"},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
-      {:sobelow, "~> 0.14.1", only: :dev},
+      {:sobelow, "~> 0.14.1", only: [:dev, :test]},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end

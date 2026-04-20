@@ -4,6 +4,7 @@ defmodule Mirage.Browser do
   alias Mirage.Session
   alias Mirage.DOM
 
+  # sobelow_skip ["Traversal.FileModule"]
   def open_browser(%Session{} = session, open_fun \\ &open_with_system_cmd/1) do
     config =
       Map.merge(session.bookkeeping, %{
@@ -174,6 +175,7 @@ defmodule Mirage.Browser do
     """
   end
 
+  # sobelow_skip ["CI.System"]
   defp open_with_system_cmd(path) do
     {cmd, args} =
       case :os.type() do
