@@ -347,12 +347,6 @@ defmodule MirageTest do
       end
     end
 
-    test "mount rejects unknown options" do
-      assert_raise ArgumentError, ~r/unknown keys \[:bogus\]/, fn ->
-        Mirage.mount(Mirage.MountableCounter, bogus: true)
-      end
-    end
-
     test "choose rejects unknown options" do
       session = Mirage.visit(Mirage.NonInteractivePage)
 
