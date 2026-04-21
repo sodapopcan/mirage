@@ -69,7 +69,9 @@ defmodule Mirage.Events do
         handle_click(session, node)
 
       [{:form_submit, submit_attr}] ->
-        form_data = Input.collect_form_values(session.ast, "$submit", submit_attr, session.bookkeeping)
+        form_data =
+          Input.collect_form_values(session.ast, "$submit", submit_attr, session.bookkeeping)
+
         dispatch_event(session, submit_attr, form_data)
 
       many ->

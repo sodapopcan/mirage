@@ -4,7 +4,7 @@ defmodule Mirage.MixProject do
   def project do
     [
       app: :mirage,
-      version: "0.0.5",
+      version: "0.0.6",
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:leex] ++ Mix.compilers(),
