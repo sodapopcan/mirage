@@ -96,6 +96,7 @@ defmodule MirageTest do
         |> Mirage.click_button("Submit")
 
       assert session.page.state.submitted == true
+      assert session.page.state.submit_data["token"] == "abc123"
     end
 
     test "dispatches form $submit for input[type=submit] with no $click" do
@@ -114,6 +115,7 @@ defmodule MirageTest do
         |> Mirage.click_button("Submit")
 
       assert session.page.state.submitted == true
+      assert session.page.state.submit_data["name"] == "alice"
     end
 
     test "dispatches form $submit for external input[type=submit] with form attribute" do
@@ -324,15 +326,16 @@ defmodule MirageTest do
       assert session.page.state.email == "a@b.c"
     end
 
-    test "also triggers the enclosing form's $change action" do
+    test "also triggers the enclosing form's $change action with form data" do
       session =
         Mirage.FillInPage
         |> Mirage.visit()
         |> Mirage.fill_in("Name", with: "Alice")
 
-      # The form's `$change` handler appends each change to a log — both
-      # the input's own action AND the form's change action fired.
-      assert session.page.state.change_log == ["Alice"]
+      # The form's `$change` handler receives all named field values.
+      assert [form_data] = session.page.state.change_log
+      assert form_data["name"] == "Alice"
+      assert form_data["email"] == ""
     end
 
     test "does not trigger a $change action when the input has no enclosing form" do

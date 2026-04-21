@@ -147,17 +147,18 @@ defmodule Mirage.FillInPage do
   end
 
   # Records a form-level change — used to assert `$change` fired.
-  def action(:form_changed, %{event: %{value: value}}, component) do
-    put_state(component, change_log: component.state.change_log ++ [value])
+  # Receives the full form data map (all named field values).
+  def action(:form_changed, %{event: event}, component) do
+    put_state(component, change_log: component.state.change_log ++ [event])
   end
 
   @impl Hologram.Page
   def template do
     ~HOLO"""
     <form $change={:form_changed}>
-      <label>Name<input $change={:update_name} /></label>
+      <label>Name<input name="name" $change={:update_name} /></label>
       <label for="email">Email</label>
-      <input id="email" $change={:set_field, field: :email} />
+      <input id="email" name="email" $change={:set_field, field: :email} />
     </form>
     <label>Comment<textarea $change={:update_comment} /></label>
     """
@@ -980,16 +981,16 @@ defmodule Mirage.ChooseFormPage do
     put_state(component, choice: value)
   end
 
-  def action(:form_changed, %{event: %{value: value}}, component) do
-    put_state(component, change_log: component.state.change_log ++ [value])
+  def action(:form_changed, %{event: event}, component) do
+    put_state(component, change_log: component.state.change_log ++ [event])
   end
 
   @impl Hologram.Page
   def template do
     ~HOLO"""
     <form $change={:form_changed}>
-      <label>Yes<input type="radio" value="yes" $change={:pick} /></label>
-      <label>No<input type="radio" value="no" $change={:pick} /></label>
+      <label>Yes<input type="radio" name="choice" value="yes" $change={:pick} /></label>
+      <label>No<input type="radio" name="choice" value="no" $change={:pick} /></label>
     </form>
     """
   end
@@ -1059,17 +1060,18 @@ defmodule Mirage.FormSubmitPage do
 
   @impl Hologram.Page
   def init(_params, component, _server) do
-    put_state(component, submitted: false)
+    put_state(component, submitted: false, submit_data: nil)
   end
 
-  def action(:submit, _params, component) do
-    put_state(component, submitted: true)
+  def action(:submit, %{event: event}, component) do
+    put_state(component, submitted: true, submit_data: event)
   end
 
   @impl Hologram.Page
   def template do
     ~HOLO"""
     <form $submit={:submit}>
+      <input type="hidden" name="token" value="abc123" />
       <button>Submit</button>
     </form>
     """
@@ -1111,11 +1113,11 @@ defmodule Mirage.FormSubmitExternalButtonPage do
 
   @impl Hologram.Page
   def init(_params, component, _server) do
-    put_state(component, submitted: false)
+    put_state(component, submitted: false, submit_data: nil)
   end
 
-  def action(:submit, _params, component) do
-    put_state(component, submitted: true)
+  def action(:submit, %{event: event}, component) do
+    put_state(component, submitted: true, submit_data: event)
   end
 
   @impl Hologram.Page
@@ -1250,8 +1252,8 @@ defmodule Mirage.SelectFormPage do
     put_state(component, color: value)
   end
 
-  def action(:form_changed, %{event: %{value: value}}, component) do
-    put_state(component, change_log: component.state.change_log ++ [value])
+  def action(:form_changed, %{event: event}, component) do
+    put_state(component, change_log: component.state.change_log ++ [event])
   end
 
   @impl Hologram.Page
@@ -1279,7 +1281,7 @@ defmodule Mirage.SelectTextPage do
     {put_state(component, selected: nil), server}
   end
 
-  def action(:text_selected, %{text: text}, component) do
+  def action(:text_selected, %{event: %{text: text}}, component) do
     put_state(component, selected: text)
   end
 

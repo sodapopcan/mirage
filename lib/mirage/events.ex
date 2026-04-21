@@ -4,6 +4,7 @@ defmodule Mirage.Events do
   alias Hologram.Component
   alias Hologram.Server
   alias Mirage.DOM
+  alias Mirage.Input
   alias Mirage.Query
   alias Mirage.Scoped
   alias Mirage.Session
@@ -68,7 +69,8 @@ defmodule Mirage.Events do
         handle_click(session, node)
 
       [{:form_submit, submit_attr}] ->
-        dispatch_event(session, submit_attr, %{})
+        form_data = Input.collect_form_values(session.ast, "$submit", submit_attr, session.bookkeeping)
+        dispatch_event(session, submit_attr, form_data)
 
       many ->
         raise "Ambiguous match: found #{length(many)} clickable elements matching #{describe(selector, opts)}"
@@ -115,26 +117,26 @@ defmodule Mirage.Events do
 
   @doc false
   # Text syntax action, e.g. `$click="my_action"`.
-  def dispatch_event(%Session{} = session, [{:text, name}], extra)
+  def dispatch_event(%Session{} = session, [{:text, name}], event_data)
       when is_binary(name) do
-    run_action(session, String.to_existing_atom(name), extra)
+    run_action(session, String.to_existing_atom(name), %{event: event_data})
   end
 
   # Bare atom action, e.g. `$click={:submit}`.
-  def dispatch_event(%Session{} = session, [{:expression, {name}}], extra)
+  def dispatch_event(%Session{} = session, [{:expression, {name}}], event_data)
       when is_atom(name) do
-    run_action(session, name, extra)
+    run_action(session, name, %{event: event_data})
   end
 
   # Action with params, e.g. `$click={:write_file, path: @tmp_path}`.
-  def dispatch_event(%Session{} = session, [{:expression, {name, params}}], extra)
+  def dispatch_event(%Session{} = session, [{:expression, {name, params}}], event_data)
       when is_atom(name) and is_list(params) do
-    run_action(session, name, Map.merge(Map.new(params), extra))
+    run_action(session, name, Map.merge(Map.new(params), %{event: event_data}))
   end
 
   # Longhand action/command, e.g. `$click={action: :name}` or `$click={command: :name}`.
   # Optionally includes `target: "cid"` to dispatch to a stateful component.
-  def dispatch_event(%Session{} = session, [{:expression, {spec}}], extra)
+  def dispatch_event(%Session{} = session, [{:expression, {spec}}], event_data)
       when is_list(spec) do
     target = Keyword.get(spec, :target)
 
@@ -142,7 +144,7 @@ defmodule Mirage.Events do
       Keyword.has_key?(spec, :action) ->
         name = Keyword.fetch!(spec, :action)
         params = Keyword.get(spec, :params, %{})
-        run_action(session, name, Map.merge(Map.new(params), extra), target)
+        run_action(session, name, Map.merge(Map.new(params), %{event: event_data}), target)
 
       Keyword.has_key?(spec, :command) ->
         name = Keyword.fetch!(spec, :command)
@@ -157,7 +159,7 @@ defmodule Mirage.Events do
   end
 
   # Attribute values that aren't one of the known expression shapes are no-ops.
-  def dispatch_event(session, _other, _extra), do: session
+  def dispatch_event(session, _other, _event_data), do: session
 
   # ---------------------------------------------------------------------------
   # Private — event targeting
