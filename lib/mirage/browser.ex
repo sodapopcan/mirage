@@ -18,6 +18,7 @@ defmodule Mirage.Browser do
   # sobelow_skip ["Traversal.FileModule"]
   def open_browser(%Session{} = session, opts, open_fun) when is_list(opts) do
     center? = Keyword.get(opts, :center, default_center())
+    wrap? = Keyword.get(opts, :wrap, default_wrap())
 
     config =
       Map.merge(session.bookkeeping, %{
@@ -28,10 +29,15 @@ defmodule Mirage.Browser do
     body = ast_to_html(session.ast, config)
 
     html =
-      if function_exported?(session.page_module, :__layout_module__, 0) do
-        body
-      else
-        wrap_in_layout(body, config.static_dir, center?)
+      cond do
+        function_exported?(session.page_module, :__layout_module__, 0) ->
+          body
+
+        wrap? ->
+          wrap_in_layout(body, config.static_dir, center?)
+
+        true ->
+          body
       end
 
     path =
@@ -49,6 +55,12 @@ defmodule Mirage.Browser do
     :mirage
     |> Application.get_env(:open_browser, [])
     |> Keyword.get(:center, true)
+  end
+
+  defp default_wrap do
+    :mirage
+    |> Application.get_env(:open_browser, [])
+    |> Keyword.get(:wrap, true)
   end
 
   defp ast_to_html(nodes, config) when is_list(nodes) do

@@ -92,5 +92,24 @@ defmodule Mirage.BrowserTest do
 
       File.rm(path)
     end
+
+    test "wrap: false skips the layout wrapper entirely" do
+      import Hologram.Template
+
+      ~HOLO"""
+      <Mirage.MountableCounter />
+      """
+      |> Mirage.mount()
+      |> Mirage.open_browser([wrap: false], fn path -> send(self(), {:opened, path}) end)
+
+      assert_receive {:opened, path}
+      html = File.read!(path)
+
+      refute html =~ "<!DOCTYPE html>"
+      refute html =~ "<html>"
+      assert html =~ "0"
+
+      File.rm(path)
+    end
   end
 end

@@ -501,12 +501,19 @@ defmodule Mirage do
       |> assert_has("Philip")
 
   When using with a component (via `Mirage.mount/2`), the output will be wrapped
-  in a thin layout bringing in your app's styles.  It also injects a bit of CSS
-  that will center your component in the viewport.  You can disable this
-  per-call by passing `center: false`.  You can change the global default like so:
+  in a thin layout bringing in your app's styles and CSS that centres the
+  component in the viewport.
+
+  ## Options
+
+    * `:wrap` - When `false`, skips the layout wrapper entirely and outputs
+      raw component HTML.  Defaults to `true`.
+    * `:center` - When `false`, omits the centering CSS.  Defaults to `true`.
+
+  Both options can be configured globally:
 
       # config/test.exs
-      config :mirage, open_browser: [center: false]
+      config :mirage, open_browser: [center: false, wrap: false]
 
   """
   @spec open_browser(Session.t(), keyword() | function()) :: Session.t()
