@@ -5,6 +5,50 @@ defmodule Mirage.Input do
   alias Mirage.Events
   alias Mirage.Scoped
 
+  def fill_in(session, label, opts) do
+    Keyword.validate!(opts, [:with, :exact])
+    exact? = Keyword.get(opts, :exact, true)
+    value = Keyword.fetch!(opts, :with)
+
+    {labels, inputs_by_id} = collect_form_nodes(Scoped.query_ast(session), nil)
+
+    matches =
+      Enum.filter(labels, fn {node, _wrapped, _form_change} ->
+        DOM.text_matches?(DOM.inner_text(node), label, exact?)
+      end)
+
+    case matches do
+      [] ->
+        raise "No input found with label: #{inspect(label)}"
+
+      [entry] ->
+        {input, form_change} = resolve_input(entry, inputs_by_id, label)
+        validate_interactive!(input, label)
+
+        session
+        |> trigger_input_action(input, value)
+        |> update_filled_inputs(input, value)
+        |> trigger_form_change(form_change)
+
+      [_ | _] = many ->
+        raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
+    end
+  end
+
+  defp update_filled_inputs(session, {:element, _, attrs, _}, value) do
+    case DOM.find_attr(attrs, "name") do
+      nil ->
+        session
+
+      name_attr ->
+        update_bookkeeping(
+          session,
+          :filled_inputs,
+          &Map.put(&1, DOM.attr_to_string(name_attr), value)
+        )
+    end
+  end
+
   def choose(session, label, opts \\ []) do
     validate_opts!(opts)
 
