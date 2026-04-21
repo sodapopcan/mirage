@@ -110,21 +110,23 @@ defmodule Mirage.Assertions do
 
   defp maybe_filter_text(nodes, text, true) do
     Enum.filter(nodes, fn node ->
-      String.trim(DOM.inner_text(node)) == text
+      String.trim(DOM.inner_text(node)) == String.trim(text)
     end)
   end
 
   defp maybe_filter_text(nodes, text, false) do
     Enum.filter(nodes, fn node ->
-      String.contains?(DOM.inner_text(node), text)
+      String.contains?(DOM.inner_text(node), String.trim(text))
     end)
   end
 
   defp maybe_filter_value(nodes, nil), do: nodes
 
   defp maybe_filter_value(nodes, value) do
+    trimmed = String.trim(value)
+
     Enum.filter(nodes, fn {:element, _, attrs, _} ->
-      DOM.attr_to_string(DOM.find_attr(attrs, "value")) == value
+      String.trim(DOM.attr_to_string(DOM.find_attr(attrs, "value"))) == trimmed
     end)
   end
 

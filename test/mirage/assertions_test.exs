@@ -235,6 +235,33 @@ defmodule Mirage.AssertionsTest do
     end
   end
 
+  describe "assert_has — trimming" do
+    test "trims whitespace and newlines from DOM text when matching :text" do
+      session = Mirage.visit(Mirage.AssertHasTrimPage)
+      Mirage.assert_has(session, "p", "hello")
+    end
+
+    test "trims surrounding whitespace from the :text option" do
+      session = Mirage.visit(Mirage.AssertHasTrimPage)
+      Mirage.assert_has(session, "p", "\n  hello\n  ")
+    end
+
+    test "trims surrounding whitespace from DOM value when matching :value" do
+      session = Mirage.visit(Mirage.AssertHasTrimPage)
+      Mirage.assert_has(session, "input", value: "world")
+    end
+
+    test "trims surrounding whitespace from the :value option" do
+      session = Mirage.visit(Mirage.AssertHasTrimPage)
+      Mirage.assert_has(session, "input", value: "  world  ")
+    end
+
+    test "trims :text for substring matching with exact: false" do
+      session = Mirage.visit(Mirage.AssertHasTrimPage)
+      Mirage.assert_has(session, "p", "  hell  ", exact: false)
+    end
+  end
+
   describe "pipelining" do
     test "assert_has and refute_has return session for chaining" do
       Mirage.visit(Mirage.AssertHasTextPage)

@@ -484,6 +484,27 @@ defmodule Mirage.AssertHasValuePage do
   end
 end
 
+defmodule Mirage.AssertHasTrimPage do
+  @moduledoc false
+  use Hologram.Page
+
+  route "/assert-has-trim"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, padded_text: "\n  hello\n  ", padded_value: "  world  ")
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <p>{@padded_text}</p>
+    <input value={@padded_value} />
+    """
+  end
+end
+
 defmodule Mirage.CommandPage do
   @moduledoc false
   use Hologram.Page
