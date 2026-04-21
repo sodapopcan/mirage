@@ -191,6 +191,25 @@ defmodule Mirage.Input do
     end
   end
 
+  defp collect_options(nodes) when is_list(nodes) do
+    Enum.flat_map(nodes, &collect_options/1)
+  end
+
+  defp collect_options({:element, "option", attrs, _children} = node) do
+    text = String.trim(DOM.inner_text(node))
+
+    value =
+      case DOM.find_attr(attrs, "value") do
+        nil -> text
+        value -> DOM.attr_to_string(value)
+      end
+
+    [{text, value}]
+  end
+
+  defp collect_options({:element, "optgroup", _attrs, children}), do: collect_options(children)
+  defp collect_options(_other), do: []
+
   def select_text(session, label, text_or_opts \\ [])
 
   def select_text(session, label, text) when is_binary(text) do
@@ -235,8 +254,37 @@ defmodule Mirage.Input do
     end
   end
 
+  @text_input_types ~w(text email password search tel url number)
+
+  defp validate_text_input!({:element, "textarea", _, _}, _label), do: :ok
+
+  defp validate_text_input!({:element, "input", attrs, _}, label) do
+    type = input_type(attrs)
+
+    unless type in @text_input_types do
+      raise "Label #{inspect(label)} points to an input[type=#{type}], which does not accept text selection"
+    end
+
+    :ok
+  end
+
+  defp validate_text_input!({:element, "select", _, _}, label) do
+    raise "Label #{inspect(label)} points to a <select>, which does not accept text selection"
+  end
+
+  defp input_value({:element, "textarea", _attrs, children}) do
+    DOM.inner_text({:element, "textarea", [], children})
+  end
+
+  defp input_value({:element, "input", attrs, _}) do
+    case DOM.find_attr(attrs, "value") do
+      nil -> ""
+      value -> DOM.attr_to_string(value)
+    end
+  end
+
   # ---------------------------------------------------------------------------
-  # Shared helpers (used by Mirage.fill_in as well)
+  # Shared helpers
   # ---------------------------------------------------------------------------
 
   # Walks the AST once, tracking the nearest enclosing `<form>`'s `$change`
@@ -326,6 +374,26 @@ defmodule Mirage.Input do
     Events.dispatch_event(session, form_change, form_data)
   end
 
+  @doc false
+  def validate_interactive!({:element, tag, attrs, _}, label) do
+    cond do
+      DOM.find_attr(attrs, "hidden") != nil ->
+        raise "Input with label #{inspect(label)} is hidden and cannot be interacted with"
+
+      tag == "input" && input_type(attrs) == "hidden" ->
+        raise "Input with label #{inspect(label)} is hidden and cannot be interacted with"
+
+      DOM.find_attr(attrs, "disabled") != nil ->
+        raise "Input with label #{inspect(label)} is disabled and cannot be interacted with"
+
+      DOM.find_attr(attrs, "readonly") != nil ->
+        raise "Input with label #{inspect(label)} is readonly and cannot be interacted with"
+
+      true ->
+        :ok
+    end
+  end
+
   # Computes the visible text of a label node, excluding any nested form
   # control elements. Necessary for select labels whose inner_text would
   # otherwise include all option texts.
@@ -348,56 +416,6 @@ defmodule Mirage.Input do
     end
   end
 
-  defp collect_options(nodes) when is_list(nodes) do
-    Enum.flat_map(nodes, &collect_options/1)
-  end
-
-  defp collect_options({:element, "option", attrs, _children} = node) do
-    text = String.trim(DOM.inner_text(node))
-
-    value =
-      case DOM.find_attr(attrs, "value") do
-        nil -> text
-        value -> DOM.attr_to_string(value)
-      end
-
-    [{text, value}]
-  end
-
-  defp collect_options({:element, "optgroup", _attrs, children}), do: collect_options(children)
-  defp collect_options(_other), do: []
-
-  defp input_value({:element, "textarea", _attrs, children}) do
-    DOM.inner_text({:element, "textarea", [], children})
-  end
-
-  defp input_value({:element, "input", attrs, _}) do
-    case DOM.find_attr(attrs, "value") do
-      nil -> ""
-      value -> DOM.attr_to_string(value)
-    end
-  end
-
-  @doc false
-  def validate_interactive!({:element, tag, attrs, _}, label) do
-    cond do
-      DOM.find_attr(attrs, "hidden") != nil ->
-        raise "Input with label #{inspect(label)} is hidden and cannot be interacted with"
-
-      tag == "input" && input_type(attrs) == "hidden" ->
-        raise "Input with label #{inspect(label)} is hidden and cannot be interacted with"
-
-      DOM.find_attr(attrs, "disabled") != nil ->
-        raise "Input with label #{inspect(label)} is disabled and cannot be interacted with"
-
-      DOM.find_attr(attrs, "readonly") != nil ->
-        raise "Input with label #{inspect(label)} is readonly and cannot be interacted with"
-
-      true ->
-        :ok
-    end
-  end
-
   defp input_type(attrs) do
     case DOM.find_attr(attrs, "type") do
       nil -> "text"
@@ -405,26 +423,12 @@ defmodule Mirage.Input do
     end
   end
 
-  @text_input_types ~w(text email password search tel url number)
-
-  defp validate_text_input!({:element, "textarea", _, _}, _label), do: :ok
-
-  defp validate_text_input!({:element, "input", attrs, _}, label) do
-    type = input_type(attrs)
-
-    unless type in @text_input_types do
-      raise "Label #{inspect(label)} points to an input[type=#{type}], which does not accept text selection"
-    end
-
-    :ok
-  end
-
-  defp validate_text_input!({:element, "select", _, _}, label) do
-    raise "Label #{inspect(label)} points to a <select>, which does not accept text selection"
-  end
-
   defp update_bookkeeping(session, key, fun) do
     update_in(session.bookkeeping[key], fun)
+  end
+
+  defp validate_opts!(opts) do
+    Keyword.validate!(opts, [:exact])
   end
 
   # ---------------------------------------------------------------------------
@@ -541,9 +545,5 @@ defmodule Mirage.Input do
       nil -> default
       v -> DOM.attr_to_string(v)
     end
-  end
-
-  defp validate_opts!(opts) do
-    Keyword.validate!(opts, [:exact])
   end
 end

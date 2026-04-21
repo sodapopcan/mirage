@@ -395,103 +395,55 @@ defmodule Mirage.Events do
 
   defp run_action(session, name, params, target \\ nil)
 
-  defp run_action(
-         %Session{bookkeeping: %{components: components}} = session,
-         name,
-         params,
-         target
-       )
-       when is_binary(target) do
-    case Map.fetch(components, target) do
-      {:ok, {module, component}} ->
-        {new_component, new_server} =
-          case module.action(name, params, component) do
-            {%Component{} = c, %Server{} = s} -> {c, s}
-            %Component{} = c -> {c, session.server}
-            %Server{} = s -> {component, s}
-          end
+  defp run_action(%Session{} = session, name, params, target) do
+    {module, component, keep} = resolve_target(session, target)
 
-        next_action = new_component.next_action
-        next_command = new_component.next_command
-
-        clean_component =
-          %{new_component | next_action: nil, next_command: nil, next_page: nil}
-
-        session =
-          session
-          |> put_in([Access.key(:server)], new_server)
-          |> put_in([Access.key(:bookkeeping), :components, target], {module, clean_component})
-
-        session =
-          if cmd = next_command do
-            run_command(session, cmd, target)
-          else
-            session
-          end
-
-        session =
-          if action = next_action do
-            run_action(session, action.name, action.params, target)
-          else
-            session
-          end
-
-        re_render(session)
-
-      :error ->
-        raise "No component found with cid: #{inspect(target)}"
-    end
-  end
-
-  defp run_action(
-         %Session{page: component, page_module: page_module, server: server} = session,
-         name,
-         params,
-         _target
-       ) do
     {new_component, new_server} =
-      case page_module.action(name, params, component) do
-        {%Component{} = component, %Server{} = server} -> {component, server}
-        %Component{} = component -> {component, server}
-        %Server{} = server -> {component, server}
+      case module.action(name, params, component) do
+        {%Component{} = c, %Server{} = s} -> {c, s}
+        %Component{} = c -> {c, session.server}
+        %Server{} = s -> {component, s}
       end
 
     next_action = new_component.next_action
     next_command = new_component.next_command
     next_page = new_component.next_page
 
-    clean_component =
-      %{new_component | next_action: nil, next_command: nil, next_page: nil}
-
-    session = %{session | page: clean_component, server: new_server}
+    clean = %{new_component | next_action: nil, next_command: nil, next_page: nil}
 
     session =
-      if cmd = next_command do
-        run_command(session, cmd)
-      else
-        session
-      end
+      session
+      |> keep.(clean)
+      |> Map.put(:server, new_server)
 
-    session =
-      if action = next_action do
-        run_action(session, action.name, action.params)
-      else
-        session
-      end
+    session = if cmd = next_command, do: run_command(session, cmd, target), else: session
+    session = if action = next_action, do: run_action(session, action.name, action.params, target), else: session
 
     case next_page do
-      nil ->
-        re_render(session)
-
-      {target_module, target_params} ->
-        Mirage.visit(target_module, target_params)
-
-      target_module ->
-        Mirage.visit(target_module)
+      nil -> re_render(session)
+      {target_module, target_params} -> Mirage.visit(target_module, target_params)
+      target_module -> Mirage.visit(target_module)
     end
   end
 
-  defp run_command(session, cmd, target \\ nil)
+  defp resolve_target(%Session{page_module: module, page: component}, nil) do
+    {module, component, fn session, comp -> %{session | page: comp} end}
+  end
+
+  defp resolve_target(%Session{bookkeeping: %{components: components}}, target)
+       when is_binary(target) do
+    case Map.fetch(components, target) do
+      {:ok, {module, component}} ->
+        keep = fn session, comp ->
+          put_in(session, [Access.key(:bookkeeping), :components, target], {module, comp})
+        end
+
+        {module, component, keep}
+
+      :error ->
+        raise "No component found with cid: #{inspect(target)}"
+    end
+  end
 
   defp run_command(
          %Session{bookkeeping: %{components: components}} = session,
@@ -503,7 +455,7 @@ defmodule Mirage.Events do
       {:ok, {module, _component}} ->
         new_server =
           case module.command(cmd.name, cmd.params, session.server) do
-            %Server{} = s -> s
+            %Server{} = new_server -> new_server
             _ -> session.server
           end
 
@@ -523,7 +475,7 @@ defmodule Mirage.Events do
   defp run_command(%Session{page_module: page_module, server: server} = session, cmd, _target) do
     new_server =
       case page_module.command(cmd.name, cmd.params, server) do
-        %Server{} = s -> s
+        %Server{} = new_server -> new_server
         _ -> server
       end
 

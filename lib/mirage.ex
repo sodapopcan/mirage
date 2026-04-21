@@ -303,7 +303,10 @@ defmodule Mirage do
     exact? = Keyword.get(opts, :exact, true)
     value = Keyword.fetch!(opts, :with)
 
-    {labels, inputs_by_id} = Input.collect_form_nodes(Scoped.query_ast(session), nil)
+    {labels, inputs_by_id} =
+      session
+      |> Scoped.query_ast()
+      |> Input.collect_form_nodes(nil)
 
     matches =
       Enum.filter(labels, fn {node, _wrapped, _form_change} ->
@@ -505,8 +508,8 @@ defmodule Mirage do
       |> assert_has("Philip")
 
   When using with a component (via `Mirage.mount/2`), the output will be wrapped
-  in a thin layout bringing in your app's styles and CSS that centres the
-  component in the viewport.
+  in a thin layout bringing in your app's styles as well as a small bit of CSS that
+  center's the component in the viewport.
 
   ## Options
 
