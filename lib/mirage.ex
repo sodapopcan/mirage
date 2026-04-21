@@ -24,6 +24,7 @@ defmodule Mirage do
         checked_radios: %{},
         checked_checkboxes: MapSet.new(),
         selected_options: %{},
+        filled_inputs: %{},
         components: %{}
       }
     ]
@@ -32,6 +33,7 @@ defmodule Mirage do
              checked_radios: map(),
              checked_checkboxes: map(),
              selected_options: map(),
+             filled_inputs: map(),
              components: map()
            }
 
@@ -98,6 +100,7 @@ defmodule Mirage do
         checked_radios: %{},
         checked_checkboxes: MapSet.new(),
         selected_options: %{},
+        filled_inputs: %{},
         components: components
       }
     }
@@ -317,7 +320,8 @@ defmodule Mirage do
 
         session
         |> Input.trigger_input_action(input, value)
-        |> Input.trigger_form_change(form_change, value)
+        |> update_filled_inputs(input, value)
+        |> Input.trigger_form_change(form_change)
 
       [_ | _] = many ->
         raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
@@ -521,6 +525,13 @@ defmodule Mirage do
 
   @doc false
   defdelegate open_browser(session, opts, open_fun), to: Mirage.Browser
+
+  defp update_filled_inputs(session, {:element, _, attrs, _}, value) do
+    case DOM.find_attr(attrs, "name") do
+      nil -> session
+      name_attr -> update_in(session.bookkeeping[:filled_inputs], &Map.put(&1, DOM.attr_to_string(name_attr), value))
+    end
+  end
 
   defp runtime_context do
     %{

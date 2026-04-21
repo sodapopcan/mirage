@@ -70,6 +70,7 @@ defmodule Mirage.Mount do
         checked_radios: %{},
         checked_checkboxes: MapSet.new(),
         selected_options: %{},
+        filled_inputs: %{},
         components: components
       }
     }

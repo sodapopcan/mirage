@@ -40,8 +40,8 @@ defmodule Mirage.Input do
 
         session
         |> trigger_input_action(input, value)
-        |> trigger_form_change(form_change, value)
         |> update_bookkeeping(:checked_radios, &Map.put(&1, name, value))
+        |> trigger_form_change(form_change)
 
       [_ | _] = many ->
         raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
@@ -83,8 +83,8 @@ defmodule Mirage.Input do
 
         session
         |> trigger_input_action(input, value)
-        |> trigger_form_change(form_change, value)
         |> update_bookkeeping(:checked_checkboxes, &MapSet.put(&1, {name, value}))
+        |> trigger_form_change(form_change)
 
       [_ | _] = many ->
         raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
@@ -126,8 +126,8 @@ defmodule Mirage.Input do
 
         session
         |> trigger_input_action(input, value)
-        |> trigger_form_change(form_change, value)
         |> update_bookkeeping(:checked_checkboxes, &MapSet.delete(&1, {name, value}))
+        |> trigger_form_change(form_change)
 
       [_ | _] = many ->
         raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
@@ -175,12 +175,12 @@ defmodule Mirage.Input do
 
             session
             |> trigger_input_action(select_node, value)
-            |> trigger_form_change(form_change, value)
             |> update_bookkeeping(:selected_options, fn current ->
               existing = Map.get(current, name, MapSet.new())
               new_set = if multiple?, do: MapSet.put(existing, value), else: MapSet.new([value])
               Map.put(current, name, new_set)
             end)
+            |> trigger_form_change(form_change)
 
           [_ | _] = many ->
             raise "Ambiguous match: found #{length(many)} options matching: #{inspect(option_text)}"
@@ -315,14 +315,15 @@ defmodule Mirage.Input do
   def trigger_input_action(session, {:element, _tag, attrs, _children}, value) do
     case DOM.find_attr(attrs, "$change") do
       nil -> session
-      action -> Events.dispatch_event(session, action, %{event: %{value: value}})
+      action -> Events.dispatch_event(session, action, %{value: value})
     end
   end
 
-  def trigger_form_change(session, nil, _value), do: session
+  def trigger_form_change(session, nil), do: session
 
-  def trigger_form_change(session, form_change, value) do
-    Events.dispatch_event(session, form_change, %{event: %{value: value}})
+  def trigger_form_change(session, form_change) do
+    form_data = collect_form_values(session.ast, "$change", form_change, session.bookkeeping)
+    Events.dispatch_event(session, form_change, form_data)
   end
 
   # Computes the visible text of a label node, excluding any nested form
@@ -424,6 +425,122 @@ defmodule Mirage.Input do
 
   defp update_bookkeeping(session, key, fun) do
     update_in(session.bookkeeping[key], fun)
+  end
+
+  # ---------------------------------------------------------------------------
+  # Form value collection
+  # ---------------------------------------------------------------------------
+
+  @doc false
+  def collect_form_values(ast, attr_name, attr_value, bookkeeping) do
+    case find_form_children(ast, attr_name, attr_value) do
+      nil -> %{}
+      children -> extract_field_values(children, bookkeeping)
+    end
+  end
+
+  defp find_form_children(nodes, attr_name, attr_value) when is_list(nodes) do
+    Enum.find_value(nodes, &find_form_children(&1, attr_name, attr_value))
+  end
+
+  defp find_form_children({:element, "form", attrs, children}, attr_name, attr_value) do
+    if DOM.find_attr(attrs, attr_name) == attr_value do
+      children
+    else
+      find_form_children(children, attr_name, attr_value)
+    end
+  end
+
+  defp find_form_children({:element, _tag, _attrs, children}, attr_name, attr_value) do
+    find_form_children(children, attr_name, attr_value)
+  end
+
+  defp find_form_children(_, _, _), do: nil
+
+  defp extract_field_values(nodes, bookkeeping) when is_list(nodes) do
+    Enum.reduce(nodes, %{}, fn node, acc ->
+      Map.merge(acc, extract_field_values(node, bookkeeping))
+    end)
+  end
+
+  defp extract_field_values({:element, "input", attrs, _}, bookkeeping) do
+    case field_name(attrs) do
+      nil ->
+        %{}
+
+      name ->
+        type = input_type(attrs)
+
+        cond do
+          type == "checkbox" ->
+            value = field_value(attrs, "on")
+
+            if MapSet.member?(bookkeeping.checked_checkboxes, {name, value}),
+              do: %{name => value},
+              else: %{}
+
+          type == "radio" ->
+            case Map.get(bookkeeping.checked_radios, name) do
+              nil -> %{}
+              v -> %{name => v}
+            end
+
+          type in ["submit", "button", "image", "reset"] ->
+            %{}
+
+          type == "hidden" ->
+            %{name => field_value(attrs, "")}
+
+          true ->
+            value = Map.get(bookkeeping.filled_inputs, name, field_value(attrs, ""))
+            %{name => value}
+        end
+    end
+  end
+
+  defp extract_field_values({:element, "textarea", attrs, children}, bookkeeping) do
+    case field_name(attrs) do
+      nil ->
+        %{}
+
+      name ->
+        default = DOM.inner_text({:element, "textarea", [], children})
+        value = Map.get(bookkeeping.filled_inputs, name, default)
+        %{name => value}
+    end
+  end
+
+  defp extract_field_values({:element, "select", attrs, _children}, bookkeeping) do
+    case field_name(attrs) do
+      nil ->
+        %{}
+
+      name ->
+        case Map.get(bookkeeping.selected_options, name) do
+          nil -> %{}
+          selected -> %{name => MapSet.to_list(selected) |> List.first()}
+        end
+    end
+  end
+
+  defp extract_field_values({:element, _tag, _attrs, children}, bookkeeping) do
+    extract_field_values(children, bookkeeping)
+  end
+
+  defp extract_field_values(_, _), do: %{}
+
+  defp field_name(attrs) do
+    case DOM.find_attr(attrs, "name") do
+      nil -> nil
+      v -> DOM.attr_to_string(v)
+    end
+  end
+
+  defp field_value(attrs, default) do
+    case DOM.find_attr(attrs, "value") do
+      nil -> default
+      v -> DOM.attr_to_string(v)
+    end
   end
 
   defp validate_opts!(opts) do

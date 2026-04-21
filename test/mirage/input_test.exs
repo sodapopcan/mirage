@@ -69,14 +69,15 @@ defmodule Mirage.InputTest do
   end
 
   describe "choose/2 — form dispatch" do
-    test "also triggers the enclosing form's $change action" do
+    test "also triggers the enclosing form's $change action with form data" do
       session =
         Mirage.ChooseFormPage
         |> Mirage.visit()
         |> Mirage.choose("Yes")
 
       assert session.page.state.choice == "yes"
-      assert session.page.state.change_log == ["yes"]
+      assert [form_data] = session.page.state.change_log
+      assert form_data["choice"] == "yes"
     end
 
     test "does not trigger a form $change when the radio is outside a form" do
@@ -278,14 +279,15 @@ defmodule Mirage.InputTest do
   end
 
   describe "select/3 — form dispatch" do
-    test "also triggers the enclosing form's $change action" do
+    test "also triggers the enclosing form's $change action with form data" do
       session =
         Mirage.SelectFormPage
         |> Mirage.visit()
         |> Mirage.select("Color", "Red")
 
       assert session.page.state.color == "red"
-      assert session.page.state.change_log == ["red"]
+      assert [form_data] = session.page.state.change_log
+      assert form_data["color"] == "red"
     end
   end
 
