@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.0.6 (Apr 21, 2026)
+
+### Changed
+
+- Form-level `$change` now receives all named field values in the event data,
+  matching Hologram's runtime behaviour.
+- Form `$submit` now includes all named field values in the event data
+  (e.g. hidden inputs, filled text fields, checked radios).
+- `open_browser`'s `:wrap` is now used to control the minimal layout wrapped
+  around components. `:center` is now used to center the component in the
+  viewport.
+
+### Added
+
+- `filled_inputs` bookkeeping — tracks values set via `fill_in` so form data
+  collection works even for inputs without a `value` binding in the template.
+
 ## v0.0.5 (Apr 20, 2026)
 
 ### Added

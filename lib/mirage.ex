@@ -528,8 +528,14 @@ defmodule Mirage do
 
   defp update_filled_inputs(session, {:element, _, attrs, _}, value) do
     case DOM.find_attr(attrs, "name") do
-      nil -> session
-      name_attr -> update_in(session.bookkeeping[:filled_inputs], &Map.put(&1, DOM.attr_to_string(name_attr), value))
+      nil ->
+        session
+
+      name_attr ->
+        update_in(
+          session.bookkeeping[:filled_inputs],
+          &Map.put(&1, DOM.attr_to_string(name_attr), value)
+        )
     end
   end
 
