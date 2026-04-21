@@ -358,30 +358,6 @@ defmodule Mirage.QueryTest do
     end
   end
 
-  describe "query_one/2" do
-    test "returns the single matching element" do
-      ast = [el("div", [{"id", "only"}])]
-
-      assert {:element, "div", _, _} = Query.query_one(ast, "#only")
-    end
-
-    test "raises when no element matches" do
-      ast = [el("div")]
-
-      assert_raise RuntimeError, ~r/No element found/, fn ->
-        Query.query_one(ast, "#missing")
-      end
-    end
-
-    test "raises when multiple elements match" do
-      ast = [el("p"), el("p")]
-
-      assert_raise RuntimeError, ~r/Expected 1 element/, fn ->
-        Query.query_one(ast, "p")
-      end
-    end
-  end
-
   describe "integration with Mirage.visit" do
     test "queries expanded page AST by tag" do
       session = Mirage.visit(Mirage.ClickPage)

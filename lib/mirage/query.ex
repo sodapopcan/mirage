@@ -48,24 +48,6 @@ defmodule Mirage.Query do
     |> Enum.flat_map(&find_in_tree(nodes, &1))
   end
 
-  @doc """
-  Returns a single AST node matching the CSS selector.
-
-  Raises if no elements or more than one element match.
-  """
-  def query_one(ast, selector) when is_binary(selector) do
-    case query_all(ast, selector) do
-      [node] ->
-        node
-
-      [] ->
-        raise "No element found matching selector: #{inspect(selector)}"
-
-      nodes ->
-        raise "Expected 1 element matching #{inspect(selector)}, found #{length(nodes)}"
-    end
-  end
-
   # ---------------------------------------------------------------------------
   # Tree walking
   # ---------------------------------------------------------------------------
