@@ -132,22 +132,22 @@ defmodule Mirage.FillInPage do
     )
   end
 
-  def action(:update_name, %{value: value}, component) do
+  def action(:update_name, %{event: %{value: value}}, component) do
     put_state(component, name: value)
   end
 
   # Generic field-setter — proves that extra params declared on the
   # attribute (e.g. `field: :email`) are merged with the fill value.
-  def action(:set_field, %{field: field, value: value}, component) do
+  def action(:set_field, %{field: field, event: %{value: value}}, component) do
     put_state(component, field, value)
   end
 
-  def action(:update_comment, %{value: value}, component) do
+  def action(:update_comment, %{event: %{value: value}}, component) do
     put_state(component, comment: value)
   end
 
   # Records a form-level change — used to assert `$change` fired.
-  def action(:form_changed, %{value: value}, component) do
+  def action(:form_changed, %{event: %{value: value}}, component) do
     put_state(component, change_log: component.state.change_log ++ [value])
   end
 
@@ -879,7 +879,7 @@ defmodule Mirage.ChoosePage do
     put_state(component, choice: nil)
   end
 
-  def action(:pick, %{value: value}, component) do
+  def action(:pick, %{event: %{value: value}}, component) do
     put_state(component, choice: value)
   end
 
@@ -904,7 +904,7 @@ defmodule Mirage.ChooseCheckedPage do
     put_state(component, choice: nil)
   end
 
-  def action(:pick, %{value: value}, component) do
+  def action(:pick, %{event: %{value: value}}, component) do
     put_state(component, choice: value)
   end
 
@@ -947,7 +947,7 @@ defmodule Mirage.ChooseInputFirstPage do
     put_state(component, choice: nil)
   end
 
-  def action(:pick, %{value: value}, component) do
+  def action(:pick, %{event: %{value: value}}, component) do
     put_state(component, choice: value)
   end
 
@@ -976,11 +976,11 @@ defmodule Mirage.ChooseFormPage do
     put_state(component, choice: nil, change_log: [])
   end
 
-  def action(:pick, %{value: value}, component) do
+  def action(:pick, %{event: %{value: value}}, component) do
     put_state(component, choice: value)
   end
 
-  def action(:form_changed, %{value: value}, component) do
+  def action(:form_changed, %{event: %{value: value}}, component) do
     put_state(component, change_log: component.state.change_log ++ [value])
   end
 
@@ -1011,11 +1011,11 @@ defmodule Mirage.CheckPage do
     put_state(component, newsletter: false, terms: false)
   end
 
-  def action(:toggle_newsletter, %{value: _value}, component) do
+  def action(:toggle_newsletter, %{event: %{value: _value}}, component) do
     put_state(component, newsletter: true)
   end
 
-  def action(:toggle_terms, %{value: _value}, component) do
+  def action(:toggle_terms, %{event: %{value: _value}}, component) do
     put_state(component, terms: true)
   end
 
@@ -1168,7 +1168,7 @@ defmodule Mirage.SelectPage do
     put_state(component, color: nil)
   end
 
-  def action(:pick_color, %{value: value}, component) do
+  def action(:pick_color, %{event: %{value: value}}, component) do
     put_state(component, color: value)
   end
 
@@ -1196,7 +1196,7 @@ defmodule Mirage.SelectMultiplePage do
     put_state(component, selections: [])
   end
 
-  def action(:pick, %{value: value}, component) do
+  def action(:pick, %{event: %{value: value}}, component) do
     put_state(component, selections: component.state.selections ++ [value])
   end
 
@@ -1246,11 +1246,11 @@ defmodule Mirage.SelectFormPage do
     put_state(component, color: nil, change_log: [])
   end
 
-  def action(:pick_color, %{value: value}, component) do
+  def action(:pick_color, %{event: %{value: value}}, component) do
     put_state(component, color: value)
   end
 
-  def action(:form_changed, %{value: value}, component) do
+  def action(:form_changed, %{event: %{value: value}}, component) do
     put_state(component, change_log: component.state.change_log ++ [value])
   end
 

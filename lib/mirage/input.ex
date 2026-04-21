@@ -315,14 +315,14 @@ defmodule Mirage.Input do
   def trigger_input_action(session, {:element, _tag, attrs, _children}, value) do
     case DOM.find_attr(attrs, "$change") do
       nil -> session
-      action -> Events.dispatch_event(session, action, %{value: value})
+      action -> Events.dispatch_event(session, action, %{event: %{value: value}})
     end
   end
 
   def trigger_form_change(session, nil, _value), do: session
 
   def trigger_form_change(session, form_change, value) do
-    Events.dispatch_event(session, form_change, %{value: value})
+    Events.dispatch_event(session, form_change, %{event: %{value: value}})
   end
 
   # Computes the visible text of a label node, excluding any nested form
