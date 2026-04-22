@@ -4,7 +4,6 @@ defmodule Mirage.Browser do
   alias Mirage.Session
   alias Mirage.DOM
 
-  # sobelow_skip ["Traversal.FileModule"]
   def open_browser(session, opts_or_open_fun \\ [])
 
   def open_browser(%Session{} = session, fun) when is_function(fun) do

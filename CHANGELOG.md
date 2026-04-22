@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.0.7 (Apr 21, 2026)
+
+### Fixed
+
+- Server state now persists across client-side navigation (link clicks and
+  action redirects no longer reset the server).
+- Shorthand event syntax now supports `target:` option
+  (e.g. `$click={:my_action, target: "cid"}`).
+
+### Changed
+
+- `assert_has` and `refute_has` now trim whitespace (including newlines) when
+  comparing `:text` and `:value` options.
+
 ## v0.0.6 (Apr 21, 2026)
 
 ### Changed
