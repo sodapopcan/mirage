@@ -70,8 +70,16 @@ defmodule Mirage do
   """
   @spec visit(module(), keyword()) :: Session.t()
   def visit(page_module, params \\ []) do
-    params = Map.new(params)
-    {page, server} = DOM.init_component(page_module, params, %Hologram.Server{})
+    init_page(page_module, Map.new(params), %Hologram.Server{})
+  end
+
+  @doc false
+  def navigate(page_module, params, server) do
+    init_page(page_module, Map.new(params), server)
+  end
+
+  defp init_page(page_module, params, server) do
+    {page, server} = DOM.init_component(page_module, params, server)
 
     vars = Map.merge(params, page.state)
     page_dom = page_module.template().(vars)
