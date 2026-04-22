@@ -131,9 +131,11 @@ defmodule Mirage.Events do
   end
 
   # Action with params, e.g. `$click={:write_file, path: @tmp_path}`.
+  # Also supports `target:` to dispatch to a stateful component.
   def dispatch_event(%Session{} = session, [{:expression, {name, params}}], event_data)
       when is_atom(name) and is_list(params) do
-    run_action(session, name, Map.merge(Map.new(params), %{event: event_data}))
+    {target, params} = Keyword.pop(params, :target)
+    run_action(session, name, Map.merge(Map.new(params), %{event: event_data}), target)
   end
 
   # Longhand action/command, e.g. `$click={action: :name}` or `$click={command: :name}`.
@@ -380,8 +382,11 @@ defmodule Mirage.Events do
     case DOM.find_attr(attrs, "$click") do
       [{:expression, {:__load_prefetched_page__, params}}] when is_list(params) ->
         case Keyword.fetch!(params, :to) do
-          {target_module, target_params} -> Mirage.visit(target_module, target_params)
-          target_module -> Mirage.visit(target_module)
+          {target_module, target_params} ->
+            Mirage.navigate(target_module, target_params, session.server)
+
+          target_module ->
+            Mirage.navigate(target_module, [], session.server)
         end
 
       _ ->
@@ -417,12 +422,21 @@ defmodule Mirage.Events do
       |> Map.put(:server, new_server)
 
     session = if cmd = next_command, do: run_command(session, cmd, target), else: session
-    session = if action = next_action, do: run_action(session, action.name, action.params, target), else: session
+
+    session =
+      if action = next_action,
+        do: run_action(session, action.name, action.params, target),
+        else: session
 
     case next_page do
-      nil -> re_render(session)
-      {target_module, target_params} -> Mirage.visit(target_module, target_params)
-      target_module -> Mirage.visit(target_module)
+      nil ->
+        re_render(session)
+
+      {target_module, target_params} ->
+        Mirage.navigate(target_module, target_params, session.server)
+
+      target_module ->
+        Mirage.navigate(target_module, [], session.server)
     end
   end
 
