@@ -1593,3 +1593,24 @@ defmodule Mirage.IfBlockPage do
     """
   end
 end
+
+defmodule Mirage.PreparePage do
+  @moduledoc "Page that reads a session value from the server."
+  use Hologram.Page
+
+  route "/prepare"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, server) do
+    greeting = Hologram.Server.get_session(server, :greeting, "none")
+    put_state(component, greeting: greeting)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <p>Greeting: {@greeting}</p>
+    """
+  end
+end

@@ -360,25 +360,25 @@ defmodule Mirage.QueryTest do
 
   describe "integration with Mirage.visit" do
     test "queries expanded page AST by tag" do
-      session = Mirage.visit(Mirage.ClickPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.ClickPage)
       results = Query.query_all(session.ast, "button")
       assert length(results) == 1
     end
 
     test "queries expanded page AST by attribute" do
-      session = Mirage.visit(Mirage.AssertHasValuePage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.AssertHasValuePage)
       results = Query.query_all(session.ast, "input[value=alice]")
       assert length(results) == 1
     end
 
     test "queries nested structure with descendant combinator" do
-      session = Mirage.visit(Mirage.AssertHasTextPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.AssertHasTextPage)
       results = Query.query_all(session.ast, "ul li")
       assert length(results) == 3
     end
 
     test "queries with child combinator" do
-      session = Mirage.visit(Mirage.AssertHasTextPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.AssertHasTextPage)
       spans_in_li = Query.query_all(session.ast, "li > span")
       assert length(spans_in_li) == 3
     end

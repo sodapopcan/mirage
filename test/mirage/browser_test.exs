@@ -5,8 +5,8 @@ defmodule Mirage.BrowserTest do
 
   describe "open_browser/2 — radio checked state" do
     test "injects checked on the chosen radio when template has no checked binding" do
-      Mirage.ChoosePage
-      |> Mirage.visit()
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.ChoosePage)
       |> Mirage.choose("Yes")
       |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
 
@@ -20,8 +20,8 @@ defmodule Mirage.BrowserTest do
     end
 
     test "respects checked binding from template, does not double-add" do
-      Mirage.ChooseCheckedPage
-      |> Mirage.visit()
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.ChooseCheckedPage)
       |> Mirage.choose("Yes")
       |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
 
@@ -37,7 +37,7 @@ defmodule Mirage.BrowserTest do
 
   describe "open_browser/2" do
     test "writes an HTML file and returns the session" do
-      session = Mirage.visit(Mirage.ClickPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.ClickPage)
 
       session = Mirage.open_browser(session, fn path -> send(self(), {:opened, path}) end)
 
