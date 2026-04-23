@@ -6,8 +6,8 @@ defmodule Mirage.InputTest do
   describe "choose/2" do
     test "dispatches $change with the radio button's value attribute" do
       session =
-        Mirage.ChoosePage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.ChoosePage)
         |> Mirage.choose("Yes")
 
       assert session.page.state.choice == "yes"
@@ -15,8 +15,8 @@ defmodule Mirage.InputTest do
 
     test "chooses among multiple options" do
       session =
-        Mirage.ChoosePage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.ChoosePage)
         |> Mirage.choose("No")
 
       assert session.page.state.choice == "no"
@@ -24,15 +24,15 @@ defmodule Mirage.InputTest do
 
     test "matches substrings when exact: false" do
       session =
-        Mirage.ChoosePage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.ChoosePage)
         |> Mirage.choose("Ye", exact: false)
 
       assert session.page.state.choice == "yes"
     end
 
     test "raises when no label matches" do
-      session = Mirage.visit(Mirage.ChoosePage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.ChoosePage)
 
       assert_raise RuntimeError, ~r/No radio button found with label: "Maybe"/, fn ->
         Mirage.choose(session, "Maybe")
@@ -40,7 +40,7 @@ defmodule Mirage.InputTest do
     end
 
     test "raises when more than one label matches" do
-      session = Mirage.visit(Mirage.ChooseAmbiguousPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.ChooseAmbiguousPage)
 
       assert_raise RuntimeError, ~r/Ambiguous match: found 2 labels matching: "Option"/, fn ->
         Mirage.choose(session, "Option")
@@ -51,8 +51,8 @@ defmodule Mirage.InputTest do
   describe "choose/2 — wrapped label" do
     test "finds a radio input wrapped inside its label (text first)" do
       session =
-        Mirage.ChoosePage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.ChoosePage)
         |> Mirage.choose("Yes")
 
       assert session.page.state.choice == "yes"
@@ -60,8 +60,8 @@ defmodule Mirage.InputTest do
 
     test "finds a radio input when the input comes before the label text" do
       session =
-        Mirage.ChooseInputFirstPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.ChooseInputFirstPage)
         |> Mirage.choose("foo")
 
       assert session.page.state.choice == "foo"
@@ -71,8 +71,8 @@ defmodule Mirage.InputTest do
   describe "choose/2 — form dispatch" do
     test "also triggers the enclosing form's $change action with form data" do
       session =
-        Mirage.ChooseFormPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.ChooseFormPage)
         |> Mirage.choose("Yes")
 
       assert session.page.state.choice == "yes"
@@ -82,8 +82,8 @@ defmodule Mirage.InputTest do
 
     test "does not trigger a form $change when the radio is outside a form" do
       session =
-        Mirage.ChoosePage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.ChoosePage)
         |> Mirage.choose("Yes")
 
       assert session.page.state.choice == "yes"
@@ -93,8 +93,8 @@ defmodule Mirage.InputTest do
   describe "check/2" do
     test "dispatches $change with the checkbox's value attribute" do
       session =
-        Mirage.CheckPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.CheckPage)
         |> Mirage.check("Newsletter")
 
       assert session.page.state.newsletter == true
@@ -102,8 +102,8 @@ defmodule Mirage.InputTest do
 
     test "multiple checkboxes can be checked independently" do
       session =
-        Mirage.CheckPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.CheckPage)
         |> Mirage.check("Newsletter")
         |> Mirage.check("Terms")
 
@@ -113,15 +113,15 @@ defmodule Mirage.InputTest do
 
     test "matches substrings when exact: false" do
       session =
-        Mirage.CheckPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.CheckPage)
         |> Mirage.check("News", exact: false)
 
       assert session.page.state.newsletter == true
     end
 
     test "raises when no label matches" do
-      session = Mirage.visit(Mirage.CheckPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.CheckPage)
 
       assert_raise RuntimeError, ~r/No checkbox found with label: "Missing"/, fn ->
         Mirage.check(session, "Missing")
@@ -129,7 +129,7 @@ defmodule Mirage.InputTest do
     end
 
     test "raises when more than one label matches" do
-      session = Mirage.visit(Mirage.CheckAmbiguousPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.CheckAmbiguousPage)
 
       assert_raise RuntimeError, ~r/Ambiguous match: found 2 labels matching: "Accept"/, fn ->
         Mirage.check(session, "Accept")
@@ -139,8 +139,8 @@ defmodule Mirage.InputTest do
 
   describe "check/2 — open_browser" do
     test "injects checked on the checked checkbox" do
-      Mirage.CheckPage
-      |> Mirage.visit()
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.CheckPage)
       |> Mirage.check("Newsletter")
       |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
 
@@ -154,8 +154,8 @@ defmodule Mirage.InputTest do
     end
 
     test "multiple checked checkboxes all show checked" do
-      Mirage.CheckPage
-      |> Mirage.visit()
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.CheckPage)
       |> Mirage.check("Newsletter")
       |> Mirage.check("Terms")
       |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
@@ -173,8 +173,8 @@ defmodule Mirage.InputTest do
   describe "uncheck/2" do
     test "removes the checkbox from checked_checkboxes" do
       session =
-        Mirage.CheckPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.CheckPage)
         |> Mirage.check("Newsletter")
         |> Mirage.uncheck("Newsletter")
 
@@ -183,8 +183,8 @@ defmodule Mirage.InputTest do
 
     test "dispatches $change when unchecking" do
       session =
-        Mirage.CheckPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.CheckPage)
         |> Mirage.check("Newsletter")
         |> Mirage.uncheck("Newsletter")
 
@@ -193,8 +193,8 @@ defmodule Mirage.InputTest do
 
     test "matches substrings when exact: false" do
       session =
-        Mirage.CheckPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.CheckPage)
         |> Mirage.check("Newsletter")
         |> Mirage.uncheck("News", exact: false)
 
@@ -202,7 +202,7 @@ defmodule Mirage.InputTest do
     end
 
     test "raises when no label matches" do
-      session = Mirage.visit(Mirage.CheckPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.CheckPage)
 
       assert_raise RuntimeError, ~r/No checkbox found with label: "Missing"/, fn ->
         Mirage.uncheck(session, "Missing")
@@ -210,8 +210,8 @@ defmodule Mirage.InputTest do
     end
 
     test "open_browser does not show checked after uncheck" do
-      Mirage.CheckPage
-      |> Mirage.visit()
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.CheckPage)
       |> Mirage.check("Newsletter")
       |> Mirage.uncheck("Newsletter")
       |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
@@ -228,8 +228,8 @@ defmodule Mirage.InputTest do
   describe "select/3" do
     test "dispatches $change with the option's value attribute" do
       session =
-        Mirage.SelectPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectPage)
         |> Mirage.select("Color", "Red")
 
       assert session.page.state.color == "red"
@@ -237,8 +237,8 @@ defmodule Mirage.InputTest do
 
     test "selects among multiple options" do
       session =
-        Mirage.SelectPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectPage)
         |> Mirage.select("Color", "Blue")
 
       assert session.page.state.color == "blue"
@@ -246,15 +246,15 @@ defmodule Mirage.InputTest do
 
     test "matches substrings when exact: false" do
       session =
-        Mirage.SelectPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectPage)
         |> Mirage.select("Color", "Gr", exact: false)
 
       assert session.page.state.color == "green"
     end
 
     test "raises when no label matches" do
-      session = Mirage.visit(Mirage.SelectPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.SelectPage)
 
       assert_raise RuntimeError, ~r/No select found with label: "Size"/, fn ->
         Mirage.select(session, "Size", "Large")
@@ -262,7 +262,7 @@ defmodule Mirage.InputTest do
     end
 
     test "raises when no option matches" do
-      session = Mirage.visit(Mirage.SelectPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.SelectPage)
 
       assert_raise RuntimeError, ~r/No option found with text: "Purple"/, fn ->
         Mirage.select(session, "Color", "Purple")
@@ -270,7 +270,7 @@ defmodule Mirage.InputTest do
     end
 
     test "raises when more than one label matches" do
-      session = Mirage.visit(Mirage.SelectAmbiguousPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.SelectAmbiguousPage)
 
       assert_raise RuntimeError, ~r/Ambiguous match: found 2 labels matching: "Color"/, fn ->
         Mirage.select(session, "Color", "Red")
@@ -281,8 +281,8 @@ defmodule Mirage.InputTest do
   describe "select/3 — form dispatch" do
     test "also triggers the enclosing form's $change action with form data" do
       session =
-        Mirage.SelectFormPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectFormPage)
         |> Mirage.select("Color", "Red")
 
       assert session.page.state.color == "red"
@@ -294,8 +294,8 @@ defmodule Mirage.InputTest do
   describe "select/3 — multiselect" do
     test "accumulates selections across multiple calls" do
       session =
-        Mirage.SelectMultiplePage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectMultiplePage)
         |> Mirage.select("Fruits", "Apple")
         |> Mirage.select("Fruits", "Cherry")
 
@@ -303,8 +303,8 @@ defmodule Mirage.InputTest do
     end
 
     test "open_browser marks all selected options" do
-      Mirage.SelectMultiplePage
-      |> Mirage.visit()
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.SelectMultiplePage)
       |> Mirage.select("Fruits", "Apple")
       |> Mirage.select("Fruits", "Cherry")
       |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
@@ -322,8 +322,8 @@ defmodule Mirage.InputTest do
 
   describe "select/3 — open_browser" do
     test "marks the selected option" do
-      Mirage.SelectPage
-      |> Mirage.visit()
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.SelectPage)
       |> Mirage.select("Color", "Green")
       |> Mirage.open_browser(fn path -> send(self(), {:opened, path}) end)
 
@@ -341,8 +341,8 @@ defmodule Mirage.InputTest do
   describe "select_text/3" do
     test "triggers $select on a textarea" do
       session =
-        Mirage.SelectTextPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectTextPage)
         |> Mirage.select_text("Bio", "some text")
 
       assert session.page.state.selected == "some text"
@@ -350,8 +350,8 @@ defmodule Mirage.InputTest do
 
     test "triggers $select on a text input" do
       session =
-        Mirage.SelectTextPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectTextPage)
         |> Mirage.select_text("Username", "user1")
 
       assert session.page.state.selected == "user1"
@@ -359,15 +359,15 @@ defmodule Mirage.InputTest do
 
     test "triggers $select on a password input" do
       session =
-        Mirage.SelectTextPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectTextPage)
         |> Mirage.select_text("Secret", "hunter2")
 
       assert session.page.state.selected == "hunter2"
     end
 
     test "raises for checkbox input" do
-      session = Mirage.visit(Mirage.SelectTextPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.SelectTextPage)
 
       assert_raise RuntimeError, ~r/does not accept text selection/, fn ->
         Mirage.select_text(session, "Agree", "x")
@@ -375,7 +375,7 @@ defmodule Mirage.InputTest do
     end
 
     test "raises for radio input" do
-      session = Mirage.visit(Mirage.SelectTextPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.SelectTextPage)
 
       assert_raise RuntimeError, ~r/does not accept text selection/, fn ->
         Mirage.select_text(session, "Pick", "x")
@@ -383,7 +383,7 @@ defmodule Mirage.InputTest do
     end
 
     test "raises for select element" do
-      session = Mirage.visit(Mirage.SelectTextPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.SelectTextPage)
 
       assert_raise RuntimeError, ~r/does not accept text selection/, fn ->
         Mirage.select_text(session, "Fruit", "x")
@@ -391,7 +391,7 @@ defmodule Mirage.InputTest do
     end
 
     test "raises when no label matches" do
-      session = Mirage.visit(Mirage.SelectTextPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.SelectTextPage)
 
       assert_raise RuntimeError, ~r/No text input found with label: "Missing"/, fn ->
         Mirage.select_text(session, "Missing", "x")
@@ -400,8 +400,8 @@ defmodule Mirage.InputTest do
 
     test "matches substrings when exact: false" do
       session =
-        Mirage.SelectTextPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectTextPage)
         |> Mirage.select_text("Bio", "selected", exact: false)
 
       assert session.page.state.selected == "selected"
@@ -409,8 +409,8 @@ defmodule Mirage.InputTest do
 
     test "selects all text in a textarea when text is omitted" do
       session =
-        Mirage.SelectTextPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectTextPage)
         |> Mirage.select_text("Bio")
 
       assert session.page.state.selected == "Hello world"
@@ -418,8 +418,8 @@ defmodule Mirage.InputTest do
 
     test "selects all text in an input when text is omitted" do
       session =
-        Mirage.SelectTextPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectTextPage)
         |> Mirage.select_text("Username")
 
       assert session.page.state.selected == "alice"
@@ -427,8 +427,8 @@ defmodule Mirage.InputTest do
 
     test "selects empty string when input has no value and text is omitted" do
       session =
-        Mirage.SelectTextPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SelectTextPage)
         |> Mirage.select_text("Secret")
 
       assert session.page.state.selected == ""

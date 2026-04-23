@@ -383,10 +383,10 @@ defmodule Mirage.Events do
       [{:expression, {:__load_prefetched_page__, params}}] when is_list(params) ->
         case Keyword.fetch!(params, :to) do
           {target_module, target_params} ->
-            Mirage.navigate(target_module, target_params, session.server)
+            Mirage.visit(session, target_module, target_params)
 
           target_module ->
-            Mirage.navigate(target_module, [], session.server)
+            Mirage.visit(session, target_module)
         end
 
       _ ->
@@ -433,10 +433,10 @@ defmodule Mirage.Events do
         re_render(session)
 
       {target_module, target_params} ->
-        Mirage.navigate(target_module, target_params, session.server)
+        Mirage.visit(session, target_module, target_params)
 
       target_module ->
-        Mirage.navigate(target_module, [], session.server)
+        Mirage.visit(session, target_module)
     end
   end
 

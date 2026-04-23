@@ -13,20 +13,20 @@ defmodule Mirage.EventsTest do
     describe "#{event}/3" do
       test "dispatches the action — page state reflects the call" do
         session =
-          Mirage.EventPage
-          |> Mirage.visit()
+          %Hologram.Server{}
+          |> Mirage.visit(Mirage.EventPage)
           |> apply_event(unquote(event), "button", "Save changes now")
 
         assert session.page.state.triggered == true
       end
 
       test "finds an element nested deep in the tree" do
-        session = Mirage.visit(Mirage.EventDeepPage)
+        session = Mirage.visit(%Hologram.Server{}, Mirage.EventDeepPage)
         assert %Session{} = apply_event(session, unquote(event), "a", "Go")
       end
 
       test "raises when no element has the attribute" do
-        session = Mirage.visit(Mirage.EventNoAttrPage)
+        session = Mirage.visit(%Hologram.Server{}, Mirage.EventNoAttrPage)
 
         assert_raise RuntimeError, ~r/No #{unquote(event)}able element found/, fn ->
           apply_event(session, unquote(event), "button")
@@ -34,7 +34,7 @@ defmodule Mirage.EventsTest do
       end
 
       test "ignores elements written inside an HTML comment" do
-        session = Mirage.visit(Mirage.EventCommentPage)
+        session = Mirage.visit(%Hologram.Server{}, Mirage.EventCommentPage)
 
         assert_raise RuntimeError, ~r/No #{unquote(event)}able element found/, fn ->
           apply_event(session, unquote(event), "button")
@@ -42,7 +42,7 @@ defmodule Mirage.EventsTest do
       end
 
       test "raises when text does not match" do
-        session = Mirage.visit(Mirage.EventPage)
+        session = Mirage.visit(%Hologram.Server{}, Mirage.EventPage)
 
         assert_raise RuntimeError, ~r/No #{unquote(event)}able element found/, fn ->
           apply_event(session, unquote(event), "button", "Cancel")
@@ -50,7 +50,7 @@ defmodule Mirage.EventsTest do
       end
 
       test "raises when more than one element matches" do
-        session = Mirage.visit(Mirage.EventAmbiguousPage)
+        session = Mirage.visit(%Hologram.Server{}, Mirage.EventAmbiguousPage)
 
         assert_raise RuntimeError, ~r/Ambiguous match: found 2/, fn ->
           apply_event(session, unquote(event), "*", "Save")
@@ -65,7 +65,7 @@ defmodule Mirage.EventsTest do
 
   describe "click/3 — navigation" do
     test "clicking a Hologram.UI.Link navigates the session to the linked page" do
-      session = Mirage.visit(Mirage.HomePage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.HomePage)
 
       assert rendered_text(session.ast) =~ "link to other page"
       refute rendered_text(session.ast) =~ "I am the other page"
@@ -77,7 +77,7 @@ defmodule Mirage.EventsTest do
     end
 
     test "clicking a Hologram.UI.Link wrapped in a custom component still navigates" do
-      session = Mirage.visit(Mirage.WrappedLinkPage)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.WrappedLinkPage)
 
       assert rendered_text(session.ast) =~ "wrapped link to other page"
       refute rendered_text(session.ast) =~ "I am the other page"
@@ -96,7 +96,7 @@ defmodule Mirage.EventsTest do
 
       on_exit(fn -> File.rm(tmp_path) end)
 
-      session = Mirage.visit(Mirage.CommandPage, tmp_path: tmp_path)
+      session = Mirage.visit(%Hologram.Server{}, Mirage.CommandPage, tmp_path: tmp_path)
       refute File.exists?(tmp_path)
 
       Mirage.click(session, "button", "write file")
@@ -106,8 +106,8 @@ defmodule Mirage.EventsTest do
 
     test "clicks a command with no params" do
       assert capture_io(fn ->
-               Mirage.ClickCommandPage
-               |> Mirage.visit()
+               %Hologram.Server{}
+               |> Mirage.visit(Mirage.ClickCommandPage)
                |> Mirage.click("button", "No params")
              end) == "No params!\n"
     end
@@ -116,8 +116,8 @@ defmodule Mirage.EventsTest do
   describe "click/3 — longhand action syntax" do
     test "longhand action without params" do
       session =
-        Mirage.LonghandActionPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.LonghandActionPage)
         |> Mirage.click("button", "longhand increment")
 
       assert session.page.state.count == 1
@@ -125,8 +125,8 @@ defmodule Mirage.EventsTest do
 
     test "longhand action with params" do
       session =
-        Mirage.LonghandActionPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.LonghandActionPage)
         |> Mirage.click("button", "longhand add 10")
 
       assert session.page.state.count == 10
@@ -136,8 +136,8 @@ defmodule Mirage.EventsTest do
   describe "click/3 — direct command from event attribute" do
     test "command without params triggers the command and its follow-up action" do
       session =
-        Mirage.DirectCommandPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.DirectCommandPage)
         |> Mirage.click("button", "run command")
 
       assert session.page.state.status == "done"
@@ -145,8 +145,8 @@ defmodule Mirage.EventsTest do
 
     test "command with params" do
       session =
-        Mirage.DirectCommandPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.DirectCommandPage)
         |> Mirage.click("button", "run param command")
 
       assert session.page.state.status == "finished"
@@ -156,8 +156,8 @@ defmodule Mirage.EventsTest do
   describe "click/3 — action chaining" do
     test "an action that calls put_action chains to the next action" do
       session =
-        Mirage.ActionChainPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.ActionChainPage)
         |> Mirage.click("button", "chain")
 
       assert session.page.state.log == ["first", "second"]
@@ -167,8 +167,8 @@ defmodule Mirage.EventsTest do
   describe "click/3 — put_page navigation" do
     test "an action that calls put_page navigates to the target page" do
       session =
-        Mirage.PutPagePage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.PutPagePage)
         |> Mirage.click("button", "go to other page")
 
       assert session.page_module == Mirage.AnotherPage
@@ -183,8 +183,8 @@ defmodule Mirage.EventsTest do
   describe "click/3 — target (action dispatched to child component)" do
     test "action targets a stateful component by cid" do
       session =
-        Mirage.TargetPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.TargetPage)
         |> Mirage.click("button", "Target kill")
 
       {_module, component} = session.bookkeeping.components["baba_yaga"]
@@ -193,8 +193,8 @@ defmodule Mirage.EventsTest do
 
     test "targeted action with params" do
       session =
-        Mirage.TargetPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.TargetPage)
         |> Mirage.click("button", "Multi kill")
 
       {_module, component} = session.bookkeeping.components["baba_yaga"]
@@ -203,8 +203,8 @@ defmodule Mirage.EventsTest do
 
     test "component state persists across multiple interactions" do
       session =
-        Mirage.TargetPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.TargetPage)
         |> Mirage.click("button", "Target kill")
         |> Mirage.click("button", "Target kill")
         |> Mirage.click("button", "Target kill")
@@ -215,8 +215,8 @@ defmodule Mirage.EventsTest do
 
     test "page action still works alongside targeted component" do
       session =
-        Mirage.TargetPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.TargetPage)
         |> Mirage.click("button", "Target kill")
         |> Mirage.click("button", "Page click")
 
@@ -227,8 +227,8 @@ defmodule Mirage.EventsTest do
 
     test "component state renders in the DOM after re-render" do
       session =
-        Mirage.TargetPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.TargetPage)
         |> Mirage.click("button", "Target kill")
         |> Mirage.click("button", "Target kill")
 
@@ -239,8 +239,8 @@ defmodule Mirage.EventsTest do
   describe "click/3 — target (command dispatched to child component)" do
     test "command targets a stateful component by cid" do
       session =
-        Mirage.TargetCommandPage
-        |> Mirage.visit()
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.TargetCommandPage)
         |> Mirage.click("button", "Work")
 
       {_module, component} = session.bookkeeping.components["worker"]

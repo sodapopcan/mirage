@@ -64,17 +64,29 @@ defmodule Mirage do
   @doc """
   Entry point to create a session.
 
-  Takes a `Hologram.Page` and, optional, any params.  It returns a session which
-  the rest of `Mirage` can use.
+  Takes a `%Hologram.Server{}` or `%Mirage.Session{}`, a page module, and
+  optionally any params.  Returns a session which the rest of `Mirage` can use.
+
+      visit(%Hologram.Server{}, MyPage, user_id: 42)
+
+      %Hologram.Server{}
+      |> Hologram.Server.put_session(:user_id, 42)
+      |> visit(MyPage)
+
+  When given a session, the server state is carried over (useful for
+  client-side navigation):
+
+      visit(session, OtherPage, id: 7)
 
   """
-  @spec visit(module(), keyword()) :: Session.t()
-  def visit(page_module, params \\ []) do
-    init_page(page_module, Map.new(params), %Hologram.Server{})
+  @spec visit(Hologram.Server.t() | Session.t(), module(), keyword()) :: Session.t()
+  def visit(server_or_session, page_module, params \\ [])
+
+  def visit(%Session{server: server}, page_module, params) do
+    init_page(page_module, Map.new(params), server)
   end
 
-  @doc false
-  def navigate(page_module, params, server) do
+  def visit(%Hologram.Server{} = server, page_module, params) do
     init_page(page_module, Map.new(params), server)
   end
 
@@ -247,15 +259,15 @@ defmodule Mirage do
 
   ## Examples
 
-      SignUpPage
-      |> visit()
+      %Hologram.Server{}
+      |> visit(SignUpPage)
       |> fill_in("Name", with: "Bender")
       |> fill_in("Password", with: "killallhumans")
       |> click("button", "Submit")
       |> assert_page(WelcomePage)
 
-      HomePage
-      |> visit()
+      %Hologram.Server{}
+      |> visit(HomePage)
       |> click("button", "Log out")
 
   ## Options
@@ -321,8 +333,8 @@ defmodule Mirage do
 
   ## Example
 
-      Profile
-      |> visit()
+      %Hologram.Server{}
+      |> visit(Profile)
       |> choose("robot")
       |> assert_has("p", "Your gender is 'robot'")
 
@@ -372,8 +384,8 @@ defmodule Mirage do
 
   ## Example
 
-      EditProfilePage
-      |> visit()
+      %Hologram.Server{}
+      |> visit(EditProfilePage)
       |> select("Company", "Planet Express")
       |> assert_has("p", "You work for 'Planet Express'")
 
@@ -472,8 +484,8 @@ defmodule Mirage do
 
   """
   @spec reload(Session.t()) :: Session.t()
-  def reload(%Session{page_module: page_module, params: params}) do
-    visit(page_module, Keyword.new(params))
+  def reload(%Session{} = session) do
+    visit(session, session.page_module, Keyword.new(session.params))
   end
 
   @doc """
