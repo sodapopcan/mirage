@@ -86,6 +86,16 @@ defmodule Mirage do
   defp init_page(page_module, params, server) do
     {page, server} = DOM.init_component(page_module, params, server)
 
+    case drain_init(page_module, page, server) do
+      {:navigate, target_module, target_params, server} ->
+        init_page(target_module, Map.new(target_params), server)
+
+      {page, server} ->
+        render_page(page_module, params, page, server)
+    end
+  end
+
+  defp render_page(page_module, params, page, server) do
     vars = Map.merge(params, page.state)
     page_dom = page_module.template().(vars)
 
@@ -117,6 +127,43 @@ defmodule Mirage do
         components: components
       }
     }
+  end
+
+  defp drain_init(module, page, server) do
+    next_action = page.next_action
+    next_command = page.next_command
+    next_page = page.next_page
+    page = %{page | next_action: nil, next_command: nil, next_page: nil}
+
+    server =
+      if cmd = next_command do
+        case module.command(cmd.name, cmd.params, server) do
+          %Hologram.Server{} = s -> s
+          _ -> server
+        end
+      else
+        server
+      end
+
+    {page, server} =
+      if action = next_action do
+        {page, server} =
+          case module.action(action.name, action.params, page) do
+            {%Hologram.Component{} = c, %Hologram.Server{} = s} -> {c, s}
+            %Hologram.Component{} = c -> {c, server}
+            %Hologram.Server{} = s -> {page, s}
+          end
+
+        drain_init(module, page, server)
+      else
+        {page, server}
+      end
+
+    case next_page do
+      nil -> {page, server}
+      {target_module, target_params} -> {:navigate, target_module, target_params, server}
+      target_module -> {:navigate, target_module, [], server}
+    end
   end
 
   @doc """

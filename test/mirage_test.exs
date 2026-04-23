@@ -36,6 +36,38 @@ defmodule MirageTest do
     end
   end
 
+  describe "drain init lifecycle" do
+    test "drains next_action set during init" do
+      Mirage.visit(%Hologram.Server{}, Mirage.InitNextActionPage)
+      |> Mirage.assert_has("p", "finalized")
+    end
+
+    test "drains chained next_actions" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.InitChainedActionPage)
+
+      assert session.page.state.steps == [:one, :two]
+    end
+
+    test "drains next_command set during init" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.InitNextCommandPage)
+
+      assert Hologram.Server.get_session(session.server, :loaded) == true
+    end
+
+    test "navigates when init sets next_page" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.InitNextPagePage)
+
+      assert session.page_module == Mirage.AnotherPage
+    end
+
+    test "navigates with params when init sets next_page" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.InitNextPageWithParamsPage)
+
+      assert session.page_module == Mirage.CommandPage
+      assert session.params == %{tmp_path: "/tmp/redirected"}
+    end
+  end
+
   describe "visit with a pre-configured server" do
     test "server is available during page init" do
       %Hologram.Server{}
