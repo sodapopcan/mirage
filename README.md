@@ -15,30 +15,40 @@ is very similar to that of
 Here is a quick example:
 
 ```elixir
-test "it works" do
-  MyApp.HomePage
-  |> visit(my_param: "some-param")
-  |> click_link("Sign-up")
-  |> fill_in("Name", with: "Bender Bending Rodríguez")
-  |> fill_in("Password", with: "wanna-kill-all-humans?")
-  |> click_button("Submit")
-  |> assert_page(MyApp.WelcomePage)
-  |> assert_has("p", "Welcome, Bender!")
+defmodule MyApp.HomePageTest do
+  use ExUnit.Case, async: true
+  use Mirage.Page
+
+  test "sign up", %{server: server} do
+    server
+    |> visit(MyApp.HomePage, my_param: "some-param")
+    |> click_link("Sign-up")
+    |> fill_in("Name", with: "Bender Bending Rodríguez")
+    |> fill_in("Password", with: "wanna-kill-all-humans?")
+    |> click_button("Submit")
+    |> assert_page(MyApp.WelcomePage)
+    |> assert_has("p", "Welcome, Bender!")
+  end
 end
 ```
 
 You can also test components in isolation:
 
 ```elixir
-test "it counts" do
-  ~HOLO"""
-  <MyApp.Components.PoplarTracker cid="counter" eaten={0}>
-    <p>{@user.name} eats too many poplars.</p>
-  </MyApp.Components.PoplarTracker>
-  """
-  |> mount({MyApp, user: current_user})
-  |> click_button("Eat a poplar")
-  |> assert_has("p", "Number of poplars eaten: 1")
+defmodule MyApp.Components.PoplarTrackerTest do
+  use ExUnit.Case, async: true
+  use Mirage.Component
+
+  test "it counts" do
+    ~HOLO"""
+    <MyApp.Components.PoplarTracker cid="counter" eaten={0}>
+      <p>{@user.name} eats too many poplars.</p>
+    </MyApp.Components.PoplarTracker>
+    """
+    |> mount({MyApp, user: current_user})
+    |> click_button("Eat a poplar")
+    |> assert_has("p", "Number of poplars eaten: 1")
+  end
 end
 ```
 

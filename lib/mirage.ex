@@ -54,13 +54,6 @@ defmodule Mirage do
   alias Mirage.Scoped
   alias Mirage.Session
 
-  defmacro sigil_HOLO(term, modifiers) do
-    quote do
-      require Hologram.Template
-      Hologram.Template.sigil_HOLO(unquote(term), unquote(modifiers))
-    end
-  end
-
   @doc """
   Entry point to create a session.
 
