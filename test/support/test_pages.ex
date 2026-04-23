@@ -1594,6 +1594,134 @@ defmodule Mirage.IfBlockPage do
   end
 end
 
+defmodule Mirage.InitNextActionPage do
+  @moduledoc "Page whose init sets a next_action."
+  use Hologram.Page
+
+  route "/init-next-action"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    component
+    |> put_state(status: "initialized")
+    |> put_action(:finalize)
+  end
+
+  def action(:finalize, _params, component) do
+    put_state(component, :status, "finalized")
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <p>{@status}</p>
+    """
+  end
+end
+
+defmodule Mirage.InitChainedActionPage do
+  @moduledoc "Page whose init chains multiple actions via next_action."
+  use Hologram.Page
+
+  route "/init-chained-action"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    component
+    |> put_state(steps: [])
+    |> put_action(:step_one)
+  end
+
+  def action(:step_one, _params, component) do
+    component
+    |> put_state(:steps, component.state.steps ++ [:one])
+    |> put_action(:step_two)
+  end
+
+  def action(:step_two, _params, component) do
+    put_state(component, :steps, component.state.steps ++ [:two])
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <p>{inspect(@steps)}</p>
+    """
+  end
+end
+
+defmodule Mirage.InitNextCommandPage do
+  @moduledoc "Page whose init sets a next_command."
+  use Hologram.Page
+
+  route "/init-next-command"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    component
+    |> put_state(status: "initialized")
+    |> put_command(:load_data)
+  end
+
+  def command(:load_data, _params, server) do
+    Hologram.Server.put_session(server, :loaded, true)
+  end
+
+  def action(:after_load, _params, component) do
+    put_state(component, :status, "loaded")
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <p>{@status}</p>
+    """
+  end
+end
+
+defmodule Mirage.InitNextPagePage do
+  @moduledoc "Page whose init navigates to another page via next_page."
+  use Hologram.Page
+
+  route "/init-next-page"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_page(component, Mirage.AnotherPage)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <p>Should not render</p>
+    """
+  end
+end
+
+defmodule Mirage.InitNextPageWithParamsPage do
+  @moduledoc "Page whose init navigates to another page with params."
+  use Hologram.Page
+
+  route "/init-next-page-params"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_page(component, Mirage.CommandPage, tmp_path: "/tmp/redirected")
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <p>Should not render</p>
+    """
+  end
+end
+
 defmodule Mirage.PreparePage do
   @moduledoc "Page that reads a session value from the server."
   use Hologram.Page
