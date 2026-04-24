@@ -1682,6 +1682,34 @@ defmodule Mirage.InitNextCommandPage do
   end
 end
 
+defmodule Mirage.InitChainedActionNavigatePage do
+  @moduledoc "Page whose init chains an action that navigates via next_page."
+  use Hologram.Page
+
+  route "/init-chained-action-navigate"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    component
+    |> put_state(steps: [])
+    |> put_action(:step_one)
+  end
+
+  def action(:step_one, _params, component) do
+    component
+    |> put_state(:steps, component.state.steps ++ [:one])
+    |> put_page(Mirage.AnotherPage)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <p>Should not render</p>
+    """
+  end
+end
+
 defmodule Mirage.InitNextPagePage do
   @moduledoc "Page whose init navigates to another page via next_page."
   use Hologram.Page

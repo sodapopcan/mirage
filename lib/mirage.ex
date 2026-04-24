@@ -145,7 +145,7 @@ defmodule Mirage do
         server
       end
 
-    {page, server} =
+    result =
       if action = next_action do
         {page, server} =
           case module.action(action.name, action.params, page) do
@@ -159,10 +159,14 @@ defmodule Mirage do
         {page, server}
       end
 
-    case next_page do
-      nil -> {page, server}
-      {target_module, target_params} -> {:navigate, target_module, target_params, server}
-      target_module -> {:navigate, target_module, [], server}
+    case result do
+      {:navigate, _, _, _} = nav -> nav
+      {page, server} ->
+        case next_page do
+          nil -> {page, server}
+          {target_module, target_params} -> {:navigate, target_module, target_params, server}
+          target_module -> {:navigate, target_module, [], server}
+        end
     end
   end
 
