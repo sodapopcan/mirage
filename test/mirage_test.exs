@@ -54,6 +54,12 @@ defmodule MirageTest do
       assert Hologram.Server.get_session(session.server, :loaded) == true
     end
 
+    test "navigates when chained action sets next_page" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.InitChainedActionNavigatePage)
+
+      assert session.page_module == Mirage.AnotherPage
+    end
+
     test "navigates when init sets next_page" do
       session = Mirage.visit(%Hologram.Server{}, Mirage.InitNextPagePage)
 
