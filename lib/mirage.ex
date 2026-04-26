@@ -160,7 +160,9 @@ defmodule Mirage do
       end
 
     case result do
-      {:navigate, _, _, _} = nav -> nav
+      {:navigate, _, _, _} = nav ->
+        nav
+
       {page, server} ->
         case next_page do
           nil -> {page, server}
