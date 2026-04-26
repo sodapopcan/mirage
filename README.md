@@ -16,8 +16,7 @@ Here is a quick example:
 
 ```elixir
 defmodule MyApp.HomePageTest do
-  use ExUnit.Case, async: true
-  use Mirage.Page
+  use MyApp.PageCase, async: true
 
   test "sign up", %{server: server} do
     server
@@ -36,8 +35,7 @@ You can also test components in isolation:
 
 ```elixir
 defmodule MyApp.Components.PoplarTrackerTest do
-  use ExUnit.Case, async: true
-  use Mirage.Component
+  use MyApp.ComponentCase, async: true
 
   test "it counts" do
     ~HOLO"""
@@ -83,40 +81,37 @@ def deps do
 end
 ```
 
-To use Mirage, just `import` it into your tests:
+Mirage comes with two different extension points, `Mirage.Page` and
+`Mirage.Component` for testing pages and component, respectively.
+
+For each test you can `use` the appropriate one.  Each one `import`s all of
+Mirage's test helpers otherwise the difference is that `Mirage.Page` puts a bare
+`%Hologram.Server{}` into the test context, and `Mirage.Component` imports the
+`~HOLO` sigil.
+
+If you are using the Ecto sandbox, you will probably want to make your own
+custom case for, at least, pages:
+
 
 ```elixir
-defmodule MyApp.MyTest do
-  use ExUnit.Case
-  import Mirage
-
-  test "it works" do
-    MyApp.HomePage
-    |> visit()
-    # ...
-  end
-end
-```
-
-Or use a custom case:
-
-```elixir
-defmodule MyApp.FeatureCase do
+defmodule MyApp.PageCase do
   use ExUnit.CaseTemplate
 
   using do
     quote do
-      import Mirage
+      use Mirage.Page
     end
   end
-end
 
-defmodule MyApp.MyTest do
-  use MyApp.FeatureCase
-
-  # ...
+  setup tags do
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Frankly.Repo, shared: not tags[:async])
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
+  end
 end
 ```
+
+If you have components that interact with the database, you'll want to make one
+for `MyApp.ComponentCase` as well.
 
 ## I'm Mr. Meeseeks, look at me!
 

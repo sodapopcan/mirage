@@ -380,6 +380,11 @@ defmodule Mirage do
       |> visit(CheckoutPage)
       |> fill_in_hidden("csrf_token", with: "abc123")
 
+  ### Note
+
+  **This function should generally be avoided.**  It is useful if you are using
+  a JavaScript library that fills in hidden fields via non-transpiled JS.
+
   """
   @spec fill_in_hidden(Session.t(), String.t(), keyword()) :: Session.t()
   defdelegate fill_in_hidden(session, name, opts), to: Input
