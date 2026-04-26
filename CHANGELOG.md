@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.5.0 (Apr 26, 2026)
+
+### Breaking
+
+`visit` now takes a `%Hologram.Session{}` as its first arg.  This allows for
+setting cookie and session data.
+
+### Added
+
+- `use Mirage.Page` — extension module that imports Mirage and sets up an ExUnit
+  `setup` block providing `%{server: %Hologram.Server{}}` in test context.
+- `use Mirage.Component` — extension module that imports Mirage and `sigil_HOLO`
+  for component-level tests.
+- Init lifecycle drain — `visit/3` now drains `next_command`, `next_action`
+  (recursive), and `next_page` set during `init/3`, matching Hologram's runtime
+  behaviour.
+- `fill_in_hidden/3` — fill in a hidden input by its `name` attribute. Validates
+  the input is actually hidden and not disabled or readonly. Triggers `$change`
+  on both the input and its enclosing form.
+
 ## v0.0.7 (Apr 21, 2026)
 
 ### Fixed
