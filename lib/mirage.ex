@@ -365,6 +365,26 @@ defmodule Mirage do
   defdelegate fill_in(session, label, opts), to: Input
 
   @doc """
+  Fill in a hidden input by its `name` attribute.
+
+  Unlike `fill_in/3`, this targets hidden inputs (`type="hidden"`) directly
+  by name rather than by label text. Raises if the input is not hidden, or if
+  it is disabled or readonly.
+
+  Triggers the input's `$change` event and its form's `$change` event (if
+  it has one).
+
+  ## Example
+
+      %Hologram.Server{}
+      |> visit(CheckoutPage)
+      |> fill_in_hidden("csrf_token", with: "abc123")
+
+  """
+  @spec fill_in_hidden(Session.t(), String.t(), keyword()) :: Session.t()
+  defdelegate fill_in_hidden(session, name, opts), to: Input
+
+  @doc """
   Selects a radio button by its associated label.
 
   Triggers the input's `$change` event as well as its form's `$change` event (if
