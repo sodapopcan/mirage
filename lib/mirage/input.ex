@@ -49,6 +49,30 @@ defmodule Mirage.Input do
     end
   end
 
+  def fill_in_hidden(session, name, opts) when is_binary(name) do
+    Keyword.validate!(opts, [:with])
+    value = Keyword.fetch!(opts, :with)
+
+    ast = Scoped.query_ast(session)
+    hidden_inputs = find_hidden_inputs_by_name(ast, name)
+
+    case hidden_inputs do
+      [] ->
+        raise "No hidden input found with name: #{inspect(name)}"
+
+      [{input, form_change}] ->
+        validate_hidden!(input, name)
+
+        session
+        |> trigger_input_action(input, value)
+        |> update_filled_inputs(input, value)
+        |> trigger_form_change(form_change)
+
+      [_ | _] = many ->
+        raise "Ambiguous match: found #{length(many)} hidden inputs with name: #{inspect(name)}"
+    end
+  end
+
   def choose(session, label, opts \\ []) do
     validate_opts!(opts)
 
@@ -418,6 +442,50 @@ defmodule Mirage.Input do
     Events.dispatch_event(session, form_change, form_data)
   end
 
+  defp validate_hidden!({:element, "input", attrs, _}, name) do
+    type = input_type(attrs)
+
+    cond do
+      type != "hidden" && DOM.find_attr(attrs, "hidden") == nil ->
+        raise "Input with name #{inspect(name)} is not hidden"
+
+      DOM.find_attr(attrs, "disabled") != nil ->
+        raise "Hidden input with name #{inspect(name)} is disabled and cannot be filled"
+
+      DOM.find_attr(attrs, "readonly") != nil ->
+        raise "Hidden input with name #{inspect(name)} is readonly and cannot be filled"
+
+      true ->
+        :ok
+    end
+  end
+
+  defp find_hidden_inputs_by_name(nodes, name, form_change \\ nil)
+
+  defp find_hidden_inputs_by_name(nodes, name, form_change) when is_list(nodes) do
+    Enum.flat_map(nodes, &find_hidden_inputs_by_name(&1, name, form_change))
+  end
+
+  defp find_hidden_inputs_by_name({:element, "form", attrs, children}, name, _form_change) do
+    find_hidden_inputs_by_name(children, name, DOM.find_attr(attrs, "$change"))
+  end
+
+  defp find_hidden_inputs_by_name({:element, "input", attrs, _} = node, name, form_change) do
+    input_name =
+      case DOM.find_attr(attrs, "name") do
+        nil -> nil
+        attr_value -> DOM.attr_to_string(attr_value)
+      end
+
+    if input_name == name, do: [{node, form_change}], else: []
+  end
+
+  defp find_hidden_inputs_by_name({:element, _tag, _attrs, children}, name, form_change) do
+    find_hidden_inputs_by_name(children, name, form_change)
+  end
+
+  defp find_hidden_inputs_by_name(_other, _name, _form_change), do: []
+
   @doc false
   def validate_interactive!({:element, tag, attrs, _}, label) do
     cond do
@@ -537,7 +605,8 @@ defmodule Mirage.Input do
             %{}
 
           type == "hidden" ->
-            %{name => field_value(attrs, "")}
+            value = Map.get(bookkeeping.filled_inputs, name, field_value(attrs, ""))
+            %{name => value}
 
           true ->
             value = Map.get(bookkeeping.filled_inputs, name, field_value(attrs, ""))

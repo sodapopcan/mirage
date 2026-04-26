@@ -270,6 +270,66 @@ defmodule MirageTest do
     end
   end
 
+  describe "fill_in_hidden/3" do
+    test "fills a hidden input by name and triggers $change" do
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.FillInHiddenPage)
+      |> Mirage.fill_in_hidden("token", with: "new_token")
+      |> Mirage.assert_has("p", "new_token")
+    end
+
+    test "fills a hidden input outside a form" do
+      session =
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.FillInHiddenPage)
+        |> Mirage.fill_in_hidden("outside_form", with: "updated")
+
+      assert session.page.state.token == "updated"
+    end
+
+    test "triggers form $change with collected form data" do
+      session =
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.FillInHiddenPage)
+        |> Mirage.fill_in_hidden("token", with: "new_token")
+
+      assert [form_data] = session.page.state.form_log
+      assert form_data["token"] == "new_token"
+    end
+
+    test "raises when no hidden input matches name" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.FillInHiddenPage)
+
+      assert_raise RuntimeError, ~r/No hidden input found with name: "nope"/, fn ->
+        Mirage.fill_in_hidden(session, "nope", with: "x")
+      end
+    end
+
+    test "raises when input with name is not hidden" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.FillInHiddenPage)
+
+      assert_raise RuntimeError, ~r/is not hidden/, fn ->
+        Mirage.fill_in_hidden(session, "visible", with: "x")
+      end
+    end
+
+    test "raises for disabled hidden input" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.FillInHiddenPage)
+
+      assert_raise RuntimeError, ~r/is disabled/, fn ->
+        Mirage.fill_in_hidden(session, "disabled_hidden", with: "x")
+      end
+    end
+
+    test "raises for readonly hidden input" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.FillInHiddenPage)
+
+      assert_raise RuntimeError, ~r/is readonly/, fn ->
+        Mirage.fill_in_hidden(session, "readonly_hidden", with: "x")
+      end
+    end
+  end
+
   describe "non-interactive inputs" do
     test "fill_in raises for type=hidden input" do
       session = Mirage.visit(%Hologram.Server{}, Mirage.NonInteractivePage)

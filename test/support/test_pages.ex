@@ -110,6 +110,41 @@ defmodule Mirage.NonInteractivePage do
   end
 end
 
+defmodule Mirage.FillInHiddenPage do
+  @moduledoc "Page with hidden inputs for fill_in_hidden/3 tests."
+  use Hologram.Page
+
+  route "/fill-in-hidden"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, token: "original", form_log: [])
+  end
+
+  def action(:update_token, %{event: %{value: value}}, component) do
+    put_state(component, token: value)
+  end
+
+  def action(:form_changed, %{event: event}, component) do
+    put_state(component, form_log: component.state.form_log ++ [event])
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <form $change={:form_changed}>
+      <input type="hidden" name="token" value="original" $change={:update_token} />
+      <input type="hidden" name="disabled_hidden" value="x" disabled $change={:update_token} />
+      <input type="hidden" name="readonly_hidden" value="x" readonly $change={:update_token} />
+      <label>Visible<input name="visible" $change={:update_token} /></label>
+    </form>
+    <input type="hidden" name="outside_form" value="solo" $change={:update_token} />
+    <p>{@token}</p>
+    """
+  end
+end
+
 defmodule Mirage.FillInPage do
   @moduledoc """
   Page fixture for `fill_in/3`. Has a form with two labelled inputs (one
