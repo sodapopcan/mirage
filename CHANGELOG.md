@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.5.0 (Apr 26, 2026)
+## v0.1.0 (Apr 26, 2026)
 
 ### Breaking
 
