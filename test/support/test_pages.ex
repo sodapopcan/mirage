@@ -1387,6 +1387,60 @@ defmodule Mirage.WithinFieldsetPage do
 end
 
 # ---------------------------------------------------------------------------
+# component init action test pages
+# ---------------------------------------------------------------------------
+
+defmodule Mirage.InitActionCounter do
+  @moduledoc "Component whose init sets a next_action."
+  use Hologram.Component
+
+  prop :cid, :string
+
+  @impl Hologram.Component
+  def init(_props, component, server) do
+    component =
+      component
+      |> put_state(count: 0)
+      |> put_action(:load_default)
+
+    {component, server}
+  end
+
+  def action(:load_default, _params, component) do
+    put_state(component, :count, 42)
+  end
+
+  def action(:increment, _params, component) do
+    put_state(component, :count, component.state.count + 1)
+  end
+
+  @impl Hologram.Component
+  def template do
+    ~HOLO"""
+    <div id={@cid}>
+      <span class="count">{@count}</span>
+      <button $click={:increment}>Add</button>
+    </div>
+    """
+  end
+end
+
+defmodule Mirage.InitActionComponentPage do
+  @moduledoc "Page with a component whose init sets a next_action."
+  use Hologram.Page
+
+  route "/init-action-component"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <Mirage.InitActionCounter cid="counter" />
+    """
+  end
+end
+
+# ---------------------------------------------------------------------------
 # target test pages
 # ---------------------------------------------------------------------------
 
