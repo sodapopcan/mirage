@@ -104,7 +104,7 @@ defmodule MyApp.PageCase do
   end
 
   setup tags do
-    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Frankly.Repo, shared: not tags[:async])
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(MyApp.Repo, shared: not tags[:async])
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
   end
 end
