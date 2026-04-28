@@ -2,6 +2,7 @@ defmodule Mirage.Mount do
   @moduledoc false
 
   alias Mirage.DOM
+  alias Mirage.Events
   alias Mirage.Session
 
   # mount(template_fn)
@@ -74,6 +75,7 @@ defmodule Mirage.Mount do
         components: components
       }
     }
+    |> Events.drain_component_inits()
   end
 
   defp unwrap_component([{:component, _, _, _} = node]), do: node

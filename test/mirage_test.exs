@@ -74,6 +74,21 @@ defmodule MirageTest do
     end
   end
 
+  describe "component init actions" do
+    test "drains next_action set during component init" do
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.InitActionComponentPage)
+      |> Mirage.assert_has(".count", "42")
+    end
+
+    test "component state reflects init action when queried" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.InitActionComponentPage)
+
+      {_module, component} = session.bookkeeping.components["counter"]
+      assert component.state.count == 42
+    end
+  end
+
   describe "visit with a pre-configured server" do
     test "server is available during page init" do
       %Hologram.Server{}

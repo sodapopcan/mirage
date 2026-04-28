@@ -395,6 +395,37 @@ defmodule Mirage.Events do
   end
 
   # ---------------------------------------------------------------------------
+  # Component init action drain
+  # ---------------------------------------------------------------------------
+
+  @doc false
+  def drain_component_inits(%Session{bookkeeping: %{components: components}} = session) do
+    init_actions =
+      for {cid, {_module, component}} <- components,
+          action = component.next_action,
+          action != nil do
+        {cid, action}
+      end
+
+    case init_actions do
+      [] ->
+        session
+
+      actions ->
+        session =
+          Enum.reduce(actions, session, fn {cid, _action}, acc ->
+            {module, component} = acc.bookkeeping.components[cid]
+            clean = %{component | next_action: nil}
+            put_in(acc, [Access.key(:bookkeeping), :components, cid], {module, clean})
+          end)
+
+        Enum.reduce(actions, session, fn {cid, action}, acc ->
+          run_action(acc, action.name, action.params, cid)
+        end)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # Private — action/command lifecycle
   # ---------------------------------------------------------------------------
 

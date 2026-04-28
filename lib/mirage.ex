@@ -91,7 +91,9 @@ defmodule Mirage do
         init_page(target_module, Map.new(target_params), server)
 
       {page, server} ->
-        render_page(page_module, params, page, server)
+        page_module
+        |> render_page(params, page, server)
+        |> Events.drain_component_inits()
     end
   end
 
