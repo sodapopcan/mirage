@@ -14,7 +14,7 @@ defmodule Mirage.MixProject do
       dialyzer: [plt_add_apps: [:ex_unit]],
 
       # Hex
-      description: "Test framework for the Hologram web framework",
+      description: "Testing libraty Hologram pages and components",
       package: package(),
 
       # Docs
