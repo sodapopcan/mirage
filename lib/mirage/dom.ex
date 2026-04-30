@@ -53,7 +53,12 @@ defmodule Mirage.DOM do
 
     expand(
       template_dom,
-      %{context: merged_context, slots: [default: expanded_children], target: target, slot_target: slot_target},
+      %{
+        context: merged_context,
+        slots: [default: expanded_children],
+        target: target,
+        slot_target: slot_target
+      },
       server
     )
   end

@@ -1,6 +1,19 @@
 # Changelog
 
-## v0.1.0 (Apr 26, 2026)
+## v0.6.0 (Apr 30, 2026)
+
+### Added
+
+- Implicit component targeting — event handlers (`$click`, `$change`,
+  `$submit`, etc.) inside a stateful component's template now automatically
+  target that component. Matches Hologram's `defaultTarget` behaviour so
+  explicit `target:` is only needed when dispatching across component
+  boundaries.
+- Component init action draining — `next_action` set during a component's
+  `init/3` is now drained after page render and `mount/2`, matching page-level
+  init drain behaviour.
+
+## v0.5.0 (Apr 26, 2026)
 
 ### Breaking
 

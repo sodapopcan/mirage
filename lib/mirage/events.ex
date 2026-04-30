@@ -136,7 +136,12 @@ defmodule Mirage.Events do
 
   # Action with params, e.g. `$click={:write_file, path: @tmp_path}`.
   # Also supports `target:` to dispatch to a stateful component.
-  def dispatch_event(%Session{} = session, [{:expression, {name, params}}], event_data, default_target)
+  def dispatch_event(
+        %Session{} = session,
+        [{:expression, {name, params}}],
+        event_data,
+        default_target
+      )
       when is_atom(name) and is_list(params) do
     {explicit_target, params} = Keyword.pop(params, :target)
     target = explicit_target || default_target

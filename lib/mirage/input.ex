@@ -313,8 +313,16 @@ defmodule Mirage.Input do
         {:element, _, attrs, _} = input
 
         case DOM.find_attr(attrs, "$select") do
-          nil -> session
-          action -> Events.dispatch_event(session, action, %{text: selected}, DOM.find_attr(attrs, "__mirage_target__"))
+          nil ->
+            session
+
+          action ->
+            Events.dispatch_event(
+              session,
+              action,
+              %{text: selected},
+              DOM.find_attr(attrs, "__mirage_target__")
+            )
         end
 
       [_ | _] = many ->
@@ -430,8 +438,16 @@ defmodule Mirage.Input do
 
   def trigger_input_action(session, {:element, _tag, attrs, _children}, value) do
     case DOM.find_attr(attrs, "$change") do
-      nil -> session
-      action -> Events.dispatch_event(session, action, %{value: value}, DOM.find_attr(attrs, "__mirage_target__"))
+      nil ->
+        session
+
+      action ->
+        Events.dispatch_event(
+          session,
+          action,
+          %{value: value},
+          DOM.find_attr(attrs, "__mirage_target__")
+        )
     end
   end
 
