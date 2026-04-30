@@ -314,7 +314,7 @@ defmodule Mirage.Input do
 
         case DOM.find_attr(attrs, "$select") do
           nil -> session
-          action -> Events.dispatch_event(session, action, %{text: selected})
+          action -> Events.dispatch_event(session, action, %{text: selected}, DOM.find_attr(attrs, "__mirage_target__"))
         end
 
       [_ | _] = many ->
@@ -431,7 +431,7 @@ defmodule Mirage.Input do
   def trigger_input_action(session, {:element, _tag, attrs, _children}, value) do
     case DOM.find_attr(attrs, "$change") do
       nil -> session
-      action -> Events.dispatch_event(session, action, %{value: value})
+      action -> Events.dispatch_event(session, action, %{value: value}, DOM.find_attr(attrs, "__mirage_target__"))
     end
   end
 
@@ -439,8 +439,27 @@ defmodule Mirage.Input do
 
   def trigger_form_change(session, form_change) do
     form_data = collect_form_values(session.ast, "$change", form_change, session.bookkeeping)
-    Events.dispatch_event(session, form_change, form_data)
+    form_target = find_form_target(session.ast, form_change)
+    Events.dispatch_event(session, form_change, form_data, form_target)
   end
+
+  defp find_form_target(nodes, form_change) when is_list(nodes) do
+    Enum.find_value(nodes, &find_form_target(&1, form_change))
+  end
+
+  defp find_form_target({:element, "form", attrs, children}, form_change) do
+    if DOM.find_attr(attrs, "$change") == form_change do
+      DOM.find_attr(attrs, "__mirage_target__")
+    else
+      find_form_target(children, form_change)
+    end
+  end
+
+  defp find_form_target({:element, _tag, _attrs, children}, form_change) do
+    find_form_target(children, form_change)
+  end
+
+  defp find_form_target(_, _), do: nil
 
   defp validate_hidden!({:element, "input", attrs, _}, name) do
     type = input_type(attrs)

@@ -48,8 +48,8 @@ defmodule Mirage.Mount do
     expanded_context = Map.merge(merged_context, component.emitted_context)
 
     # Slot = children from the markup, expanded with context vars
-    slot_dom = DOM.expand(children, %{context: expanded_context, slots: []}, server)
-    env = %{context: expanded_context, slots: [default: slot_dom]}
+    slot_dom = DOM.expand(children, %{context: expanded_context, slots: [], target: nil}, server)
+    env = %{context: expanded_context, slots: [default: slot_dom], target: nil}
 
     Process.delete(:mirage_components)
 

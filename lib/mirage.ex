@@ -109,7 +109,7 @@ defmodule Mirage do
 
     root = {:component, page_module.__layout_module__(), layout_props_dom, page_dom}
     context = Map.merge(runtime_context(), page.emitted_context)
-    env = %{context: context, slots: []}
+    env = %{context: context, slots: [], target: nil}
 
     Process.delete(:mirage_components)
     ast = DOM.expand(root, env, server)

@@ -1839,6 +1839,70 @@ defmodule Mirage.InitNextPageWithParamsPage do
   end
 end
 
+# ---------------------------------------------------------------------------
+# implicit component targeting test fixtures
+# ---------------------------------------------------------------------------
+
+defmodule Mirage.FormCounter do
+  @moduledoc "Component with a form — tests implicit targeting for $submit and $change."
+  use Hologram.Component
+
+  prop :cid, :string
+
+  @impl Hologram.Component
+  def init(_props, component, server) do
+    {put_state(component, name: "", submitted_name: nil), server}
+  end
+
+  def action(:update_form, %{event: event}, component) do
+    put_state(component, :name, event["name"] || "")
+  end
+
+  def action(:submit_form, %{event: event}, component) do
+    put_state(component, :submitted_name, event["name"])
+  end
+
+  @impl Hologram.Component
+  def template do
+    ~HOLO"""
+    <div id={@cid}>
+      <form $change={:update_form} $submit={:submit_form}>
+        <label>Name<input name="name" /></label>
+        <button>Save</button>
+      </form>
+      <span class="submitted">{@submitted_name}</span>
+    </div>
+    """
+  end
+end
+
+defmodule Mirage.ImplicitTargetPage do
+  @moduledoc "Page hosting components whose events should implicitly target them."
+  use Hologram.Page
+
+  route "/implicit-target"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, page_data: "untouched")
+  end
+
+  def action(:page_action, _params, component) do
+    put_state(component, :page_data, "page_action_ran")
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <Mirage.InitActionCounter cid="counter" />
+    <Mirage.FormCounter cid="form_counter" />
+    <button $click={:page_action}>Page Button</button>
+    <span id="page-data">{@page_data}</span>
+    """
+  end
+end
+
 defmodule Mirage.PreparePage do
   @moduledoc "Page that reads a session value from the server."
   use Hologram.Page

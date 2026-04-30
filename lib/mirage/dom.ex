@@ -48,18 +48,22 @@ defmodule Mirage.DOM do
     merged_context = Map.merge(env.context, component_struct.emitted_context)
     template_dom = module.template().(vars)
 
+    target = if has_cid?(props), do: props[:cid], else: env[:target]
+    slot_target = env[:target]
+
     expand(
       template_dom,
-      %{context: merged_context, slots: [default: expanded_children]},
+      %{context: merged_context, slots: [default: expanded_children], target: target, slot_target: slot_target},
       server
     )
   end
 
   def expand({:element, "slot", _attrs, []}, env, server) do
-    expand(env.slots[:default] || [], %{env | slots: []}, server)
+    expand(env.slots[:default] || [], %{env | slots: [], target: env[:slot_target]}, server)
   end
 
   def expand({:element, tag, attrs_dom, children}, env, server) do
+    attrs_dom = maybe_stamp_target(attrs_dom, env[:target])
     {:element, tag, attrs_dom, expand(children, env, server)}
   end
 
@@ -72,6 +76,22 @@ defmodule Mirage.DOM do
   end
 
   def expand(other, _env, _server), do: other
+
+  @event_attrs ~w($click $change $submit $focus $blur $select $input
+                  $pointerdown $pointerup $pointermove $pointercancel
+                  $mousemove $transitionend $transitionstart $transitionrun $transitioncancel)
+
+  defp maybe_stamp_target(attrs, nil), do: attrs
+
+  defp maybe_stamp_target(attrs, target) do
+    has_event? = Enum.any?(attrs, fn {name, _} -> name in @event_attrs end)
+
+    if has_event? do
+      [{"__mirage_target__", target} | attrs]
+    else
+      attrs
+    end
+  end
 
   @doc """
   Calls the module's `init/3` if defined and normalizes the result to a
