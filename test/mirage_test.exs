@@ -577,6 +577,58 @@ defmodule MirageTest do
     end
   end
 
+  describe "implicit component targeting" do
+    test "clicking a button inside a component targets that component" do
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.ImplicitTargetPage)
+      |> Mirage.click("button", "Add")
+      |> Mirage.assert_has(".count", "43")
+    end
+
+    test "clicking a button inside a component does not affect page state" do
+      session =
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.ImplicitTargetPage)
+        |> Mirage.click("button", "Add")
+
+      assert session.page.state.page_data == "untouched"
+    end
+
+    test "clicking a page-level button still targets the page" do
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.ImplicitTargetPage)
+      |> Mirage.click("button", "Page Button")
+      |> Mirage.assert_has("#page-data", "page_action_ran")
+    end
+
+    test "form $submit inside a component targets that component" do
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.ImplicitTargetPage)
+      |> Mirage.fill_in("Name", with: "Alice")
+      |> Mirage.click("button", "Save")
+      |> Mirage.assert_has(".submitted", "Alice")
+    end
+
+    test "form $change inside a component targets that component" do
+      session =
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.ImplicitTargetPage)
+        |> Mirage.fill_in("Name", with: "Bob")
+
+      {_module, component} = session.bookkeeping.components["form_counter"]
+      assert component.state.name == "Bob"
+    end
+
+    test "multiple clicks accumulate on the component" do
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.ImplicitTargetPage)
+      |> Mirage.click("button", "Add")
+      |> Mirage.click("button", "Add")
+      |> Mirage.click("button", "Add")
+      |> Mirage.assert_has(".count", "45")
+    end
+  end
+
   describe "{%if} blocks" do
     test "elements inside a false if block are not visible" do
       %Hologram.Server{}

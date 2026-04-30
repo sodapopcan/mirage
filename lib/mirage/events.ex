@@ -43,19 +43,21 @@ defmodule Mirage.Events do
           internal =
             ast
             |> find_submit_targets()
-            |> Enum.filter(fn {node, _submit_attr} ->
+            |> Enum.filter(fn {node, _submit_attr, _form_target} ->
               text == nil or DOM.text_matches?(element_text(node), text, exact?)
             end)
 
           external =
             ast
             |> find_external_submit_buttons(forms_by_id)
-            |> Enum.filter(fn {node, _submit_attr} ->
+            |> Enum.filter(fn {node, _submit_attr, _form_target} ->
               text == nil or DOM.text_matches?(element_text(node), text, exact?)
             end)
 
           (internal ++ external)
-          |> Enum.map(fn {_node, submit_attr} -> {:form_submit, submit_attr} end)
+          |> Enum.map(fn {_node, submit_attr, form_target} ->
+            {:form_submit, submit_attr, form_target}
+          end)
 
         nodes ->
           Enum.map(nodes, &{:click, &1})
@@ -68,11 +70,11 @@ defmodule Mirage.Events do
       [{:click, node}] ->
         handle_click(session, node)
 
-      [{:form_submit, submit_attr}] ->
+      [{:form_submit, submit_attr, form_target}] ->
         form_data =
           Input.collect_form_values(session.ast, "$submit", submit_attr, session.bookkeeping)
 
-        dispatch_event(session, submit_attr, form_data)
+        dispatch_event(session, submit_attr, form_data, form_target)
 
       many ->
         raise "Ambiguous match: found #{length(many)} clickable elements matching #{describe(selector, opts)}"
@@ -118,31 +120,35 @@ defmodule Mirage.Events do
   end
 
   @doc false
+  def dispatch_event(session, attr_value, event_data, default_target \\ nil)
+
   # Text syntax action, e.g. `$click="my_action"`.
-  def dispatch_event(%Session{} = session, [{:text, name}], event_data)
+  def dispatch_event(%Session{} = session, [{:text, name}], event_data, default_target)
       when is_binary(name) do
-    run_action(session, String.to_existing_atom(name), %{event: event_data})
+    run_action(session, String.to_existing_atom(name), %{event: event_data}, default_target)
   end
 
   # Bare atom action, e.g. `$click={:submit}`.
-  def dispatch_event(%Session{} = session, [{:expression, {name}}], event_data)
+  def dispatch_event(%Session{} = session, [{:expression, {name}}], event_data, default_target)
       when is_atom(name) do
-    run_action(session, name, %{event: event_data})
+    run_action(session, name, %{event: event_data}, default_target)
   end
 
   # Action with params, e.g. `$click={:write_file, path: @tmp_path}`.
   # Also supports `target:` to dispatch to a stateful component.
-  def dispatch_event(%Session{} = session, [{:expression, {name, params}}], event_data)
+  def dispatch_event(%Session{} = session, [{:expression, {name, params}}], event_data, default_target)
       when is_atom(name) and is_list(params) do
-    {target, params} = Keyword.pop(params, :target)
+    {explicit_target, params} = Keyword.pop(params, :target)
+    target = explicit_target || default_target
     run_action(session, name, Map.merge(Map.new(params), %{event: event_data}), target)
   end
 
   # Longhand action/command, e.g. `$click={action: :name}` or `$click={command: :name}`.
   # Optionally includes `target: "cid"` to dispatch to a stateful component.
-  def dispatch_event(%Session{} = session, [{:expression, {spec}}], event_data)
+  def dispatch_event(%Session{} = session, [{:expression, {spec}}], event_data, default_target)
       when is_list(spec) do
-    target = Keyword.get(spec, :target)
+    explicit_target = Keyword.get(spec, :target)
+    target = explicit_target || default_target
 
     cond do
       Keyword.has_key?(spec, :action) ->
@@ -163,7 +169,7 @@ defmodule Mirage.Events do
   end
 
   # Attribute values that aren't one of the known expression shapes are no-ops.
-  def dispatch_event(session, _other, _event_data), do: session
+  def dispatch_event(session, _other, _event_data, _default_target), do: session
 
   # ---------------------------------------------------------------------------
   # Private — event targeting
@@ -205,7 +211,7 @@ defmodule Mirage.Events do
   defp dispatch_from_node(session, {:element, _tag, attrs, _children}, event_attr) do
     case DOM.find_attr(attrs, event_attr) do
       nil -> session
-      value -> dispatch_event(session, value, %{})
+      value -> dispatch_event(session, value, %{}, DOM.find_attr(attrs, "__mirage_target__"))
     end
   end
 
@@ -240,9 +246,11 @@ defmodule Mirage.Events do
         find_submit_targets(children)
 
       submit_attr ->
+        form_target = DOM.find_attr(attrs, "__mirage_target__")
+
         children
         |> find_submit_buttons()
-        |> Enum.map(fn btn -> {btn, submit_attr} end)
+        |> Enum.map(fn btn -> {btn, submit_attr, form_target} end)
     end
   end
 
@@ -281,9 +289,15 @@ defmodule Mirage.Events do
   defp collect_forms_with_submit({:element, "form", attrs, children}) do
     acc =
       case {DOM.find_attr(attrs, "id"), DOM.find_attr(attrs, "$submit")} do
-        {nil, _} -> %{}
-        {_, nil} -> %{}
-        {id, submit_attr} -> %{DOM.attr_to_string(id) => submit_attr}
+        {nil, _} ->
+          %{}
+
+        {_, nil} ->
+          %{}
+
+        {id, submit_attr} ->
+          form_target = DOM.find_attr(attrs, "__mirage_target__")
+          %{DOM.attr_to_string(id) => {submit_attr, form_target}}
       end
 
     Enum.reduce(children, acc, fn node, a -> Map.merge(a, collect_forms_with_submit(node)) end)
@@ -312,7 +326,7 @@ defmodule Mirage.Events do
 
           if submit_button?(attrs) do
             case Map.fetch(forms_by_id, form_id) do
-              {:ok, submit_attr} -> [{node, submit_attr}]
+              {:ok, {submit_attr, form_target}} -> [{node, submit_attr, form_target}]
               :error -> []
             end
           else
@@ -338,7 +352,7 @@ defmodule Mirage.Events do
           end
 
         case {is_submit, Map.fetch(forms_by_id, form_id)} do
-          {true, {:ok, submit_attr}} -> [{node, submit_attr}]
+          {true, {:ok, {submit_attr, form_target}}} -> [{node, submit_attr, form_target}]
           _ -> []
         end
     end
@@ -559,7 +573,7 @@ defmodule Mirage.Events do
       end
 
     context = Map.merge(runtime_context(), page.emitted_context)
-    env = %{context: context, slots: []}
+    env = %{context: context, slots: [], target: nil}
 
     Process.put(:mirage_components, bookkeeping.components)
     ast = DOM.expand(root, env, server)
