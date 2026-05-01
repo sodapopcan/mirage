@@ -1441,6 +1441,63 @@ defmodule Mirage.InitActionComponentPage do
 end
 
 # ---------------------------------------------------------------------------
+# action retarget test fixtures
+# ---------------------------------------------------------------------------
+
+defmodule Mirage.RetargetCounter do
+  @moduledoc "Component whose action chains back to page via target: page."
+  use Hologram.Component
+
+  prop :cid, :string
+
+  @impl Hologram.Component
+  def init(_props, component, server) do
+    {put_state(component, count: 0), server}
+  end
+
+  def action(:increment_and_notify, _params, component) do
+    component
+    |> put_state(:count, component.state.count + 1)
+    |> put_action(name: :notified, target: "page", params: %{by: "counter"})
+  end
+
+  @impl Hologram.Component
+  def template do
+    ~HOLO"""
+    <div id={@cid}>
+      <span class="count">{@count}</span>
+      <button $click={:increment_and_notify}>Notify</button>
+    </div>
+    """
+  end
+end
+
+defmodule Mirage.RetargetPage do
+  @moduledoc "Page hosting a component that retargets an action to page."
+  use Hologram.Page
+
+  route "/retarget"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, notification: nil)
+  end
+
+  def action(:notified, %{by: by}, component) do
+    put_state(component, :notification, by)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <Mirage.RetargetCounter cid="rc" />
+    <span id="notif">{@notification}</span>
+    """
+  end
+end
+
+# ---------------------------------------------------------------------------
 # target test pages
 # ---------------------------------------------------------------------------
 

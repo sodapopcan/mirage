@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.1 (May 1, 2026)
+
+### Fixed
+
+- Chained actions and commands now respect `action.target` / `command.target`.
+  Previously `next_action` and `next_command` set during a component action
+  always reused the original target, ignoring `target: "page"` or explicit
+  component cids.
+
 ## v0.6.0 (Apr 30, 2026)
 
 ### Added

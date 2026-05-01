@@ -629,6 +629,25 @@ defmodule MirageTest do
     end
   end
 
+  describe "action retargeting" do
+    test "component action with target: page dispatches to the page" do
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.RetargetPage)
+      |> Mirage.click("button", "Notify")
+      |> Mirage.assert_has("#notif", "counter")
+    end
+
+    test "component state still updates before retargeted action" do
+      session =
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.RetargetPage)
+        |> Mirage.click("button", "Notify")
+
+      {_module, component} = session.bookkeeping.components["rc"]
+      assert component.state.count == 1
+    end
+  end
+
   describe "{%if} blocks" do
     test "elements inside a false if block are not visible" do
       %Hologram.Server{}
