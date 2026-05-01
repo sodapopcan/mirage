@@ -448,8 +448,6 @@ defmodule Mirage.Events do
   # Private — action/command lifecycle
   # ---------------------------------------------------------------------------
 
-  defp run_action(session, name, params, target \\ nil)
-
   defp run_action(%Session{} = session, name, params, target) do
     {module, component, keep} = resolve_target(session, target)
 
@@ -471,11 +469,14 @@ defmodule Mirage.Events do
       |> keep.(clean)
       |> Map.put(:server, new_server)
 
-    session = if cmd = next_command, do: run_command(session, cmd, target), else: session
+    session =
+      if cmd = next_command,
+        do: run_command(session, cmd, retarget(cmd.target, target)),
+        else: session
 
     session =
       if action = next_action,
-        do: run_action(session, action.name, action.params, target),
+        do: run_action(session, action.name, action.params, retarget(action.target, target)),
         else: session
 
     case next_page do
@@ -489,6 +490,10 @@ defmodule Mirage.Events do
         Mirage.visit(session, target_module)
     end
   end
+
+  defp retarget("page", _fallback), do: nil
+  defp retarget(nil, fallback), do: fallback
+  defp retarget(explicit, _fallback), do: explicit
 
   defp resolve_target(%Session{page_module: module, page: component}, nil) do
     {module, component, fn session, comp -> %{session | page: comp} end}
@@ -526,7 +531,7 @@ defmodule Mirage.Events do
         session = %{session | server: new_server}
 
         if action = new_server.next_action do
-          run_action(session, action.name, action.params, target)
+          run_action(session, action.name, action.params, retarget(action.target, target))
         else
           session
         end
@@ -546,7 +551,7 @@ defmodule Mirage.Events do
     session = %{session | server: new_server}
 
     if action = new_server.next_action do
-      run_action(session, action.name, action.params)
+      run_action(session, action.name, action.params, retarget(action.target, nil))
     else
       session
     end
