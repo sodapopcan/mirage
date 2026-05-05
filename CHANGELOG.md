@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.2 (May 5, 2026)
+
+### Added
+
+- `assert_disabled/2` / `refute_disabled/2` — assert whether an input
+  (found by label text) is disabled.
+- `assert_readonly/2` / `refute_readonly/2` — assert whether an input
+  (found by label text) is readonly.
+
 ## v0.6.1 (May 1, 2026)
 
 ### Fixed
