@@ -531,6 +531,46 @@ defmodule Mirage do
   defdelegate refute_has(session, selector, text, opts), to: Mirage.Assertions
 
   @doc """
+  Asserts that the input identified by its label text is disabled.
+
+      session
+      |> assert_disabled("Email")
+
+  """
+  @doc group: "Assertions"
+  defdelegate assert_disabled(session, label, opts \\ []), to: Mirage.Assertions
+
+  @doc """
+  Asserts that the input identified by its label text is *not* disabled.
+
+      session
+      |> refute_disabled("Email")
+
+  """
+  @doc group: "Assertions"
+  defdelegate refute_disabled(session, label, opts \\ []), to: Mirage.Assertions
+
+  @doc """
+  Asserts that the input identified by its label text is readonly.
+
+      session
+      |> assert_readonly("User ID")
+
+  """
+  @doc group: "Assertions"
+  defdelegate assert_readonly(session, label, opts \\ []), to: Mirage.Assertions
+
+  @doc """
+  Asserts that the input identified by its label text is *not* readonly.
+
+      session
+      |> refute_readonly("Email")
+
+  """
+  @doc group: "Assertions"
+  defdelegate refute_readonly(session, label, opts \\ []), to: Mirage.Assertions
+
+  @doc """
   Asserts that we are on a specific page.  Useful after redirect.
 
   Optionally takes a keyword list of expected params:
