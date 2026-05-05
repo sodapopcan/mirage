@@ -629,6 +629,86 @@ defmodule MirageTest do
     end
   end
 
+  describe "assert_disabled/2" do
+    test "passes for a disabled input" do
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.NonInteractivePage)
+      |> Mirage.assert_disabled("Disabled input")
+    end
+
+    test "raises for an enabled input" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.NonInteractivePage)
+
+      assert_raise ExUnit.AssertionError, ~r/to be disabled/, fn ->
+        Mirage.assert_disabled(session, "Readonly input")
+      end
+    end
+
+    test "raises when no input matches label" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/No input found/, fn ->
+        Mirage.assert_disabled(session, "Nonexistent")
+      end
+    end
+  end
+
+  describe "refute_disabled/2" do
+    test "passes for a non-disabled input" do
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.NonInteractivePage)
+      |> Mirage.refute_disabled("Readonly input")
+    end
+
+    test "raises for a disabled input" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.NonInteractivePage)
+
+      assert_raise ExUnit.AssertionError, ~r/not to be disabled/, fn ->
+        Mirage.refute_disabled(session, "Disabled input")
+      end
+    end
+  end
+
+  describe "assert_readonly/2" do
+    test "passes for a readonly input" do
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.NonInteractivePage)
+      |> Mirage.assert_readonly("Readonly input")
+    end
+
+    test "raises for a non-readonly input" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.NonInteractivePage)
+
+      assert_raise ExUnit.AssertionError, ~r/to be readonly/, fn ->
+        Mirage.assert_readonly(session, "Disabled input")
+      end
+    end
+
+    test "raises when no input matches label" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.NonInteractivePage)
+
+      assert_raise RuntimeError, ~r/No input found/, fn ->
+        Mirage.assert_readonly(session, "Nonexistent")
+      end
+    end
+  end
+
+  describe "refute_readonly/2" do
+    test "passes for a non-readonly input" do
+      %Hologram.Server{}
+      |> Mirage.visit(Mirage.NonInteractivePage)
+      |> Mirage.refute_readonly("Disabled input")
+    end
+
+    test "raises for a readonly input" do
+      session = Mirage.visit(%Hologram.Server{}, Mirage.NonInteractivePage)
+
+      assert_raise ExUnit.AssertionError, ~r/not to be readonly/, fn ->
+        Mirage.refute_readonly(session, "Readonly input")
+      end
+    end
+  end
+
   describe "action retargeting" do
     test "component action with target: page dispatches to the page" do
       %Hologram.Server{}

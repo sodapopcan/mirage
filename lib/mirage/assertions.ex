@@ -157,6 +157,72 @@ defmodule Mirage.Assertions do
     Enum.filter(nodes, fn node -> node in labelled_inputs end)
   end
 
+  def assert_disabled(%Session{} = session, label, opts \\ []) when is_binary(label) do
+    exact? = Keyword.get(opts, :exact, true)
+    input = find_labelled_input!(session, label, exact?)
+    {:element, _, attrs, _} = input
+
+    assert DOM.find_attr(attrs, "disabled") != nil,
+           "Expected input with label #{inspect(label)} to be disabled, but it is not"
+
+    session
+  end
+
+  def refute_disabled(%Session{} = session, label, opts \\ []) when is_binary(label) do
+    exact? = Keyword.get(opts, :exact, true)
+    input = find_labelled_input!(session, label, exact?)
+    {:element, _, attrs, _} = input
+
+    assert DOM.find_attr(attrs, "disabled") == nil,
+           "Expected input with label #{inspect(label)} not to be disabled, but it is"
+
+    session
+  end
+
+  def assert_readonly(%Session{} = session, label, opts \\ []) when is_binary(label) do
+    exact? = Keyword.get(opts, :exact, true)
+    input = find_labelled_input!(session, label, exact?)
+    {:element, _, attrs, _} = input
+
+    assert DOM.find_attr(attrs, "readonly") != nil,
+           "Expected input with label #{inspect(label)} to be readonly, but it is not"
+
+    session
+  end
+
+  def refute_readonly(%Session{} = session, label, opts \\ []) when is_binary(label) do
+    exact? = Keyword.get(opts, :exact, true)
+    input = find_labelled_input!(session, label, exact?)
+    {:element, _, attrs, _} = input
+
+    assert DOM.find_attr(attrs, "readonly") == nil,
+           "Expected input with label #{inspect(label)} not to be readonly, but it is"
+
+    session
+  end
+
+  defp find_labelled_input!(session, label, exact?) do
+    ast = Scoped.query_ast(session)
+    {labels, inputs_by_id} = Input.collect_form_nodes(ast, nil)
+
+    matches =
+      Enum.filter(labels, fn {node, _wrapped, _form_change} ->
+        DOM.text_matches?(DOM.inner_text(node), label, exact?)
+      end)
+
+    case matches do
+      [] ->
+        raise "No input found with label: #{inspect(label)}"
+
+      [entry] ->
+        {input, _form_change} = Input.resolve_input(entry, inputs_by_id, label)
+        input
+
+      [_ | _] = many ->
+        raise "Ambiguous match: found #{length(many)} labels matching: #{inspect(label)}"
+    end
+  end
+
   defp describe(selector, opts) do
     parts = [inspect(selector)]
 
