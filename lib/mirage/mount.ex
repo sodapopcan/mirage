@@ -67,6 +67,7 @@ defmodule Mirage.Mount do
       ast: ast,
       page_module: module,
       params: props,
+      mounted_cid: props[:cid],
       bookkeeping: %{
         checked_radios: %{},
         checked_checkboxes: MapSet.new(),
