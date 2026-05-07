@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.3 (May 7, 2026)
+
+### Fixed
+
+- Slot event targeting — events rendered inside a component's `<slot>` now
+  target that component, matching Hologram's `defaultTarget` behaviour. Previously
+  slot events always dispatched to the page.
+- `mount/2` state sync — when a mounted component is updated via its cid
+  (e.g. from a slot event), `session.page` now stays in sync with the
+  bookkeeping copy so re-renders reflect the updated state.
+
 ## v0.6.2 (May 5, 2026)
 
 ### Added
