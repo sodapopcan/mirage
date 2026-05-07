@@ -20,6 +20,7 @@ defmodule Mirage do
       :page_module,
       :params,
       :scope,
+      :mounted_cid,
       bookkeeping: %{
         checked_radios: %{},
         checked_checkboxes: MapSet.new(),
@@ -100,6 +101,14 @@ defmodule Mirage do
   defp render_page(page_module, params, page, server) do
     vars = Map.merge(params, page.state)
     page_dom = page_module.template().(vars)
+    context = Map.merge(runtime_context(), page.emitted_context)
+
+    Process.delete(:mirage_components)
+
+    # Expand page content in the page's scope (target nil) before wrapping in
+    # the layout so that page-level events target the page, not the layout.
+    page_env = %{context: context, slots: [], target: nil}
+    expanded_page = DOM.expand(page_dom, page_env, server)
 
     layout_props_dom =
       page_module.__layout_props__()
@@ -107,11 +116,11 @@ defmodule Mirage do
       |> Map.merge(page.state)
       |> Enum.map(fn {name, value} -> {to_string(name), [expression: {value}]} end)
 
-    root = {:component, page_module.__layout_module__(), layout_props_dom, page_dom}
-    context = Map.merge(runtime_context(), page.emitted_context)
-    env = %{context: context, slots: [], target: nil}
+    root =
+      {:component, page_module.__layout_module__(), layout_props_dom,
+       [{:preexpanded, expanded_page}]}
 
-    Process.delete(:mirage_components)
+    env = %{context: context, slots: [], target: nil}
     ast = DOM.expand(root, env, server)
     components = Process.delete(:mirage_components) || %{}
 

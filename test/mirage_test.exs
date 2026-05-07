@@ -629,6 +629,38 @@ defmodule MirageTest do
     end
   end
 
+  describe "slot event targeting" do
+    test "clicking a button in slot content targets the component" do
+      session =
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SlotEventPage)
+        |> Mirage.click("button", "Close")
+
+      {_module, dialog} = session.bookkeeping.components["dialog"]
+      assert dialog.state.closed == true
+    end
+
+    test "clicking a button in slot content does not target the page" do
+      session =
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SlotEventPage)
+        |> Mirage.click("button", "Close")
+
+      assert session.page.state.page_clicked == false
+    end
+
+    test "page-level button still targets the page alongside slotted component" do
+      session =
+        %Hologram.Server{}
+        |> Mirage.visit(Mirage.SlotEventPage)
+        |> Mirage.click("button", "Page Button")
+
+      assert session.page.state.page_clicked == true
+      {_module, dialog} = session.bookkeeping.components["dialog"]
+      assert dialog.state.closed == false
+    end
+  end
+
   describe "assert_disabled/2" do
     test "passes for a disabled input" do
       %Hologram.Server{}

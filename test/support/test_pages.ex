@@ -1960,6 +1960,62 @@ defmodule Mirage.ImplicitTargetPage do
   end
 end
 
+# ---------------------------------------------------------------------------
+# slot event targeting test fixtures
+# ---------------------------------------------------------------------------
+
+defmodule Mirage.SlotDialog do
+  @moduledoc "Component with a slot — events in slot content should target this component."
+  use Hologram.Component
+
+  prop :cid, :string
+
+  @impl Hologram.Component
+  def init(_props, component, server) do
+    {put_state(component, closed: false), server}
+  end
+
+  def action(:close, _params, component) do
+    put_state(component, :closed, true)
+  end
+
+  @impl Hologram.Component
+  def template do
+    ~HOLO"""
+    <div class="dialog" data-closed={to_string(@closed)}>
+      <slot />
+    </div>
+    """
+  end
+end
+
+defmodule Mirage.SlotEventPage do
+  @moduledoc "Page with a slot-based component — verifies slot events target the component."
+  use Hologram.Page
+
+  route "/slot-event"
+  layout Mirage.TestLayout
+
+  @impl Hologram.Page
+  def init(_params, component, _server) do
+    put_state(component, page_clicked: false)
+  end
+
+  def action(:page_action, _params, component) do
+    put_state(component, :page_clicked, true)
+  end
+
+  @impl Hologram.Page
+  def template do
+    ~HOLO"""
+    <Mirage.SlotDialog cid="dialog">
+      <button $click={:close}>Close</button>
+    </Mirage.SlotDialog>
+    <button $click={:page_action}>Page Button</button>
+    """
+  end
+end
+
 defmodule Mirage.PreparePage do
   @moduledoc "Page that reads a session value from the server."
   use Hologram.Page

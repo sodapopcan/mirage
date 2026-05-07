@@ -499,13 +499,22 @@ defmodule Mirage.Events do
     {module, component, fn session, comp -> %{session | page: comp} end}
   end
 
-  defp resolve_target(%Session{bookkeeping: %{components: components}}, target)
+  defp resolve_target(%Session{bookkeeping: %{components: components}} = session, target)
        when is_binary(target) do
     case Map.fetch(components, target) do
       {:ok, {module, component}} ->
-        keep = fn session, comp ->
-          put_in(session, [Access.key(:bookkeeping), :components, target], {module, comp})
-        end
+        keep =
+          if session.mounted_cid == target do
+            fn session, comp ->
+              session
+              |> put_in([Access.key(:bookkeeping), :components, target], {module, comp})
+              |> Map.put(:page, comp)
+            end
+          else
+            fn session, comp ->
+              put_in(session, [Access.key(:bookkeeping), :components, target], {module, comp})
+            end
+          end
 
         {module, component, keep}
 
@@ -568,24 +577,30 @@ defmodule Mirage.Events do
        ) do
     vars = Map.merge(params, page.state)
     page_dom = page_module.template().(vars)
+    context = Map.merge(runtime_context(), page.emitted_context)
+
+    Process.put(:mirage_components, bookkeeping.components)
 
     root =
       if function_exported?(page_module, :__layout_module__, 0) do
+        # Expand page content in the page's scope first so page events target
+        # the page, not the layout.
+        page_env = %{context: context, slots: [], target: nil}
+        expanded_page = DOM.expand(page_dom, page_env, server)
+
         layout_props_dom =
           page_module.__layout_props__()
           |> Enum.into(%{cid: "layout"})
           |> Map.merge(page.state)
           |> Enum.map(fn {name, value} -> {to_string(name), [expression: {value}]} end)
 
-        {:component, page_module.__layout_module__(), layout_props_dom, page_dom}
+        {:component, page_module.__layout_module__(), layout_props_dom,
+         [{:preexpanded, expanded_page}]}
       else
         page_dom
       end
 
-    context = Map.merge(runtime_context(), page.emitted_context)
     env = %{context: context, slots: [], target: nil}
-
-    Process.put(:mirage_components, bookkeeping.components)
     ast = DOM.expand(root, env, server)
     updated_components = Process.delete(:mirage_components) || %{}
 

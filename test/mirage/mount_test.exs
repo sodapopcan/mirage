@@ -99,6 +99,19 @@ defmodule Mirage.MountTest do
       Mirage.refute_has(session, "p")
     end
 
+    test "slot event targets the mounted component" do
+      session =
+        ~HOLO"""
+        <Mirage.SlotDialog cid="dialog">
+          <button $click={:close}>Close</button>
+        </Mirage.SlotDialog>
+        """
+        |> Mirage.mount()
+        |> Mirage.click("button", "Close")
+
+      assert session.page.state.closed == true
+    end
+
     test "slot can reference context-derived vars" do
       session =
         ~HOLO"""
