@@ -6,6 +6,10 @@
 Browserless page and component testing library for
 the [Hologram](http://hologram.page) framework.
 
+> [!CAUTION]
+> I've archived this library as I've done no Hologram development in the past several months and not sure when, or if, I'll be coming back.
+> If you would like to take ownership of this repo, let me know.
+
 ## About
 
 Mirage allows for browserless testing of hologram pages and components.  Its API
